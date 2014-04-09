@@ -4,7 +4,8 @@ LD_FLAGS=
 TARGET=sire
 SOURCES=\
   main.cpp \
-  Lexer.cpp #\
+  Lexer.cpp \
+  Error.cpp
 #  Parser.cpp \
 # NameTable.cpp
 OBJECTS=$(SOURCES:.cpp=.o)

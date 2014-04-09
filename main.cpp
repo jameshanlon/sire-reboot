@@ -4,6 +4,7 @@
 #include <stdio.h>
 
 #include "Error.h"
+#include "SymTable.h"
 #include "Lexer.h"
 //#include "Parser.h"
 
@@ -50,9 +51,10 @@ int main(int argc, char *argv[]) {
     // Open the input file
     fp = filename.empty() ? stdin : fopen(filename.c_str(), "r");
     if(fp == NULL)
-      fatalError("Could not open the input file");
+      throw FatalError("Could not open the input file");
     
-    lex().fp = fp;
+    SYM.init();
+    LEX.init(fp);
     //Parser syn(lex);
 
     // Start interactive mode if not file or pipe
@@ -61,10 +63,14 @@ int main(int argc, char *argv[]) {
       return 0;
     }
 
-    Lexer::Token t = lex().readToken();
+    Lexer::Token t = LEX.readToken();
     while (t != Lexer::t_EOF) {
-      printf(".");
-      t = lex().readToken();
+      printf("%3d %s ", (int) t, LEX.tokenStr(t));
+      if(t == Lexer::t_NUMBER) printf("%d", LEX.value);
+      if(t == Lexer::t_NAME)   printf("%s", LEX.s.c_str());
+      if(t == Lexer::t_STRING) printf("%s", LEX.s.c_str());
+      printf("\n");
+      t = LEX.readToken();
     }
 
     // Otherwise, proceed normally

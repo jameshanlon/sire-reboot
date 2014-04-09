@@ -4,6 +4,9 @@
 #include <string>
 #include <exception>
 
+#define MAX_ERRORS 8
+#define ERR Error::get()
+
 #include "Lexer.h"
 
 class FatalError {
@@ -16,14 +19,19 @@ public:
   }
 };
 
-void fatalErr(const char *msg) {
-  throw FatalError(msg); 
-}
-
-void synErr() {
-  printf("Error near line %d: %s", lineNum);
-  lex().printChBuf();
-  // FatalError if too many errors
-}
+class Error {
+public:
+  Error() : count(0) {};
+  ~Error() {};
+  static Error instance;
+  static Error &get() { return instance; }
+  void record() {
+    count++;
+    if(count >= MAX_ERRORS)
+      throw FatalError("too many errors");
+  }
+private:
+  int count;
+};
 
 #endif

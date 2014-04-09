@@ -1,10 +1,15 @@
 #include <cstdlib>
 
 #include "Lexer.h"
+#include "SymTable.h"
+#include "Error.h"
 
 Lexer Lexer::instance;
 
-void Lexer::declareKeywords() {
+Lexer::init(FILE *fileptr) {
+  fp = fileptr;
+  declareKeywords();
+  readChar();
 }
 
 Lexer::Token Lexer::readToken() {
@@ -14,17 +19,21 @@ Lexer::Token Lexer::readToken() {
   // Newlines (skip)
   case '\n':
     lineNum++;
+    readChar();
+    return readToken();
  
   // Whitespace (skip)
   case '\r': case '\t': case ' ':
-    do readChar();
-    while(isspace(ch));
+    do readChar(); while(ch=='\r' || ch=='\t' || ch==' ');
+    return readToken();
   
   // Comment: #.* (skip)
   case '#':    
     do readChar(); while (ch!=EOF && ch!='\n');
     if(ch=='\n')
       lineNum++;
+    readChar();
+    return readToken();
 
   // Number: [0-9]+
   case '0': case '1': case '2': case '3': case '4':
@@ -46,8 +55,7 @@ Lexer::Token Lexer::readToken() {
   case 'U': case 'V': case 'W': case 'X': case 'Y':
   case 'Z':
     readName();
-    // TODO: insert s into nameTable
-    return t_NAME;
+    return TAB.lookup(s);
 
   // Symbols
   case '{': tok = t_LCURLY;  break;
@@ -71,29 +79,29 @@ Lexer::Token Lexer::readToken() {
   case '@': tok = t_AT;      break;
 
   case '~': 
-    ch = readChar(fp);
+    readChar();
     if(ch=='=') { tok = t_NEQ; break; }
     return t_NOT;
 
   case '<': 
-    ch = readChar(fp);
+    readChar();
     if(ch=='=') { tok = t_LEQ; break; }
     if(ch=='<') { tok = t_LSH; break; }
     return t_LT;
 
   case '>': 
-    ch = readChar(fp);
+    readChar();
     if(ch=='=') { tok = t_GEQ; break; }
     if(ch=='>') { tok = t_RSH; break; }
     return t_GT;
 
   case ':': 
-    ch = readChar(fp);
+    readChar();
     if(ch=='=') { tok = t_ASS; break; }
     return t_COLON;
   
   case '&':
-    ch = readChar(fp);
+    readChar();
     if(ch=='&') { tok = t_LAND; break; }
     return t_AND;
 
@@ -105,24 +113,23 @@ Lexer::Token Lexer::readToken() {
     s.clear();
     while(ch!='"' && ch!=EOF)
       s += readStrCh();
-      // Read char constant here
     tok = t_STRING;
     break;
   
-  case ''':
+  case '\'':
     readChar();
     value = (int) ch;
     ch = readStrCh();
-    if(ch==''') { tok = t_CHAR; break; }
-    synErr("expected ''' after character constant");
+    if(ch=='\'') { tok = t_CHAR; break; }
+    error("expected ''' after character constant");
     return t_ERROR;
 
   // EOF or invalid tokens
-  detault:
+  default:
     if(ch != EOF) {
-      synErr("Illegal character %x", ch);
+      error("illegal character");
       // Skip the rest of the line
-      do readChar(); while(ch!='EOF' && ch!='\n');
+      do readChar(); while(ch!=EOF && ch!='\n');
       return t_ERROR;
     }
     return t_EOF;
@@ -132,48 +139,61 @@ Lexer::Token Lexer::readToken() {
   return tok;
 }
 
-void readChar() {
+void Lexer::readChar() {
   ch = fgetc(fp);
-  charBuf[++chCount & (CH_BUF_SIZE-1)];
+  chBuf[++chCount & (BUF_SIZE-1)] = ch;
 }
 
-void printChBuf() {
+void Lexer::printChBuf() {
   printf("\n...");
-  for(int i=chCount+1; i<chCount+CH_BUF_SIZE; i++) {
-    char c = chBuf[i&(CHAR_BUF_SIZE-1)];
-    if(c) printf("%c", c);
+  for(int i=chCount+1; i<chCount+BUF_SIZE; i++) {
+    char c = chBuf[i & (BUF_SIZE-1)];
+    if(c)
+      printf("%c", c);
   }
   printf("\n");
 }
 
-void readNumber() {
+void Lexer::skipLine() {
+  do readChar(); while (ch!=EOF && ch!='\n');
+  if(ch=='\n')
+    lineNum++;
+}
+
+void Lexer::readNumber() {
   s.clear();
-  do s += ch; while(isdigit(readChar()));
+  do {
+    s += ch; 
+    readChar(); 
+  } while('0'<=ch && ch<='9');
   value = (int) strtol(s.c_str(), NULL, 0);
 }
 
-void readName() {
+void Lexer::readName() {
   s.clear();
   s = ch;
   readChar();
-  while(isalnum(ch) || ch=='_') {
+  while(('a'<=ch && ch<='z') ||
+        ('A'<=ch && ch<='Z') ||
+        ('0'<=ch && ch<='9') ||  ch=='_') {
     s += ch;
-    ch = readChar(fp);
+    readChar();
   }
 }
 
-char readStrCh() {
+char Lexer::readStrCh() {
   char res = ch;
-  if(ch=='\n') {
+  if(ch == '\n') {
     lineNum++;
-    synErr("expected ''' after character constant");
+    error("expected ''' after character constant");
   }
   if(ch == '\\') {
     readChar();
     switch(ch) {
-      default: synErr("Bad string or character constant");
-      case '\\': case '\'': case '"': res = ch; break;
+      default: error("bad string or character constant");
+      case '\\': case '\'': case '"': res = ch;   break;
       case 't':  case 'T':            res = '\t'; break;
+      case 'r':  case 'R':            res = '\r'; break;
       case 'n':  case 'N':            res = '\n'; break;
     }
   }
@@ -181,3 +201,96 @@ char readStrCh() {
   return res;
 }
 
+void Lexer::declare(const char *keyword, Lexer::Token t) {
+  TAB.insert(std::string(keyword), (int) t);
+}
+
+void Lexer::declareKeywords() {
+  declare("accept",    Lexer::t_ACCEPT); 
+  declare("alt",       Lexer::t_ALT);    
+  declare("call",      Lexer::t_CALL);
+  declare("chanend",   Lexer::t_CHANEND);
+  declare("connect",   Lexer::t_CONNECT); 
+  declare("do",        Lexer::t_DO);    
+  declare("else",      Lexer::t_ELSE);  
+  declare("false",     Lexer::t_FALSE);
+  declare("final",     Lexer::t_FINAL);   
+  declare("for",       Lexer::t_FOR);    
+  declare("from",      Lexer::t_FROM);
+  declare("function",  Lexer::t_FUNCTION);
+  declare("if",        Lexer::t_IF);
+  declare("inherits",  Lexer::t_INHERITS); 
+  declare("initial",   Lexer::t_INITIAL);
+  declare("interface", Lexer::t_INTERFACE);
+  declare("is",        Lexer::t_IS);     
+  declare("on",        Lexer::t_ON);     
+  declare("par",       Lexer::t_PAR);
+  declare("process",   Lexer::t_PROCESS);
+  declare("result",    Lexer::t_RESULT);  
+  declare("seq",       Lexer::t_SEQ);  
+  declare("server",    Lexer::t_SERVER);  
+  declare("skip",      Lexer::t_SKIP);
+  declare("step",      Lexer::t_STEP);   
+  declare("stop",      Lexer::t_STOP);    
+  declare("then",      Lexer::t_THEN);    
+  declare("to",        Lexer::t_TO);
+  declare("true",      Lexer::t_TRUE);    
+  declare("val",       Lexer::t_VAL);   
+  declare("valof",     Lexer::t_VALOF);   
+  declare("var",       Lexer::t_VAR);
+  declare("while",     Lexer::t_WHILE);                         
+}
+
+void Lexer::error(const char *msg) {
+  printf("Error near line %d: %s\n", lineNum, msg);
+  printChBuf();
+  ERR.record();
+  skipLine();
+  readToken();
+}
+
+const char *Lexer::tokenStr(Lexer::Token t) {
+  switch(t) { 
+    default: return "unknown";
+    case t_ERROR: return "Error";
+    // Literals
+    case t_NUMBER:  return "Number";  case t_NAME:      return "Name";
+    // Symbols
+    case t_LCURLY:  return "Lcurly";  case t_RCURLY:    return "Rcurly"; 
+    case t_LSQUARE: return "Lsquare"; case t_RSQUARE:   return "Rsquare";
+    case t_LPAREN:  return "Lparen";  case t_RPAREN:    return "Rparen"; 
+    case t_COMMA:   return "Comma";   case t_DOT:       return "Dot";
+    case t_SEMI:    return "Semi";    case t_IN:        return "In";     
+    case t_OUT:     return "Out";     case t_EQ:        return "Eq";
+    case t_ADD:     return "Add";     case t_SUB:       return "Sub";    
+    case t_MUL:     return "Mul";     case t_DIV:       return "Div";
+    case t_XOR:     return "Xor";     case t_REM:       return "Rem";     
+    case t_AT:      return "At";      case t_NEQ:       return "Neq";
+    case t_NOT:     return "Not";     case t_LEQ:       return "Leq";     
+    case t_LSH:     return "Lsh";     case t_LT:        return "Lt";
+    case t_GEQ:     return "Geq";     case t_RSH:       return "Rsh";      
+    case t_GT:      return "Gt";      case t_ASS:       return "Ass";
+    case t_COLON:   return "Colon";   case t_LAND:      return "Land";     
+    case t_AND:     return "And";     case t_LOR:       return "Lor";
+    case t_OR:      return "Or";      case t_STRING:    return "String";
+    case t_CHAR:    return "Char";
+    // Keywords
+    case t_ACCEPT:  return "Accept";  case t_ALT:       return "Alt"; 
+    case t_CALL:    return "Call";    case t_CHANEND:   return "Chanend";
+    case t_CONNECT: return "Connet";  case t_DO:        return "Do";   
+    case t_ELSE:    return "Else";    case t_FALSE:     return "False";
+    case t_FINAL:   return "Final";   case t_FOR:       return "For";
+    case t_FROM:    return "From";    case t_FUNCTION:  return "Function";
+    case t_IF:      return "If";      case t_INHERITS:  return "Inherits";
+    case t_INITIAL: return "Initial"; case t_INTERFACE: return "Interface";
+    case t_IS:      return "Is";      case t_ON:        return "On"; 
+    case t_PAR:     return "Par";     case t_PROCESS:   return "Process";
+    case t_RESULT:  return "Result";  case t_SEQ:       return "Seq";
+    case t_SERVER:  return "Server";  case t_SKIP:      return "Skip";
+    case t_STEP:    return "Step";    case t_STOP:      return "Stop";
+    case t_THEN:    return "Then";    case t_TO:        return "To";
+    case t_TRUE:    return "True";    case t_VAL:       return "Val";     
+    case t_VALOF:   return "Valof";   case t_VAR:       return "Var";
+    case t_WHILE:   return "While"; 
+  }
+}

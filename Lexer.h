@@ -4,7 +4,8 @@
 #include <string>
 #include "stdio.h"
 
-#define CH_BUF_SIZE 64
+#define BUF_SIZE 64
+#define LEX Lexer::get()
 
 class Lexer {
 
@@ -34,7 +35,7 @@ public:
     t_IF,      t_INHERITS, t_INITIAL, t_INTERFACE,
     t_IS,      t_ON,       t_PAR,     t_PROCESS,
     t_RESULT,  t_SEQ,      t_SERVER,  t_SKIP,
-    t_STEP,    t_STOP,     t_THEN     t_TO,
+    t_STEP,    t_STOP,     t_THEN,    t_TO,
     t_TRUE,    t_VAL,      t_VALOF,   t_VAR,
     t_WHILE                            
   } Token;
@@ -49,16 +50,27 @@ public:
   std::string s;
   char ch;
   int chCount;
-  char chBuf[CH_BUF_SIZE];
-  
-  Lexer() : chCount(0) : lineNo(1) {
-    for(int i=0; i<CH_BUF_SIZE; i++) chBuf[i] = 0;
+  char chBuf[BUF_SIZE];
+
+  Lexer() : lineNum(1), chCount(0) {
+    for(int i=0; i<BUF_SIZE; i++) 
+      chBuf[i] = 0;
   }
   ~Lexer() {}
-  void declareKeywords();
+  void init();
+  void readChar();
   Token readToken();
+  void declareKeywords();
+  const char *tokenStr(Lexer::Token t);
+  
+private:
+  void readNumber();
+  void readName();
+  char readStrCh();
+  void printChBuf();
+  void skipLine();
+  void error(const char *msg);
+  void declare(const char *keyword, Token);
 };
-
-Lexer::Lexer &lex() { return Lexer::get(); }
 
 #endif
