@@ -52,7 +52,7 @@ int main(int argc, char *argv[]) {
     if(fp == NULL)
       fatalError("Could not open the input file");
     
-    Lexer lex(fp);
+    lex().fp = fp;
     //Parser syn(lex);
 
     // Start interactive mode if not file or pipe
@@ -61,10 +61,10 @@ int main(int argc, char *argv[]) {
       return 0;
     }
 
-    Lexer::Token t = lex.readToken();
+    Lexer::Token t = lex().readToken();
     while (t != Lexer::t_EOF) {
       printf(".");
-      t = lex.readToken();
+      t = lex().readToken();
     }
 
     // Otherwise, proceed normally

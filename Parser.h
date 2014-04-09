@@ -18,4 +18,7 @@ private:
   Lexer::Token getNextToken();
 };
 
+Parser::Parser &parser() { return Parser::get(); }
+
+
 #endif

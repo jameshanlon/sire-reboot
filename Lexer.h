@@ -4,6 +4,8 @@
 #include <string>
 #include "stdio.h"
 
+#define CH_BUF_SIZE 64
+
 class Lexer {
 
 // The lexical analyser
@@ -36,16 +38,27 @@ public:
     t_TRUE,    t_VAL,      t_VALOF,   t_VAR,
     t_WHILE                            
   } Token;
-  
+
+  static Lexer instance;
+  static Lexer &get() { return instance; }
+
   FILE* fp;
   int lineNum;
   int linePos;
   int value;
   std::string s;
   char ch;
+  int chCount;
+  char chBuf[CH_BUF_SIZE];
   
-  Lexer(FILE* fp) : fp(fp) {}
+  Lexer() : chCount(0) : lineNo(1) {
+    for(int i=0; i<CH_BUF_SIZE; i++) chBuf[i] = 0;
+  }
+  ~Lexer() {}
+  void declareKeywords();
   Token readToken();
 };
+
+Lexer::Lexer &lex() { return Lexer::get(); }
 
 #endif

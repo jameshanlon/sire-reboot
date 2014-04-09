@@ -5,7 +5,8 @@ TARGET=sire
 SOURCES=\
   main.cpp \
   Lexer.cpp #\
-#  Parser.cpp
+#  Parser.cpp \
+# NameTable.cpp
 OBJECTS=$(SOURCES:.cpp=.o)
 
 all: $(TARGET)

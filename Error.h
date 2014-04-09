@@ -4,6 +4,8 @@
 #include <string>
 #include <exception>
 
+#include "Lexer.h"
+
 class FatalError {
   std::string s;
 public:
@@ -14,12 +16,13 @@ public:
   }
 };
 
-void fatalError(const char *msg) {
+void fatalErr(const char *msg) {
   throw FatalError(msg); 
 }
 
-void syntaxError() {
+void synErr() {
   printf("Error near line %d: %s", lineNum);
+  lex().printChBuf();
   // FatalError if too many errors
 }
 
