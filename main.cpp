@@ -6,7 +6,7 @@
 #include "Error.h"
 #include "SymTable.h"
 #include "Lexer.h"
-//#include "Parser.h"
+#include "Parser.h"
 
 void interpreterLoop() {
 //  fprintf(stderr, "> ");
@@ -53,9 +53,9 @@ int main(int argc, char *argv[]) {
     if(fp == NULL)
       throw FatalError("Could not open the input file");
     
-    SYM.init();
+    TAB.init();
     LEX.init(fp);
-    //Parser syn(lex);
+    SYN.init();
 
     // Start interactive mode if not file or pipe
     if(filename.empty() && isatty(fileno(stdin))) {
@@ -63,6 +63,7 @@ int main(int argc, char *argv[]) {
       return 0;
     }
 
+    // Lexer debug
     Lexer::Token t = LEX.readToken();
     while (t != Lexer::t_EOF) {
       printf("%3d %s ", (int) t, LEX.tokenStr(t));
@@ -73,9 +74,7 @@ int main(int argc, char *argv[]) {
       t = LEX.readToken();
     }
 
-    // Otherwise, proceed normally
     //tree = parse();
-    //run(tree);
   }
   catch(FatalError &e) {
     fprintf(stderr, "Error: %s\n", e.msg());

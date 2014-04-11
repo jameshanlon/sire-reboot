@@ -1,24 +1,25 @@
 #ifndef PARSER_H
 #define PARSER_H
 
+#include "Parser.h"
 #include "Lexer.h"
 
+#define SYN Parser::get()
+
 class Parser {
-
-// The parser
-
 public:
-  Lexer *lex;
+  static Parser instance;
+  static Parser &get() { return instance; }
+  
   Lexer::Token curTok;
   
-  Parser(Lexer &lex) : lex(lex) {};
+  Parser() {};
+  ~Parser() {};
+  void init() {};
   //Tree parse();
 
 private:
-  Lexer::Token getNextToken();
+  void getNextToken();
 };
-
-Parser::Parser &parser() { return Parser::get(); }
-
 
 #endif

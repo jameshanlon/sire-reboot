@@ -57,7 +57,7 @@ public:
       chBuf[i] = 0;
   }
   ~Lexer() {}
-  void init();
+  void init(FILE *p);
   void readChar();
   Token readToken();
   void declareKeywords();

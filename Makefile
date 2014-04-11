@@ -4,10 +4,10 @@ LD_FLAGS=
 TARGET=sire
 SOURCES=\
   main.cpp \
+  Error.cpp \
+  SymTable.cpp \
   Lexer.cpp \
-  Error.cpp
-#  Parser.cpp \
-# NameTable.cpp
+  Parser.cpp
 OBJECTS=$(SOURCES:.cpp=.o)
 
 all: $(TARGET)
@@ -20,4 +20,7 @@ $(TARGET): $(OBJECTS)
 
 clean:
 	rm -f $(TARGET) $(OBJECTS)
+
+count:
+	wc -l *.cpp *.h
 

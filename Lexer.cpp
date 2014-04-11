@@ -6,8 +6,8 @@
 
 Lexer Lexer::instance;
 
-Lexer::init(FILE *fileptr) {
-  fp = fileptr;
+void Lexer::init(FILE *p) {
+  fp = p;
   declareKeywords();
   readChar();
 }
@@ -55,7 +55,7 @@ Lexer::Token Lexer::readToken() {
   case 'U': case 'V': case 'W': case 'X': case 'Y':
   case 'Z':
     readName();
-    return TAB.lookup(s);
+    return (Lexer::Token) TAB.lookup(s);
 
   // Symbols
   case '{': tok = t_LCURLY;  break;
@@ -202,7 +202,7 @@ char Lexer::readStrCh() {
 }
 
 void Lexer::declare(const char *keyword, Lexer::Token t) {
-  TAB.insert(std::string(keyword), (int) t);
+  TAB.insert(std::string(keyword), t);
 }
 
 void Lexer::declareKeywords() {

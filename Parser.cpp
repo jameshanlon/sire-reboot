@@ -1,7 +1,9 @@
 #include "Parser.h"
 
-Lexer::Token getNextToken() {
-  return curTok = Lexer::getToken();
+Parser Parser::instance;
+
+void Parser::getNextToken() {
+  curTok = LEX.readToken();
 }
 
 //void parse() {
