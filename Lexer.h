@@ -58,6 +58,7 @@ public:
   }
   ~Lexer() {}
   void init(FILE *p);
+  void error(const char *msg);
   void readChar();
   Token readToken();
   void declareKeywords();
@@ -69,7 +70,6 @@ private:
   char readStrCh();
   void printChBuf();
   void skipLine();
-  void error(const char *msg);
   void declare(const char *keyword, Token);
 };
 

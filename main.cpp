@@ -74,7 +74,8 @@ int main(int argc, char *argv[]) {
       t = LEX.readToken();
     }
 
-    //tree = parse();
+    //tree = SYN.formTree();
+    //TRN.translateTree();
   }
   catch(FatalError &e) {
     fprintf(stderr, "Error: %s\n", e.msg());

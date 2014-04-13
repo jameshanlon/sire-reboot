@@ -251,8 +251,8 @@ void Lexer::error(const char *msg) {
 
 const char *Lexer::tokenStr(Lexer::Token t) {
   switch(t) { 
-    default: return "unknown";
-    case t_ERROR: return "Error";
+    default:        return "unknown";
+    case t_ERROR:   return "Error";
     // Literals
     case t_NUMBER:  return "Number";  case t_NAME:      return "Name";
     // Symbols

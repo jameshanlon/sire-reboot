@@ -7,6 +7,7 @@ SOURCES=\
   Error.cpp \
   SymTable.cpp \
   Lexer.cpp \
+  Tree.cpp \
   Parser.cpp
 OBJECTS=$(SOURCES:.cpp=.o)
 
