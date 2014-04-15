@@ -50,9 +50,9 @@ public:
   std::vector<Formal*> args;
   std::vector<Command*> body;
   Def(Tree::Type type,
-      std::string name, 
-      std::vector<Formal*> args, 
-      std::vector<Command*> body) : 
+      const std::string &name, 
+      const std::vector<Formal*> &args, 
+      const std::vector<Command*> &body) : 
     Node(type), 
     name(name),
     args(args), 
@@ -67,7 +67,7 @@ class Decl : public Node {
 public:
   std::string name;
   Decl(Tree::Type type,
-      std::string name) :
+       const std::string &name) :
     Node(type),
     name(name) {}
 };
@@ -75,8 +75,8 @@ public:
 class ArrayDecl : public Decl {
 public:
   std::vector<Expr *> sizes;
-  ArrayDecl(std::string name, 
-      std::vector<Expr *> sizes) :
+  ArrayDecl(const std::string &name, 
+            const std::vector<Expr *> &sizes) :
     Decl(Tree::t_ARRAY, name),
     sizes(sizes) {}
 };

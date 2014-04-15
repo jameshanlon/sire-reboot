@@ -15,8 +15,8 @@ public:
   SymTable() {}
   ~SymTable() {}
   void init();
-  void insert(std::string name, Lexer::Token t);
-  int lookup(std::string name);
+  void insert(const std::string name, const Lexer::Token t);
+  int lookup(const std::string name);
   
 private:
   std::map<std::string, Lexer::Token> table;
