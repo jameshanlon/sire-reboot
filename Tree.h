@@ -4,91 +4,101 @@
 #include <vector>
 #include <string>
 
-struct Node;
-
-struct Tree {
 // The syntax tree base struct
-  std::vector<Node*> specification;
-  std::vector<Node*> program;
+struct Tree {
+  std::vector<Node*> spec;
+  std::vector<Node*> prog;
   void print();
 };
 
-struct Node {
 // The tree node base struct
-public:
-  Tree::Type type;
-  Node(Tree::Type type) : type(type) {}
+struct Node {
 };
 
-// Base Node types
+// Base Tree Node types
+struct Node;
 struct Specification;
 struct Command;
 struct Formal;
 struct Expr;
 struct Elem;
 
-// Program ====================================================================
+// Definitions ================================================================
 
-struct Def : public Node {
+// Specifications =============================================================
+
+struct Spec : public Node {
   typedef enum {
-    t_SERVER, 
-    t_PROCESS, 
-    t_FUNCTION,
+    DEF,
+    DECL,
+    ABBR
   } Type;
+  Type type;
   std::string name;
+  Spec(Type type, std::string &name) : 
+    type(type), name(name) {}
+  virtual void accept(Visitor *v) = 0;
+}
+
+struct Def : public Specification {
+  typedef enum {
+    SERVER,
+    PROCESS,
+    FUNCTION
+  } Type;
   std::vector<Formal*> args;
-  std::vector<Command*> body;
+  Cmd body;
   Def(Tree::Type type,
       const std::string &name, 
       const std::vector<Formal*> &args, 
       const std::vector<Command*> &body) : 
-    Node(type), 
-    name(name),
+    Spec(Spec::DEF, name),
     args(args), 
     body(body) {}
 };
 
-// Specifications =============================================================
-
-struct Specification : public Node {
+struct Decl : public Spec {
   typedef enum {
-    VAR_DECL,
-    ARRAY_DECL,
-    VAL_ABBRV,
-    VAR_ABBRV,
+    VAR,
+    ARRAY
   } Type;
-  std::string name;
-  Specification() {}
-}
+  Type type;
+  Decl(Type type, const std::string &name) :
+    Spec(Spec::DECL, name), type(type) {}
+};
 
-struct VarDecl : public Specification {
+struct VarDecl : public Decl {
   VarDecl(const std::string &name) :
-    Node(Specification::VAR_DECL),
-    name(name) {}
+    Decl(Specification::VAR_DECL, name) {}
 };
 
-struct ArrayDecl : public Specification {
+struct ArrayDecl : public Decl {
   std::vector<Expr*> sizes;
-  ArrayDecl(const std::string &name, 
+  ArrayDecl(const std::string &name,
             const std::vector<Expr*> &sizes) :
-    Specification(Specification::ARRAY_DECL),
-    sizes(sizes) {}
+    Decl(Decl::ARRAY, name), sizes(sizes) {}
 };
 
-struct ValAbbrv : public Specification {
+struct Abbr : public Spec {
+  typedef enum {
+    VAL,
+    VAR
+  } Type;
+  Type type;
+  Abbr(Type type, const std::string &name) :
+    Spec(Spec::ABBR, name), type(type) {}
+};
+
+struct ValAbbrv : public ABBR {
   Elem *elem;
-  ValAbbrv(const std::string &name,
-           Elem *elem) :
-    Specification(Specification::VAL_ABBRV),
-    elem(elem) {}
+  ValAbbrv(const std::string &name, Elem *elem) :
+    Abbr(Abbr::VAL, name), elem(elem) {}
 };
 
-struct VarAbbrv : public Specification {
+struct VarAbbrv : public ABBR {
   Expr *expr;
-  ValAbbrv(const std::string &name,
-           Expr* expr) :
-    Specification(Specification::VAL_ABBRV),
-    expr(expr) {}
+  ValAbbrv(const std::string &name, Expr* expr) :
+    Abbr(Abbr::VAR, name), expr(expr) {}
 };
 
 // Commands ===================================================================
@@ -107,6 +117,16 @@ struct Cmd : public Node {
     SEQ,
     PAR
   } Type;
+  Type type;
+  Cmd(Type type) : type(type) {}
+};
+
+struct Skip : public Cmd {
+  Skip() : Cmd(SKIP) {}
+};
+
+struct Stop : public Cmd {
+  Skip() : Cmd(STOP) {}
 };
 
 // Formals ====================================================================
