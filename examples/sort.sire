@@ -1,0 +1,77 @@
+val D is 3:
+val N is 1 << D:
+
+function level(val id) is 
+  % return a level for a hypercube node
+  valof 
+  { var d, dmax, l:
+    dmax := 0; l := 0;
+    while dmax < id do 
+    { dmax := 2*dmax + 1;
+      l := l + 1 } }
+  result l :
+
+function nbr(val id, val d) is
+  % return the id of a neighbour for a hypercube node in dimension d
+  valof result id xor (1<<d) :
+  
+process distribute(val id, chanend[D+1] c, var[n] a, val n) is
+{ var lvl, len, base: 
+  lvl := level(id);
+  % receive $2^{\ttt{level}(\ttt{id})}$ elements of 'a' from the parent
+  c[lvl] ? len;
+  seq [i=0 for len] c[lvl] ? a[i]
+  % redistribute topmost portions of 'a' to each child
+  base := len/2;
+  seq [i=lvl+1 for D-lvl-1]
+  { len := len / 2;
+    c[i] ! len;
+    seq [j=base for len] c[i] ! a[j]; 
+    base := base-len } } :
+  
+process collect(val id, chanend[D+1] c, var[n] a, val n) is
+{ var lvl, len, lenPart: 
+  lvl := level(id);
+  % receive portions of array from each child
+  lenPart := 1;
+  seq [i=D-1 for D-1-lvl step -1]
+  { c[i] ? len;
+    seq [j=len/2 for len] c[i] ? a[j];
+    lenPart := lenPart * 2 };
+  % send a complete portion to the parent
+  c[lvl] ! lenPart;
+  seq [i=0 for lenPart] c[lvl] ! a[i] } :
+
+process sort(val id, chanend[D+1] c, var a) is
+{ var swp:
+  % perform D pairwise exchanges
+  seq [i=0 for D]
+    if id < nbr(id, i+1)
+    then
+    { c[i] ! a;
+      c[i] ? swp;
+      if { swp < a: a := swp } }
+    else
+    { c[i] ? swp;
+      c[i] ! a;
+      if { swp > a: a := swp } } } :
+
+process Master(process Node n) is
+    interface(chanend c):
+{ connect c to n.c[0];
+  var a[N];
+  seq [i=0 for N] c ! N-i-1; % input the array to the hypercube
+  seq [i=0 for N] c ? a[i] } % output the sorted array
+
+& process Node(val id, process Master m, Node[N] n) is
+    interface(chanend[D+1] c):
+{ seq [i=1 for D] connect c[i-1] to n[nbr(id, i)].c;
+  if { id = 0: connect c[0] to m.c };
+  var a[N]:
+  distribute(id, c, a, N);
+  sort(id, c, a[0]);
+  collect(id, c, a, N) } :
+
+{ m is Master(n) & 
+  n is par [i=0 for N] Node(i, m, n) }
+

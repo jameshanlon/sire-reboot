@@ -1,0 +1,35 @@
+val N is 10:
+
+server Stack() is
+  interface(call 
+    push(val v), 
+    pop(var v), 
+    full(var b), 
+    empty(var b)
+  ):
+{ var[N] s:
+  var p:
+  initial p := 0:
+  alt 
+  { accept write(val v):
+    { s[p] := v;
+      count := count + 1
+    }
+  | accept read(var v):
+    { v := s[p]; 
+      count := count - 1 
+    }
+  | accept full(var b):
+      b := p+1 = N
+  | accept empty(var b):
+      b := p = 0
+  }
+}
+
+s is Stack():
+var f, e:
+s.full(f);
+if { ~f: s.push(0) };
+s.empty(e); 
+if { ~e: s.pop(v) }
+

@@ -1,0 +1,18 @@
+val N is 10:
+
+server Store() is
+  interface(call 
+    read(val i, var v), 
+    write(val i, val v)):
+{ var[N] a:
+  alt 
+  { accept read(val i, var v):  v := a[i]
+  | accept write(val i, val v): a[i] := v
+  } 
+} :
+
+s is Store():
+var v:
+seq [i=0 for N]: s.write(i, N-i);
+seq [i=0 for N]: s.read(i, v)
+

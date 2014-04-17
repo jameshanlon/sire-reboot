@@ -1,0 +1,48 @@
+val D is 3:
+val N is 1 << D:
+
+process Root(chanend root) is
+    interface(chanend c):
+{ connect c to root;
+  var v: 
+  root ! 0; 
+  root ? v
+}
+
+& process Branch(val i, chanend m, 
+    process Branch[N-1] b, Leaf[N] l) is
+    interface(chanend root, left, right):
+{ if i = 0
+  then connect root to m
+  else if i rem 2 = 1
+  then connect root to b[((i+1)/2)+((i+1) rem 2)].left
+  else connect root to b[((i+1)/2)+((i+1) rem 2)].right;
+  if i < N/2 then
+  { connect left to b[(2*i)+1].root;
+    connect right to b[(2*i)+2].root }
+  else 
+  { connect left to l[i-(N/2)-1].root;
+    connect right to l[i-(N/2)-1].root }
+  var sum, lsum, rsum:
+  root ? sum;                 % receive the partial sum
+  left ! sum; left ? lsum;    % propagate sum to left-hand child
+  right ! lsum; right ? rsum; % propagate sum to right-hand child
+  root ! rsum                 % return the new sum
+}
+
+& process Leaf(val i, process Branch[N-1] b) is
+    interface(chanend root):
+{ if i rem 2 = 1
+  then connect root to b[N-(i/2)].left
+  else connect root to b[N-(i/2)].right;
+  var v, r, psum: 
+  v := i;
+  root ? psum;   % receive the partial sum
+  r := psum + v; % compute the local result
+  root ! r       % return the updated partial sum
+}:
+
+{ r is Root(b[0].root) & 
+  b is par [i=0 for N-1] Branch(i, m.root, b, l) &
+  l is par [i=0 for N] Leaf(i, b) }
+

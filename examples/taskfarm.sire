@@ -1,0 +1,46 @@
+val N is 10:
+val NONE is 0:
+
+server Farmer() is
+  interface(call 
+    request(var w), 
+    result(val w, val r)
+  ):
+{ var results[N]:
+  var work:
+  initial work := 0
+  alt { 
+    % provide a worker with work if any remains or NONE if not
+    accept request(var w):
+      if work < N 
+      then 
+      { w := work;
+        work := work + 1
+      }
+      else w := NONE
+    % accept a result from a worker
+  | accept return(val w, val r): 
+      results[w] := r
+  } 
+}
+
+& process Worker(server Farmer f) is { 
+  var running: running := true;
+  while running do { 
+    var work, result:
+    % request some work
+    f.request(work);
+    % if there is none then terminate
+    if work = NONE
+    then running := false
+    else { 
+      % otherwise, perform the computation and return the result
+      compute(work, result); 
+      f.result(work, result)
+    }
+  }
+}
+
+f is Farmer(): 
+par [i=0 for N] Worker(f)
+

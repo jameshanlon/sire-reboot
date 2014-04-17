@@ -1,0 +1,57 @@
+val S is 1024:
+val N is 10:
+
+server Store() is
+  interface(call 
+    read(val i, var v), 
+    write(val i, val v)
+  ):
+{ var[S] a:
+  alt 
+  { accept read(val i, var v): 
+      v := a[i]
+  | accept write(val i, val v): 
+      a[i] := v 
+  }
+}
+
+& server Access(server Store[N] s) is
+  interface(call 
+    read(val i, var v),
+    write(val i, val v)):
+{ var[M] cache, indices:
+  var k, hit:
+  initial seq [i=0 for M] indices[0] := 0
+  alt { 
+    accept read(val i, var v): 
+    { hit := false;
+      if [j=0 for M] 
+      { i = indices[j]: 
+        { v := cache[j]; 
+          hit := true } };
+      if { ~hit:
+      { k := h(i);
+        s[i/N].read(i rem S, cache[k]);
+        indices[k] := i; 
+        v := cache[k] } } }
+  | accept write(val i, val v):
+    { k := h(i);
+      cache[k] := v; 
+      indices[k] := i;
+      s[i/N].write(i rem S, v)
+    }
+  } 
+}
+
+& server RAM() inherits
+  from { 
+    s is [N] Store():
+    m is Access(s) 
+  }
+  interface m
+
+m is RAM():
+var v:
+m.write(99, 42); 
+m.read(99, v);
+

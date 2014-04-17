@@ -1,0 +1,61 @@
+val SQRTN is 4:
+val N is 16:
+val NONE is false:
+
+server Control(chanend pin, pout) is
+  interface(chanend out, in, 
+    call isPrime(val p, var r)):
+  var i, v:
+  initial
+  { connect out to pin;
+    connect in to pout;
+    in ! 2;
+    seq [i=3 for N step 2] 
+    { in ! i; 
+      out ? v
+    }
+  }: 
+  alt {
+    accept isPrime(val p, var r): 
+    { in ! v; 
+      out ? r
+    }
+}
+:
+
+server Node(val i, server Control m, Node[SQRTN] p) is
+  interface(chanend in, out):
+{ var p, mp:
+  initial
+  { if i = 0
+    then connect in to m.out
+    else connect out to p[i+1].in;
+    if i = N-1
+    then connect in to p[i-1].out
+    else connect out to m.in;
+    p := NONE;
+    while p ~= NONE do in ? p;
+    mp := p
+  }:
+  alt
+  { accept in ? m:
+    { while m > mp do 
+        mp := mp + p;
+      if m < mp 
+      then out ! m 
+      else out ! NONE
+    }
+  } 
+}
+:
+
+server TestPrimes() inherits
+  from
+  { m is Control(p) &
+    p is [i=0 for SQRTN] Node(i, m, p) }
+  interface m
+:
+
+p is TestPrimes(): 
+p.isPrime(11, r)
+

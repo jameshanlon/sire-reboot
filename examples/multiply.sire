@@ -1,0 +1,77 @@
+val N is 3:
+
+process Node(val i, val j, process Node[N][N] g,
+  process North[N] bn, process West[N] bw, 
+  process South[N] bs, process East[N] be) is
+    interface(chanend n, w, s, e):
+{ if
+  { i = 0:
+    { connect w to bw[j];
+      connect e to g[i+1][j] }
+  | i = N-1:
+    { connect w to g[i-1][j];
+      connect e to be[j] }
+  | i > 0 and i < N-1:
+    { connect w to g[i-1][j] &
+      connect e to g[i+1][j] } };
+  if
+  { j = 0:
+    { connect n to bn[i];
+      connect s to g[i][j+1] }
+  | j = N-1:
+    { connect n to g[i][j-1];
+      connect s to bs[i] }
+  | j > 0 and j < N-1:
+    { connect n to g[i][j-1] &
+      connect s to g[i][j+1] } };
+  var Aij, Bi, j;
+  % initialise the matrix element
+  if i = j then Aij := 1 else Aij := 0;
+  % communicate and compute
+  while true do
+  { n ? j; 
+    w ? Bi; 
+    e ! Bi; 
+    s ! Aij*Bi + j
+  }
+}
+
+& process North(val i, process Node[N][N] g) is
+    interface(chanend c):
+{ connect c to g[i][0]; 
+  % input partial sums
+  while true do c ! 0 
+}
+
+& process West(val j, process Node[N][N] g) is
+    interface(chanend c):
+{ connect c to g[0][j];
+  % input elements from a column of B (the identity)
+  seq [i=0 for N]
+    if i = j then c ! 1 else c ! 0
+}
+
+& process South(val i, process Node[N][N] g) is
+    interface(chanend c):
+{ connect c to g[i][N-1];
+  % receive elements from the columns of the result
+  var Bj[N]:
+  for[k=0 for N] c ? B[k]
+}
+
+& process East(val j, process Node[N][N] g) is
+    interface(chanend c):
+{ connect c to g[N-1][j];
+  % discard output
+  var v: 
+  while true do c ? v
+}
+
+{ n is par [i=0 for N] North(i, g) & 
+  w is par [j=0 for N] West(j, g) &
+  s is par [i=0 for N] South(i, g) &
+  e is par [j=0 for N] East(j, g) &
+  g is par [i=0 for N, j=0 for N]
+    Node(i, j, n, s, e, w)
+}
+

@@ -1,0 +1,52 @@
+val N is 16:
+val SQRTN is 4:
+
+process Node(val i, process Node[SQRTN] p, Source s, Sink t) is
+  interface(chanend in, out):
+{ if
+  { i = 0:
+    { connect in to s.out;
+      connect out to p[i+1].in }
+  | i = N-1:
+    { connect in to p[i-1].out;
+      connect out to t.in }
+  | i > 0 and i < N-1:
+    { connect out to p[i+1].in &
+      connect in to p[i-1].out } };
+  var p, m, mp:
+  % receive a prime
+  in ? p;  
+  % filter subsequent numbers
+  mp := p;
+  while true do
+  { in ? m;
+    while m > mp do mp := mp + p;
+    if m < mp then out ! m else skip
+  }
+}
+
+& process Source(chanend in) is
+    interface(chanend c):
+{ connect c to in;
+  % generate the first prime, 2
+  c ! 2;
+  % then a stream of the next N odd numbers
+  seq [i=3 for N step 2] c ! i 
+}:
+
+& process Sink(chanend out) is
+    interface(chanend c):
+{ connect c to out;
+  var i:
+  var[N] primes:
+  i := 0
+  % receive and store each prime
+  while true do
+  { c ? primes[i];
+    i := i + 1
+  }
+}:
+
+{ s is Source(p) & t is Sink(p) &
+  p is par [i=0 for SQRTN] Node(i, p, s, t) }
+
