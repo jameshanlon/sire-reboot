@@ -1,8 +1,8 @@
 #ifndef LEXER_H
 #define LEXER_H
 
-#include <string>
 #include "stdio.h"
+#include <string>
 
 #define BUF_SIZE 64
 #define LEX Lexer::get()

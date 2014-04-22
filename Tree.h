@@ -18,12 +18,33 @@ struct Node {
 };
 
 // Base Tree Node types
-struct Node;
 struct Spec;
 struct Cmd;
 struct Formal;
 struct Expr;
 struct Elem;
+struct Name;
+
+// Elements ===================================================================
+
+struct Elem : public Node {
+  typedef enum {
+    SUBSCRIPT,
+    FIELD,
+    NAME,
+    LITERAL
+  } Type;
+  Type type;
+  Elem(Type type) :
+    type(type) {}
+};
+
+struct Name : public Elem {
+  std::string s;
+  Name(const std::string &s) :
+    Elem(Elem::NAME),
+    s(s) {}
+};
 
 // Specifications =============================================================
 
@@ -34,8 +55,8 @@ struct Spec : public Node {
     ABBR
   } Type;
   Type type;
-  std::string name;
-  Spec(Type type, const std::string &name) : 
+  Name *name;
+  Spec(Type type, Name *name) : 
     type(type), name(name) {}
 };
 
@@ -45,11 +66,11 @@ struct Def : public Spec {
     PROCESS,
     FUNCTION
   } Type;
-  std::vector<Formal*> args;
+  std::vector<Formal*> *args;
   Cmd *body;
   Def(Type type,
-      const std::string &name, 
-      const std::vector<Formal*> &args, 
+      Name *name, 
+      std::vector<Formal*> *args, 
       Cmd *body) : 
     Spec(Spec::DEF, name),
     args(args), 
@@ -62,18 +83,18 @@ struct Decl : public Spec {
     ARRAY
   } Type;
   Type type;
-  Decl(Type type, const std::string &name) :
+  Decl(Type type, Name *name) :
     Spec(Spec::DECL, name), type(type) {}
 };
 
 struct VarDecl : public Decl {
-  VarDecl(const std::string &name) :
+  VarDecl(Name *name) :
     Decl(Decl::VAR, name) {}
 };
 
 struct ArrayDecl : public Decl {
   std::vector<Expr*> sizes;
-  ArrayDecl(const std::string &name,
+  ArrayDecl(Name *name, 
             const std::vector<Expr*> &sizes) :
     Decl(Decl::ARRAY, name), sizes(sizes) {}
 };
@@ -84,19 +105,19 @@ struct Abbr : public Spec {
     VAR
   } Type;
   Type type;
-  Abbr(Type type, const std::string &name) :
+  Abbr(Type type, Name *name) :
     Spec(Spec::ABBR, name), type(type) {}
 };
 
 struct ValAbbr : public Abbr {
   Elem *elem;
-  ValAbbr(const std::string &name, Elem *elem) :
+  ValAbbr(Name *name, Elem *elem) :
     Abbr(Abbr::VAL, name), elem(elem) {}
 };
 
 struct VarAbbr : public Abbr {
   Expr *expr;
-  VarAbbr(const std::string &name, Expr* expr) :
+  VarAbbr(Name *name, Expr* expr) :
     Abbr(Abbr::VAR, name), expr(expr) {}
 };
 
@@ -190,13 +211,19 @@ struct IfThenElse : public Cmd {
 };
 
 struct Loop : public Cmd {
-  Loop() : Cmd(Cmd::LOOP) {
-  }
+  Expr *cond;
+  Cmd *body;
+  Loop(Expr *cond, Cmd *body) : 
+    Cmd(Cmd::LOOP),
+    cond(cond),
+    body(body) {}
 };
 
 struct Seq : public Cmd {
-  Seq() : Cmd(Cmd::SEQ) {
-  }
+  std::vector<Cmd*> cmds;
+  Seq(std::vector<Cmd*> cmds) : 
+    Cmd(Cmd::SEQ),
+    cmds(cmds) {}
 };
 
 struct Par : public Cmd {
@@ -223,17 +250,6 @@ struct Expr : public Node {
     UNARY,
     BINARY,
     VALOF
-  } Type;
-};
-
-// Elements ===================================================================
-
-struct Elem : public Node {
-  typedef enum {
-    SUBSCRIPT,
-    FIELD,
-    NAME,
-    LITERAL
   } Type;
 };
 

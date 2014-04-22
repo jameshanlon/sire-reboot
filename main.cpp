@@ -1,12 +1,12 @@
-#include <string>
-#include <string.h>
-#include <unistd.h>
-#include <stdio.h>
-
 #include "Error.h"
 #include "SymTable.h"
 #include "Lexer.h"
 #include "Parser.h"
+
+#include <string>
+#include <string.h>
+#include <unistd.h>
+#include <stdio.h>
 
 void interpreterLoop() {
 //  fprintf(stderr, "> ");

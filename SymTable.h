@@ -1,10 +1,10 @@
 #ifndef SYM_TABLE_H
 #define SYM_TABLE_H
 
+#include "Lexer.h"
+
 #include <string>
 #include <map>
-
-#include "Lexer.h"
 
 #define TAB SymTable::get()
 

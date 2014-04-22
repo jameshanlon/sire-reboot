@@ -1,8 +1,8 @@
-#include <cstdlib>
-
 #include "Lexer.h"
 #include "SymTable.h"
 #include "Error.h"
+
+#include <cstdlib>
 
 Lexer Lexer::instance;
 

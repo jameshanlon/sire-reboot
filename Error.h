@@ -1,13 +1,13 @@
 #ifndef ERROR_H
 #define ERROR_H
 
+#include "Lexer.h"
+
 #include <string>
 #include <exception>
 
 #define MAX_ERRORS 8
 #define ERR Error::get()
-
-#include "Lexer.h"
 
 class FatalError {
   std::string s;
