@@ -5,7 +5,7 @@ server Store() is
   interface(call 
     read(val i, var v), 
     write(val i, val v)
-  ):
+  ) to
 { var[S] a:
   alt 
   { accept read(val i, var v): 
@@ -19,7 +19,7 @@ server Store() is
   interface(call 
     read(val addr, var v), 
     write(val addr, val v)
-  ):
+  ) to
   alt { 
     accept read(val addr, var v): 
       s[addr/N].read(addr rem S, v)
@@ -33,6 +33,7 @@ server Store() is
     m is Access(s) 
   }
   interface m
+:
 
 m is RAM():
 var v:

@@ -1,7 +1,7 @@
 val N is 10:
 
 server Buffer() is
-  interface(call 
+  interface(call
     write(val v), 
     read(var v)
   ):
@@ -27,11 +27,14 @@ server Buffer() is
 }
 
 & process Producer(server Buffer b) is
-  while true do b.write(0):
+  while true do b.write(0)
+:
+
 & process Consumer(server Buffer b) is
-  var v: while true do b.read(v):
+  var v: while true do b.read(v)
+:
 
 b is Buffer(): 
-{ Producer(b) 
+{ Producer(b)
 & Consumer(b) }  
 

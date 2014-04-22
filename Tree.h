@@ -41,7 +41,7 @@ struct Elem : public Node {
 
 struct Name : public Elem {
   std::string s;
-  Name(const std::string &s) :
+  Name(std::string &s) :
     Elem(Elem::NAME),
     s(s) {}
 };
@@ -56,7 +56,8 @@ struct Spec : public Node {
   } Type;
   Type type;
   Name *name;
-  Spec(Type type, Name *name) : 
+  Spec(Type type, 
+       Name *name) : 
     type(type), name(name) {}
 };
 
@@ -83,8 +84,10 @@ struct Decl : public Spec {
     ARRAY
   } Type;
   Type type;
-  Decl(Type type, Name *name) :
-    Spec(Spec::DECL, name), type(type) {}
+  Decl(Type type, 
+       Name *name) :
+    Spec(Spec::DECL, name),
+    type(type) {}
 };
 
 struct VarDecl : public Decl {
@@ -93,10 +96,11 @@ struct VarDecl : public Decl {
 };
 
 struct ArrayDecl : public Decl {
-  std::vector<Expr*> sizes;
+  std::vector<Expr*> *sizes;
   ArrayDecl(Name *name, 
-            const std::vector<Expr*> &sizes) :
-    Decl(Decl::ARRAY, name), sizes(sizes) {}
+            std::vector<Expr*> *sizes) :
+    Decl(Decl::ARRAY, name), 
+    sizes(sizes) {}
 };
 
 struct Abbr : public Spec {
@@ -188,8 +192,8 @@ struct Alternative {
 };
 
 struct Alt : public Cmd {
-  std::vector<Alternative> alternatives;
-  Alt(std::vector<Alternative> alternatives) : 
+  std::vector<Alternative> *alternatives;
+  Alt(std::vector<Alternative> *alternatives) : 
     Cmd(Cmd::ALT),
     alternatives(alternatives) {}
 };
@@ -198,8 +202,8 @@ struct Choice {
 };
 
 struct Cond : public Cmd {
-  std::vector<Choice> choices;
-  Cond(std::vector<Choice> choices) : 
+  std::vector<Choice> *choices;
+  Cond(std::vector<Choice> *choices) : 
     Cmd(Cmd::COND),
     choices(choices) {}
 };
@@ -221,7 +225,7 @@ struct Loop : public Cmd {
 
 struct Seq : public Cmd {
   std::vector<Cmd*> cmds;
-  Seq(std::vector<Cmd*> cmds) : 
+  Seq(std::vector<Cmd*> &cmds) : 
     Cmd(Cmd::SEQ),
     cmds(cmds) {}
 };

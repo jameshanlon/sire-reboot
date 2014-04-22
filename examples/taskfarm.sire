@@ -5,7 +5,7 @@ server Farmer() is
   interface(call 
     request(var w), 
     result(val w, val r)
-  ):
+  ) to
 { var results[N]:
   var work:
   initial work := 0
@@ -24,8 +24,8 @@ server Farmer() is
   } 
 }
 
-& process Worker(server Farmer f) is { 
-  var running: running := true;
+& process Worker(server Farmer f) is
+{ var running: running := true;
   while running do { 
     var work, result:
     % request some work
@@ -39,7 +39,7 @@ server Farmer() is
       f.result(work, result)
     }
   }
-}
+}:
 
 f is Farmer(): 
 par [i=0 for N] Worker(f)

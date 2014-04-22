@@ -47,6 +47,6 @@ process Node(val i, process Node[SQRTN] p, Source s, Sink t) is
   }
 }:
 
-{ s is Source(p) & t is Sink(p) &
-  p is par [i=0 for SQRTN] Node(i, p, s, t) }
+{ s is Source(p) & t is Sink(p) 
+& p is par [i=0 for SQRTN] Node(i, p, s, t) }
 

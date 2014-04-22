@@ -16,13 +16,13 @@ void Parser::checkFor(Lexer::Token t, const char *msg) {
 }
 
 Tree *Parser::formTree() {
-  Tree *t = readProgram();
+  Tree *t = readProg();
   if(curTok != Lexer::t_EOF)
     throw FatalError("incorrect termination");
   return t;
 }
 
-Tree *Parser::readProgram() {
+Tree *Parser::readProg() {
   Tree *tree = new Tree();
   // Read specifications
   while(curTok == Lexer::t_VAL 
@@ -44,9 +44,9 @@ Spec *Parser::readSpec() {
   case Lexer::t_VAR:      return readDecl();
   case Lexer::t_VAL:      return readAbbr();
   case Lexer::t_NAME:     return readAbbr();
-  case Lexer::t_FUNCTION: return readFunction();
-  case Lexer::t_PROCESS:  return readProcess();
-  case Lexer::t_SERVER:   return readServer();
+  case Lexer::t_FUNCTION: return readFunc();
+  case Lexer::t_PROCESS:  return readProc();
+  case Lexer::t_SERVER:   return readServ();
   }
 }
 
@@ -58,34 +58,33 @@ Decl *Parser::readAbbr() {
   return (Decl *) NULL;
 }
 
-Def *Parser::readFunction() {
+Def *Parser::readFunc() {
   return (Def*) NULL;
 }
 
-Def *Parser::readProcess() {
-   Name *name = readName();
-   checkFor(Lexer::t_LPAREN, "'(' missing");
-   std::vector<Formal*> *args = readFmlList();
-   checkFor(Lexer::t_LPAREN, "')' missing");
-   if(curTok == Lexer::t_INHERITS) {
-     // return ...
-   }
+Def *Parser::readProc() {
+  Name *name = readName();
+  checkFor(Lexer::t_LPAREN, "'(' missing");
+  std::vector<Formal*> *args = new std::vector<Formal*>();
+  readFmlList(*args);
+  checkFor(Lexer::t_LPAREN, "')' missing");
+  if(curTok == Lexer::t_INHERITS) {
+    // return ...
+  }
 
-   if(curTok == Lexer::t_INTERFACE) {
-     // read interface
-   }
-   checkFor(Lexer::t_LPAREN, "':' missing");
-   Cmd *cmd = readCmd();
-   return new Def(Def::PROCESS, name, args, cmd);
+  if(curTok == Lexer::t_INTERFACE) {
+    // read interface
+  }
+  checkFor(Lexer::t_LPAREN, "':' missing");
+  Cmd *cmd = readCmd();
+  return new Def(Def::PROCESS, name, args, cmd);
 }
 
-Def *Parser::readServer() {
+Def *Parser::readServ() {
   return NULL;
 }
 
-std::vector<Formal*> *Parser::readFmlList() {
-  std::vector<Formal*> *fmls = new std::vector<Formal*>();
-  return fmls;
+void Parser::readFmlList(std::vector<Formal*> &args) {
 }
 
 Cmd *Parser::readCmd() {
@@ -100,12 +99,10 @@ Name *Parser::readName() {
   return new Name(LEX.s);
 }
 
-std::vector<Name*> *Parser::readNameList() {
-  std::vector<Name*> *names = new std::vector<Name*>();
+void Parser::readNameList(std::vector<Name*> &names) {
   do {
-    names->push_back(readName());
+    names.push_back(readName());
     getNextToken();
   } while(curTok != Lexer::t_COMMA);
-  return names;
 }
 

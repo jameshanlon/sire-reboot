@@ -49,6 +49,7 @@ server Store() is
     m is Access(s) 
   }
   interface m
+:
 
 m is RAM():
 var v:

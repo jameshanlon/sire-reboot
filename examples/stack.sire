@@ -24,7 +24,7 @@ server Stack() is
   | accept empty(var b):
       b := p = 0
   }
-}
+}:
 
 s is Stack():
 var f, e:

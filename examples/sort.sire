@@ -9,11 +9,13 @@ function level(val id) is
     while dmax < id do 
     { dmax := 2*dmax + 1;
       l := l + 1 } }
-  result l :
+  result l
+:
 
 function nbr(val id, val d) is
   % return the id of a neighbour for a hypercube node in dimension d
-  valof result id xor (1<<d) :
+  valof result id xor (1<<d)
+:
   
 process distribute(val id, chanend[D+1] c, var[n] a, val n) is
 { var lvl, len, base: 
@@ -40,7 +42,8 @@ process collect(val id, chanend[D+1] c, var[n] a, val n) is
     lenPart := lenPart * 2 };
   % send a complete portion to the parent
   c[lvl] ! lenPart;
-  seq [i=0 for lenPart] c[lvl] ! a[i] } :
+  seq [i=0 for lenPart] c[lvl] ! a[i]
+}:
 
 process sort(val id, chanend[D+1] c, var a) is
 { var swp:
@@ -50,28 +53,34 @@ process sort(val id, chanend[D+1] c, var a) is
     then
     { c[i] ! a;
       c[i] ? swp;
-      if { swp < a: a := swp } }
+      if { swp < a: a := swp } 
+    }
     else
     { c[i] ? swp;
       c[i] ! a;
-      if { swp > a: a := swp } } } :
+      if { swp > a: a := swp }
+    }
+}:
 
 process Master(process Node n) is
-    interface(chanend c):
+    interface(chanend c) to
 { connect c to n.c[0];
   var a[N];
   seq [i=0 for N] c ! N-i-1; % input the array to the hypercube
-  seq [i=0 for N] c ? a[i] } % output the sorted array
+  seq [i=0 for N] c ? a[i]   % output the sorted array
+}
 
 & process Node(val id, process Master m, Node[N] n) is
-    interface(chanend[D+1] c):
+    interface(chanend[D+1] c) to
 { seq [i=1 for D] connect c[i-1] to n[nbr(id, i)].c;
   if { id = 0: connect c[0] to m.c };
   var a[N]:
   distribute(id, c, a, N);
   sort(id, c, a[0]);
-  collect(id, c, a, N) } :
+  collect(id, c, a, N)
+}:
 
 { m is Master(n) & 
-  n is par [i=0 for N] Node(i, m, n) }
+  n is par [i=0 for N] Node(i, m, n)
+}
 

@@ -5,12 +5,16 @@ server Store() is
       read(val i, var v), 
       write(val i, val v), 
       apply(process f(var[n] a, val n))
-  ):
+  ) to
 { var[N] a:
   alt 
-  { accept read(val i, var v):  v := a[i]
-  | accept write(val i, val v): a[i] := v } 
-  | accept apply(process f(var[n] a, val  n)): f(a, N) }
+  { accept read(val i, var v):  
+      v := a[i]
+  | accept write(val i, val v): 
+      a[i] := v
+  | accept apply(process f(var[n] a, val  n)): 
+      f(a, N) 
+  }
 :
 
 function foo(var[n] a, val n) is

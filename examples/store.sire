@@ -9,7 +9,7 @@ server Store() is
   { accept read(val i, var v):  v := a[i]
   | accept write(val i, val v): a[i] := v
   } 
-} :
+}:
 
 s is Store():
 var v:

@@ -20,18 +20,18 @@ public:
 private:
   Lexer::Token curTok;
   void getNextToken();
-  void checkFor(Lexer::Token t, const char *msg);
-  Tree *readProgram();
+  void checkFor(Lexer::Token, const char*);
+  Tree *readProg();
   Spec *readSpec();
   Decl *readDecl();
   Decl *readAbbr();
-  Def *readFunction();
-  Def *readProcess();
-  Def *readServer();
-  std::vector<Formal*> *readFmlList();
+  Def *readFunc();
+  Def *readProc();
+  Def *readServ();
+  void readFmlList(std::vector<Formal*>&);
   Cmd *readCmd();
   Name *readName();
-  std::vector<Name*> *readNameList();
+  void readNameList(std::vector<Name*>&);
 };
 
 #endif

@@ -4,7 +4,7 @@ val NONE is false:
 
 server Control(chanend pin, pout) is
   interface(chanend out, in, 
-    call isPrime(val p, var r)):
+    call isPrime(val p, var r)) to
   var i, v:
   initial
   { connect out to pin;
@@ -20,11 +20,10 @@ server Control(chanend pin, pout) is
     { in ! v; 
       out ? r
     }
-}
-:
+}:
 
 server Node(val i, server Control m, Node[SQRTN] p) is
-  interface(chanend in, out):
+  interface(chanend in, out) to
 { var p, mp:
   initial
   { if i = 0
@@ -46,8 +45,7 @@ server Node(val i, server Control m, Node[SQRTN] p) is
       else out ! NONE
     }
   } 
-}
-:
+}:
 
 server TestPrimes() inherits
   from

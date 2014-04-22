@@ -11,25 +11,31 @@ server Store() is
   interface(call 
     read(val i, var v), 
     write(val i, val v)
-  ):
+  ) to
 { t is Table(S):
   alt 
   { accept read(val addr, var v): 
       t.lookup(addr, v)
   | accept write(val addr, val v):
     { var s: t.search(addr, s);
-      if s ~= NONE then t.update(addr, v) else t.insert(addr, v) } } }
+      if s ~= NONE
+      then t.update(addr, v) 
+      else t.insert(addr, v) 
+    } 
+  }
+}:
 
 server Access(server Store[N] s) is
   interface(call 
       read(val addr, var v), 
       write(val addr, val v)
-  ):
-  alt 
-  { accept read(val addr, var v): 
+  ) to
+  alt
+  { accept read(val addr, var v):
       s[h(addr)].read(addr, v)
-  | accept write(val addr, val v): 
-      s[h(addr)].write(addr, v) }
+  | accept write(val addr, val v):
+      s[h(addr)].write(addr, v)
+}:
 
 server ParallelRAM() inherits
   from
@@ -38,7 +44,7 @@ server ParallelRAM() inherits
   interface a
 
 m is ParallelRAM():
-par [i=0 for CLIENTS] 
+par[i=0 for CLIENTS]
 { m[i].write(addr, 42); 
   m[i].read(addr, v)
 }

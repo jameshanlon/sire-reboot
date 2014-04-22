@@ -2,16 +2,16 @@ val D is 3:
 val N is 1 << D:
 
 process Root(chanend root) is
-  interface(chanend c):
+  interface(chanend c) to
 { connect c to root;
-  var v: 
-  root ! 0; 
+  var v:
+  root ! 0;
   root ? v
 }
 
 & process Branch(val i, chanend m, 
     process Branch[N-1] b, Leaf[N] l) is
-  interface(chanend root, left, right):
+  interface(chanend root, left, right) to
 { if i = 0
   then connect root to m
   else if i rem 2 = 1
@@ -33,7 +33,7 @@ process Root(chanend root) is
 }
 
 & process Leaf(val i, process Branch[N-1] b) is
-  interface(chanend root):
+  interface(chanend root) to
 { if i rem 2 = 1
   then connect root to b[N-(i/2)].left
   else connect root to b[N-(i/2)].right;
@@ -44,7 +44,8 @@ process Root(chanend root) is
   root ! r       % return the updated partial sum
 }:
 
-{ r is Root(b[0].root) & 
-  b is par [i=0 for N-1] Branch(i, m.root, b, l) &
-  l is par [i=0 for N] Leaf(i, b) }
+{ r is Root(b[0].root)
+& b is par [i=0 for N-1] Branch(i, m.root, b, l) 
+& l is par [i=0 for N] Leaf(i, b)
+}
 
