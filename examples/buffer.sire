@@ -4,7 +4,7 @@ server Buffer() is
   interface(call
     write(val v), 
     read(var v)
-  ):
+  ) to
 { var[N] b: 
   var inp, outp, count:
   initial { 

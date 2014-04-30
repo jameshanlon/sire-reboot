@@ -25,13 +25,14 @@ private:
   Spec *readSpec();
   Decl *readDecl();
   Decl *readAbbr();
-  Def *readFunc();
   Def *readProc();
   Def *readServ();
-  void readFmlList(std::vector<Formal*>&);
+  Def *readFunc();
+  void readFormals(std::vector<Formal*>&);
+  void readInterface(std::vector<Decl*>&);
   Cmd *readCmd();
   Name *readName();
-  void readNameList(std::vector<Name*>&);
+  void readNames(std::vector<Name*>&);
 };
 
 #endif

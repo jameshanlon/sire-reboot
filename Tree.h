@@ -24,6 +24,45 @@ struct Formal;
 struct Expr;
 struct Elem;
 struct Name;
+  
+// Specifiers =================================================================
+
+struct Spef : public Node {
+  typedef enum {
+    VAR,
+    VAL
+  } Type;
+  Type type;
+  Spec(Type t) : type(t) {}
+};
+
+struct ArraySpef : public Spef {
+  std::vector<Expr*> *lengths;
+  ArrayType(Type t, 
+            std::vector<Expr*> *l) :
+    type(t),
+    lengths(l) {}
+};
+
+// Formals ====================================================================
+
+struct Formal : public Node {
+  Spef *spef;
+  Name *name;
+  Formal(Spef *s, 
+      Name *n) :
+    spef(s),
+    name(n) {}
+};
+
+struct FormalMult : public Node {
+  Spef *spef;
+  std::vector<Name*> names;
+  FormalMult(Spef *s,
+             std::vector<Name*> n*) :
+    spef(s),
+    name(n)
+};
 
 // Elements ===================================================================
 
@@ -35,15 +74,15 @@ struct Elem : public Node {
     LITERAL
   } Type;
   Type type;
-  Elem(Type type) :
-    type(type) {}
+  Elem(Type t) :
+    type(t) {}
 };
 
 struct Name : public Elem {
-  std::string s;
+  std::string str;
   Name(std::string &s) :
     Elem(Elem::NAME),
-    s(s) {}
+    str(s) {}
 };
 
 // Specifications =============================================================
@@ -56,9 +95,10 @@ struct Spec : public Node {
   } Type;
   Type type;
   Name *name;
-  Spec(Type type, 
-       Name *name) : 
-    type(type), name(name) {}
+  Spec(Type t, 
+       Name *n) : 
+    type(t), 
+    name(n) {}
 };
 
 struct Def : public Spec {
@@ -69,13 +109,14 @@ struct Def : public Spec {
   } Type;
   std::vector<Formal*> *args;
   Cmd *body;
-  Def(Type type,
-      Name *name, 
-      std::vector<Formal*> *args, 
-      Cmd *body) : 
+  Def(Type t,
+      Name *n,
+      std::vector<Formal*> *f,
+      Cmd *c) :
     Spec(Spec::DEF, name),
-    args(args), 
-    body(body) {}
+    type(t),
+    args(f), 
+    body(c) {}
 };
 
 struct Decl : public Spec {
@@ -83,24 +124,22 @@ struct Decl : public Spec {
     VAR,
     ARRAY
   } Type;
-  Type type;
-  Decl(Type type, 
-       Name *name) :
-    Spec(Spec::DECL, name),
-    type(type) {}
+  Spef *spef;
+  Decl(Spef *s,
+       Name *n) :
+    Spec(Spec::DECL, n, s),
+    type(VAR),
+    name(n),
+    spef(s) {}
 };
 
-struct VarDecl : public Decl {
-  VarDecl(Name *name) :
-    Decl(Decl::VAR, name) {}
-};
-
-struct ArrayDecl : public Decl {
-  std::vector<Expr*> *sizes;
-  ArrayDecl(Name *name, 
-            std::vector<Expr*> *sizes) :
-    Decl(Decl::ARRAY, name), 
-    sizes(sizes) {}
+struct ArrayDecl : public Spec {
+  ArraySpef *spef;
+  ArrayDecl(Name *n,
+            ArraySpef *s) :
+    Spec(Spec::DECL, n),
+    type(Decl::ARRAY),
+    spef(s) {}
 };
 
 struct Abbr : public Spec {
@@ -109,20 +148,40 @@ struct Abbr : public Spec {
     VAR
   } Type;
   Type type;
-  Abbr(Type type, Name *name) :
-    Spec(Spec::ABBR, name), type(type) {}
+  Abbr(Type t, 
+       Name *n) :
+    Spec(Spec::ABBR, n), 
+    type(t) {}
 };
 
 struct ValAbbr : public Abbr {
-  Elem *elem;
-  ValAbbr(Name *name, Elem *elem) :
-    Abbr(Abbr::VAL, name), elem(elem) {}
+  Expr *expr;
+  ValAbbr(Name *name,
+          Elem *elem) :
+    Abbr(Abbr::VAL, n),
+    elem(elem) {}
 };
 
 struct VarAbbr : public Abbr {
-  Expr *expr;
-  VarAbbr(Name *name, Expr* expr) :
-    Abbr(Abbr::VAR, name), expr(expr) {}
+  Spef *spef;
+  Elem *elem;
+  VarAbbr(Spef *s,
+          Name *n,
+          Elem* e) :
+    Abbr(Abbr::VAR, n),
+    spef(s),
+    elem(e) {}
+};
+
+struct ArrayAbbr : public Abbr {
+  ArraySpef *spef;
+  Elem *elem;
+  ArrayAbbr(ArraySpef *s,
+            Name *n, 
+            Elem* e) :
+    Abbr(Abbr::VAR, n),
+    spef(s),
+    elem(elem) {}
 };
 
 // Commands ===================================================================
@@ -235,17 +294,6 @@ struct Par : public Cmd {
   }
 };
 
-
-// Formals ====================================================================
-
-struct Formal : public Node {
-  typedef enum {
-    VAR,
-    VAR_ARRAY,
-    CALL_ARRAY,
-    VAL
-  } Type;
-};
 
 // Expressions ================================================================
 

@@ -58,24 +58,22 @@ Decl *Parser::readAbbr() {
   return (Decl *) NULL;
 }
 
-Def *Parser::readFunc() {
-  return (Def*) NULL;
-}
-
 Def *Parser::readProc() {
   Name *name = readName();
   checkFor(Lexer::t_LPAREN, "'(' missing");
   std::vector<Formal*> *args = new std::vector<Formal*>();
   readFmlList(*args);
-  checkFor(Lexer::t_LPAREN, "')' missing");
+  checkFor(Lexer::t_RPAREN, "')' missing");
+  checkFor(Lexer::t_IS, "'is' missing");
   if(curTok == Lexer::t_INHERITS) {
     // return ...
   }
 
   if(curTok == Lexer::t_INTERFACE) {
-    // read interface
+    std::vector<Decl*> *interfaces = new std::vector<Decl*>();
+    readInterface(interfaces);
+    checkFor(Lexer::t_TO, "'to' missing");
   }
-  checkFor(Lexer::t_LPAREN, "':' missing");
   Cmd *cmd = readCmd();
   return new Def(Def::PROCESS, name, args, cmd);
 }
@@ -84,7 +82,32 @@ Def *Parser::readServ() {
   return NULL;
 }
 
-void Parser::readFmlList(std::vector<Formal*> &args) {
+Def *Parser::readFunc() {
+  return (Def*) NULL;
+}
+
+void Parser::readFormals(std::vector<Formal*> &formals) {
+  checkFor(Lexer::t_LPAREN, "'(' missing");
+  do {
+    formals.push_back(readFormal());
+    getNextToken();
+  } while(curTok != Lexer::t_COMMA);
+  checkFor(Lexer::t_RPAREN, "')' missing");
+}
+
+void Parser::readInterfaces(std::vector<Decl*> &interfaces) {
+  checkFor(Lexer::t_LPAREN, "'(' missing");
+  do {
+    formals.push_back(readInterface());
+    getNextToken();
+  } while(curTok != Lexer::t_COMMA);
+  checkFor(Lexer::t_RPAREN, "')' missing");
+}
+
+Formal *Parser::readFormal() {
+}
+
+Decl *Parser::readDecl() {
 }
 
 Cmd *Parser::readCmd() {
@@ -99,7 +122,7 @@ Name *Parser::readName() {
   return new Name(LEX.s);
 }
 
-void Parser::readNameList(std::vector<Name*> &names) {
+void Parser::readNames(std::vector<Name*> &names) {
   do {
     names.push_back(readName());
     getNextToken();
