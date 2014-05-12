@@ -10,7 +10,7 @@ struct Node;
 struct Tree {
   std::vector<Node*> spec;
   std::vector<Node*> prog;
-  void print();
+  //void print();
 };
 
 // The tree node base struct
@@ -20,7 +20,7 @@ struct Node {
 // Base Tree Node types
 struct Spec;
 struct Cmd;
-struct Formal;
+struct Fml;
 struct Expr;
 struct Elem;
 struct Name;
@@ -30,38 +30,59 @@ struct Name;
 struct Spef : public Node {
   typedef enum {
     VAR,
-    VAL
+    VAL,
+    ARRAY
   } Type;
   Type type;
-  Spec(Type t) : type(t) {}
+protected:
+  Spef(Type t) : type(t) {}
+};
+
+struct VarSpef : public Spef {
+  VarSpef() :
+    Spef(VAR) {}
+};
+
+struct ValSpef : public Spef {
+  ValSpef() :
+    Spef(VAL) {}
 };
 
 struct ArraySpef : public Spef {
   std::vector<Expr*> *lengths;
-  ArrayType(Type t, 
+  ArraySpef(Type t, 
             std::vector<Expr*> *l) :
-    type(t),
+    Spef(t),
     lengths(l) {}
 };
 
 // Formals ====================================================================
 
-struct Formal : public Node {
+struct Fml : public Node {
+  typedef enum {
+    SINGLE,
+    LIST
+  } Type;
   Spef *spef;
+protected:
+  Fml(Spef *s) :
+    spef(s) {}
+};
+
+struct FmlSingle : public Fml {
   Name *name;
-  Formal(Spef *s, 
-      Name *n) :
-    spef(s),
+  FmlSingle(Spef *s,
+               Name *n) :
+    Fml(s),
     name(n) {}
 };
 
-struct FormalMult : public Node {
-  Spef *spef;
+struct FmlList : public Fml {
   std::vector<Name*> names;
-  FormalMult(Spef *s,
-             std::vector<Name*> n*) :
-    spef(s),
-    name(n)
+  FmlList(Spef *s,
+             std::vector<Name*> n) :
+    Fml(s),
+    names(n) {}
 };
 
 // Elements ===================================================================
@@ -74,6 +95,7 @@ struct Elem : public Node {
     LITERAL
   } Type;
   Type type;
+protected:
   Elem(Type t) :
     type(t) {}
 };
@@ -95,6 +117,7 @@ struct Spec : public Node {
   } Type;
   Type type;
   Name *name;
+protected:
   Spec(Type t, 
        Name *n) : 
     type(t), 
@@ -106,15 +129,16 @@ struct Def : public Spec {
     SERVER,
     PROCESS,
     FUNCTION
-  } Type;
-  std::vector<Formal*> *args;
+  } DefType;
+  DefType tDef;
+  std::vector<Fml*> *args;
   Cmd *body;
-  Def(Type t,
+  Def(DefType t,
       Name *n,
-      std::vector<Formal*> *f,
+      std::vector<Fml*> *f,
       Cmd *c) :
     Spec(Spec::DEF, name),
-    type(t),
+    tDef(t),
     args(f), 
     body(c) {}
 };
@@ -123,22 +147,28 @@ struct Decl : public Spec {
   typedef enum {
     VAR,
     ARRAY
-  } Type;
-  Spef *spef;
-  Decl(Spef *s,
+  } DeclType;
+  DeclType tDecl;
+protected:
+  Decl(DeclType t, 
        Name *n) :
-    Spec(Spec::DECL, n, s),
-    type(VAR),
-    name(n),
+    Spec(Spec::DECL, n),
+    tDecl(VAR) {}
+};
+
+struct VarDecl : public Decl {
+  Spef *spef;
+  VarDecl(Spef *s,
+          Name *n) :
+    Decl(VAR, n),
     spef(s) {}
 };
 
-struct ArrayDecl : public Spec {
+struct ArrayDecl : public Decl {
   ArraySpef *spef;
   ArrayDecl(Name *n,
             ArraySpef *s) :
-    Spec(Spec::DECL, n),
-    type(Decl::ARRAY),
+    Decl(ARRAY, n),
     spef(s) {}
 };
 
@@ -148,6 +178,7 @@ struct Abbr : public Spec {
     VAR
   } Type;
   Type type;
+protected:
   Abbr(Type t, 
        Name *n) :
     Spec(Spec::ABBR, n), 
@@ -156,10 +187,10 @@ struct Abbr : public Spec {
 
 struct ValAbbr : public Abbr {
   Expr *expr;
-  ValAbbr(Name *name,
-          Elem *elem) :
+  ValAbbr(Name *n,
+          Expr *e) :
     Abbr(Abbr::VAL, n),
-    elem(elem) {}
+    expr(e) {}
 };
 
 struct VarAbbr : public Abbr {
@@ -181,7 +212,7 @@ struct ArrayAbbr : public Abbr {
             Elem* e) :
     Abbr(Abbr::VAR, n),
     spef(s),
-    elem(elem) {}
+    elem(e) {}
 };
 
 // Commands ===================================================================
@@ -196,12 +227,13 @@ struct Cmd : public Node {
     CONNECT,
     ALT,
     COND,
-    IF_THEN_ELSE,
+    IFTE,
     LOOP,
     SEQ,
     PAR
   } Type;
   Type type;
+protected:
   Cmd(Type type) : type(type) {}
 };
 
@@ -226,7 +258,7 @@ struct In : public Cmd {
   Elem *lhs, *rhs;
   In(Elem *lhs, Elem *rhs) : 
     Cmd(Cmd::IN),
-    lhs(lhs), 
+    lhs(lhs),
     rhs(rhs) {}
 };
 
@@ -247,14 +279,14 @@ struct Connect : public Cmd {
     remote(remote) {}
 };
 
-struct Alternative {
+struct Altn {
 };
 
 struct Alt : public Cmd {
-  std::vector<Alternative> *alternatives;
-  Alt(std::vector<Alternative> *alternatives) : 
+  std::vector<Altn> *altns;
+  Alt(std::vector<Altn> *altns) : 
     Cmd(Cmd::ALT),
-    alternatives(alternatives) {}
+    altns(altns) {}
 };
 
 struct Choice {
@@ -267,9 +299,9 @@ struct Cond : public Cmd {
     choices(choices) {}
 };
 
-struct IfThenElse : public Cmd {
+struct IfTE : public Cmd {
   Cmd *ifCmd, *elseCmd;
-  IfThenElse() : Cmd(Cmd::IF_THEN_ELSE) {
+  IfTE() : Cmd(Cmd::IFTE) {
   }
 };
 
@@ -303,6 +335,8 @@ struct Expr : public Node {
     BINARY,
     VALOF
   } Type;
+protected:
+  Expr() {}
 };
 
 #endif

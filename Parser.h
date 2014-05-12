@@ -28,8 +28,10 @@ private:
   Def *readProc();
   Def *readServ();
   Def *readFunc();
-  void readFormals(std::vector<Formal*>&);
-  void readInterface(std::vector<Decl*>&);
+  void readFmls(std::vector<Fml*>&);
+  void readInterfaces(std::vector<Decl*>&);
+  Fml *readFml();
+  Decl *readInterface();
   Cmd *readCmd();
   Name *readName();
   void readNames(std::vector<Name*>&);
