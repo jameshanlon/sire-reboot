@@ -8,10 +8,9 @@ function h(val v) is ... :
 server Table() is ... :
 
 server Store() is
-  interface(call 
-    read(val i, var v), 
-    write(val i, val v)
-  ) to
+  interface(
+    call read(val i, var v), 
+    call write(val i, val v)) to
 { t is Table(S):
   alt 
   { accept read(val addr, var v): 
@@ -26,10 +25,9 @@ server Store() is
 }:
 
 server Access(server Store[N] s) is
-  interface(call 
-      read(val addr, var v), 
-      write(val addr, val v)
-  ) to
+  interface(
+    call read(val addr, var v), 
+    call write(val addr, val v)) to
   alt
   { accept read(val addr, var v):
       s[h(addr)].read(addr, v)

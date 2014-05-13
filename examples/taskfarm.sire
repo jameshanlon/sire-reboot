@@ -4,8 +4,7 @@ val NONE is 0:
 server Farmer() is
   interface(call 
     request(var w), 
-    result(val w, val r)
-  ) to
+    result(val w, val r)) to
 { var results[N]:
   var work:
   initial work := 0

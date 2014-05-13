@@ -72,7 +72,7 @@ protected:
 struct FmlSingle : public Fml {
   Name *name;
   FmlSingle(Spef *s,
-               Name *n) :
+            Name *n) :
     Fml(s),
     name(n) {}
 };
@@ -80,7 +80,7 @@ struct FmlSingle : public Fml {
 struct FmlList : public Fml {
   std::vector<Name*> names;
   FmlList(Spef *s,
-             std::vector<Name*> n) :
+          std::vector<Name*> n) :
     Fml(s),
     names(n) {}
 };
@@ -103,7 +103,7 @@ protected:
 struct Name : public Elem {
   std::string str;
   Name(std::string &s) :
-    Elem(Elem::NAME),
+    Elem(NAME),
     str(s) {}
 };
 
@@ -137,7 +137,7 @@ struct Def : public Spec {
       Name *n,
       std::vector<Fml*> *f,
       Cmd *c) :
-    Spec(Spec::DEF, name),
+    Spec(DEF, name),
     tDef(t),
     args(f), 
     body(c) {}
@@ -152,7 +152,7 @@ struct Decl : public Spec {
 protected:
   Decl(DeclType t, 
        Name *n) :
-    Spec(Spec::DECL, n),
+    Spec(DECL, n),
     tDecl(VAR) {}
 };
 
@@ -224,7 +224,7 @@ struct Cmd : public Node {
     ASS,
     IN,
     OUT,
-    CONNECT,
+    CONN,
     ALT,
     COND,
     IFTE,
@@ -234,15 +234,18 @@ struct Cmd : public Node {
   } Type;
   Type type;
 protected:
-  Cmd(Type type) : type(type) {}
+  Cmd(Type t) :
+    type(t) {}
 };
 
 struct Skip : public Cmd {
-  Skip() : Cmd(Cmd::SKIP) {}
+  Skip() : 
+    Cmd(SKIP) {}
 };
 
 struct Stop : public Cmd {
-  Stop() : Cmd(Cmd::STOP) {}
+  Stop() : 
+    Cmd(STOP) {}
 };
 
 struct Ass : public Cmd {
@@ -272,11 +275,12 @@ struct Out : public Cmd {
 };
 
 struct Connect : public Cmd {
-  Elem *local, *remote;
-  Connect(Elem *local, Elem *remote) : 
-    Cmd(Cmd::CONNECT),
-    local(local),
-    remote(remote) {}
+  Elem *local;
+  Elem *remote;
+  Connect(Elem *l, Elem *r) : 
+    Cmd(CONN),
+    local(l),
+    remote(r) {}
 };
 
 struct Altn {
@@ -301,8 +305,8 @@ struct Cond : public Cmd {
 
 struct IfTE : public Cmd {
   Cmd *ifCmd, *elseCmd;
-  IfTE() : Cmd(Cmd::IFTE) {
-  }
+  IfTE() :
+    Cmd(Cmd::IFTE) {}
 };
 
 struct Loop : public Cmd {
@@ -322,8 +326,8 @@ struct Seq : public Cmd {
 };
 
 struct Par : public Cmd {
-  Par() : Cmd(Cmd::PAR) {
-  }
+  Par() : 
+    Cmd(Cmd::PAR) {}
 };
 
 

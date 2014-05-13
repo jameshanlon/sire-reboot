@@ -17,11 +17,10 @@ void Parser::checkFor(Lexer::Token t, const char *msg) {
 
 Tree *Parser::formTree() {
   Tree *t = readProg();
-  if(curTok != Lexer::t_EOF)
-    throw FatalError("incorrect termination");
   return t;
 }
 
+// program = <specification> : <cmd>
 Tree *Parser::readProg() {
   Tree *tree = new Tree();
   // Read specifications
@@ -31,12 +30,15 @@ Tree *Parser::readProg() {
      || curTok == Lexer::t_SERVER 
      || curTok == Lexer::t_FUNCTION)
     tree->spec.push_back(readSpec());
-  // Read program sequence
+  // Read program command sequence
   while(curTok != Lexer::t_EOF)
     tree->prog.push_back(readCmd());
   return tree;
 }
 
+// specification = <declaration>
+//               | <abbreviation>
+//               | <definition>
 Spec *Parser::readSpec() {
   switch(curTok) {
   default:                assert(0 && "invalid token");
@@ -58,17 +60,21 @@ Decl *Parser::readAbbr() {
   return (Decl *) NULL;
 }
 
+// def = process <name> ( {0, <formal>} ) inherits ...
+//     | process <name> ( {0, <formal>} ) is <cmd>
 Def *Parser::readProc() {
   Name *name = readName();
   checkFor(Lexer::t_LPAREN, "'(' missing");
   std::vector<Fml*> *args = new std::vector<Fml*>();
   readFmls(*args);
   checkFor(Lexer::t_RPAREN, "')' missing");
-  checkFor(Lexer::t_IS, "'is' missing");
+
+  // Inheriting definition
   if(curTok == Lexer::t_INHERITS) {
     // return ...
   }
 
+  checkFor(Lexer::t_IS, "'is' missing");
   if(curTok == Lexer::t_INTERFACE) {
     std::vector<Decl*> *interfaces = new std::vector<Decl*>();
     readInterfaces(*interfaces);
@@ -78,10 +84,12 @@ Def *Parser::readProc() {
   return new Def(Def::PROCESS, name, args, cmd);
 }
 
+// def := <name> ( {0, <formal>} ) is ...
 Def *Parser::readServ() {
   return NULL;
 }
 
+// def := function <name> ( {0, <formal>} ) is <valof>
 Def *Parser::readFunc() {
   return (Def*) NULL;
 }
@@ -104,14 +112,17 @@ void Parser::readInterfaces(std::vector<Decl*> &interfaces) {
   checkFor(Lexer::t_RPAREN, "')' missing");
 }
 
+// formal = ...
 Fml *Parser::readFml() {
   return NULL;
 }
 
+// interface-decl = ...
 Decl *Parser::readInterface() {
   return NULL;
 }
 
+// cmd = ...
 Cmd *Parser::readCmd() {
   switch(curTok) {
   default: LEX.error("bad outer-level declaration or command");
@@ -119,6 +130,7 @@ Cmd *Parser::readCmd() {
   return (Cmd *) NULL;
 }
 
+// name = ...
 Name *Parser::readName() {
   checkFor(Lexer::t_NAME, "name expected");
   return new Name(LEX.s);

@@ -21,7 +21,7 @@ process Node(val i, process Node[SQRTN] p, Source s, Sink t) is
   while true do
   { in ? m;
     while m > mp do mp := mp + p;
-    if m < mp then out ! m else skip
+    if m < mp do out ! m
   }
 }
 

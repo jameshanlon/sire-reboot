@@ -3,7 +3,7 @@ val N is 3:
 process Node(val i, val j, process Node[N][N] g,
   process North[N] bn, process West[N] bw, 
   process South[N] bs, process East[N] be) is
-    interface(chanend n, w, s, e):
+    interface(chanend n, w, s, e) to
 { if
   { i = 0:
     { connect w to bw[j];
@@ -27,6 +27,7 @@ process Node(val i, val j, process Node[N][N] g,
   var Aij, Bi, j;
   % initialise the matrix element
   if i = j then Aij := 1 else Aij := 0;
+  %Aij := valof if i = j then return 1 else return 0;
   % communicate and compute
   while true do
   { n ? j; 
@@ -56,7 +57,7 @@ process Node(val i, val j, process Node[N][N] g,
 { connect c to g[i][N-1];
   % receive elements from the columns of the result
   var Bj[N]:
-  for[k=0 for N] c ? B[k]
+  seq [k=0 for N] c ? B[k]
 }
 
 & process East(val j, process Node[N][N] g) is

@@ -1,0 +1,97 @@
+The sire interpreter
+====================
+
+Start the interpreter:
+
+$ sire
+>>
+
+Builtin processes
+-----------------
+
+  print
+  println
+  getchar
+  fopen
+  frwite
+  fwriteln
+  freadchar
+  freadline
+  fclose
+  rand
+
+Standard library servers
+------------------------
+
+  memory
+  sharedmem
+
+Assignment
+----------
+
+  >> int v
+  >> v := 1
+  >> printintln(v)
+  1
+  >>
+
+Skip
+----
+
+  >> skip
+  >>
+
+Stop
+----
+
+  >> stop
+
+Conditional
+-----------
+
+  >>> if rand() < 10 then print("yes")
+  yes
+  >>> if { rand() < 10: print("yes") }
+  >>>
+  >>> if rand() < 10:
+  ...   print("yes")
+  ...
+  yes
+  >>>
+
+Loop
+----
+
+  >> val a; a:= 10
+  >> while a > 0 do a := a - 1
+  >>
+
+Sequence
+--------
+
+Parallel
+--------
+
+Server
+------
+
+
+Example programs
+----------------
+
+Task farm
+
+  >>> val N is 10
+  >>> server farmer() is
+  ... interface(call request(), return()):
+  ... { int results[N]:
+  ...   int work:
+  ...   initial work := 0
+  ...   alt {
+  ...     accept request() ...
+  ...   | accept return() ...
+  ...   }
+  >>> 
+  >>>
+
+

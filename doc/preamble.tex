@@ -1,0 +1,129 @@
+\usepackage{
+  amsmath, 
+  amssymb, 
+  amsthm, 
+  amsfonts,
+  graphicx,
+  color,
+  xcolor,
+  colortbl,
+  url,
+  alltt,
+  tikz,
+  booktabs,
+  tabularx,
+  verbments,
+  enumitem,
+}
+% to fix "Class scrreprt Warning: \float@addtolists detected!"
+\usepackage{scrhack} 
+
+% Fonts
+\usepackage{libertine}
+\usepackage[scaled=0.90]{helvet} % scaled sans serif
+\renewcommand*{\ttdefault}{txtt} % monospace
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+
+% Hyperlinks (after all other packages)
+\usepackage[
+  plainpages=false,
+  colorlinks=true,
+  breaklinks,
+  pdfpagelabels,
+]{hyperref}
+%\hypersetup{
+%  linkcolor=DarkBlue, 
+%  citecolor=DarkRed, 
+%  filecolor=DarkBlue, 
+%  urlcolor=DarkGreen,
+%}
+\AtBeginDocument{\hypersetup{pdfauthor={\@author},pdftitle={\@title}}}
+
+% Bookmarks
+\usepackage[open,openlevel=0]{bookmark}
+\usepackage[all]{hypcap}
+
+% ============================================================================
+% Formatting
+% ============================================================================
+
+% Allow ragged pages
+\raggedbottom
+
+% Don't split footnotes
+\interfootnotelinepenalty=10000
+
+% Komascript
+\renewcommand{\capfont}{\small}
+\renewcommand{\caplabelfont}{\bfseries}
+\addtokomafont{subsection}{\normalsize\textsf\scshape}
+\setkomafont{subsubsection}{\normalfont\sffamily\em}
+\setkomafont{descriptionlabel}{\normalfont\sffamily\em}
+
+% ============================================================================
+% Content macros
+% ============================================================================
+
+% Shorthand formatting
+\newcommand{\ben}{\begin{enumerate}}
+\newcommand{\een}{\end{enumerate}}
+\newcommand{\bit}{\begin{itemize}}
+\newcommand{\eit}{\end{itemize}}
+\newcommand{\bds}{\begin{description}}
+\newcommand{\eds}{\end{description}}
+\newcommand{\ttt}[1]{\texttt{#1}}
+
+% References
+\newcommand{\fig}[1]{Figure~\ref{fig:#1}} 
+\newcommand{\subfig}[1]{\protect\subref{fig:#1}} 
+\newcommand{\tab}[1]{Table~\ref{tab:#1}}
+\newcommand{\Sect}[1]{Section~\ref{sec:#1}}
+\newcommand{\sect}[1]{\S\ref{sec:#1}, p.~\pageref{sec:#1}}
+\newcommand{\proc}[1]{Process~\ref{proc:#1}}
+
+% Maths
+\newcommand{\brkt}[1]{\left(#1\right)}
+\newtheorem{theorem}{Theorem}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{lemma}[theorem]{Lemma}
+\newcommand{\thm}[1]{\begin{theorem}#1\end{theorem}}
+\newcommand{\pf}[1]{\begin{proof}#1\end{proof}}
+
+% Occam and sire formatting
+\newcommand{\occam}{{\sffamily occam}}
+\newcommand{\Occam}{{\sffamily Occam}}
+\newcommand{\sire}{{\sffamily sire}}
+\newcommand{\Sire}{{\sffamily Sire}}
+
+% BNF symbols
+\newcommand{\pn}[1]{\langle \textnormal{#1} \rangle} % Production name
+\newcommand{\pp}{=} % Produces
+\newcommand{\oo}{\; \mid \;} % Or
+\newcommand{\sk}{\dots } % Dots
+\newcommand{\ww}{\;} % Space
+\newcommand{\nn}{\perp} % Null
+\newcommand{\sm}[1]{{\texttt{\bfseries{#1}}}} % Symbol terminal
+\newcommand{\sd}[1]{\textnormal{\it #1}} % Descriptive terminal
+\newcommand*{\MakeBoxName}[1]{%
+  {\makebox[4.5cm][r]{\ensuremath{#1}}}} % Descriptive terminal
+\newcommand{\pr}[1]{\MakeBoxName{\sd{#1}}}
+
+% Code syntax commands
+\newcommand{\w}[1]{\textbf{#1}}
+\newcommand{\ttw}[1]{\texttt{\w{#1}}}
+\newcommand{\lb}{\big{[}\mkern-4mu\big{[}}
+\newcommand{\rb}{\big{]}\mkern-4mu\big{]}}
+\newcommand{\enclose}[1]{$\lb${#1}$\rb$}
+
+% Inline code block
+\newcommand{\code}[1]{%
+\begin{quote}%
+\begin{alltt}%
+#1%
+\end{alltt}%
+\end{quote}}
+
+% Line indent
+\newcommand{\lindent}{\-\hspace{4mm}}
+

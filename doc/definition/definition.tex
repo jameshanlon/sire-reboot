@@ -1,0 +1,1402 @@
+\documentclass[11pt,a4paper,parskip=half-]{scrartcl}
+\input{../preamble}
+
+\title{The \sire\ language defintion}
+\author{\large James Hanlon}
+\date{\large March 23, 2014\\{\small (last revised \today)}}
+
+\setlength{\abovedisplayskip}{0pt}
+\def\sirelistingfontsize{\normalsize}
+
+\begin{document}
+
+\maketitle
+
+\setcounter{tocdepth}{2}
+\tableofcontents
+
+%==============================================================================
+\section{Introduction}
+%==============================================================================
+
+\def\sirewordfootnote{The word \emph{sire} is a verb meaning to create or bear.
+The choice of this for the name of the language relates to the way in which a
+\sire\ program executes, by allocating and deallocating processors dynamically.}
+
+% Rationale
+\emph{\Sire}\footnote{\sirewordfootnote} is a communicating-process programming
+language designed for highly-parallel execution.
+%
+It provides facilities for sharing and abstraction that can be used to
+build distributed parallel subroutines and shared-access data structures.
+%
+Its design is based on the \occam\ programming language and, in the \occam\
+philosophy, includes the smallest set of features necessary to this.
+
+\Sire\ is capable of being compiled using simple techniques to produce
+efficient programs, allowing the programmer to directly exploit the UPA.
+
+% Overview
+This document presents the definition of the \sire. It introduces the
+language incrementally, with each section building on the last.
+ 
+
+%=============================================================================
+\section{The model of computation}
+%=============================================================================
+
+A \sire\ program consists of a collection of \emph{processes}. Each process
+performs a sequence of commands, as well as being able to create additional
+processes.
+%
+Processes can communicate with each other by using point-to-point message
+passing \emph{channels}, which consist of a connected pair of \emph{channel
+ends} local to either process. Communication also causes processes
+to synchronise; a sending process waits until the receiver is ready to receive
+a message.
+%
+A special type of process called a \emph{server} provides a means of
+abstraction and forms the basis of a parallel subroutine mechanism.
+
+% Execution
+A \sire\ program is executed by a collection of one or more \emph{processors}.
+Each processor has a small private memory and can execute a number of
+\emph{processes} simultaneously.
+%
+The execution begins on a single processor and the computation progresses in
+\emph{time} and \emph{space} as processors are allocated and deallocated
+dynamically.
+
+
+%=============================================================================
+\section{Notation}
+%=============================================================================
+
+% Overview 
+Since \sire\ builds on \occam, it is prudent to present the language in a
+similar way to the original \occam\ specifications, as its successors have also
+done~\cite{Occam83, Occam3Ref92, Occam21Ref95}.
+% BNF
+The presentation uses a modified version of the \emph{Backus-Naur Form} (BNF)
+to specify the syntax of the language.
+% Production
+In the BNF, a \emph{production rule} defines a new \emph{symbol} to consist of
+a choice of one or more sequences of other symbols, which are defined by other
+rules or are \emph{terminal} and therefore elements occurring in the program.
+%
+Taking part of the command syntax as an example, a production of the form
+%
+\begin{flalign*}
+&\pr{command} \pp \pn{input}\ww\oo\ww\pn{output}&
+\end{flalign*}
+%
+specifies the symbol $\pn{process}$ to be the symbol $\pn{input}$ or
+$\pn{output}$. This can also be written with separate rules in the equivalent
+definition
+%
+\begin{flalign*}
+\pr{command} \pp & \pn{input}&\\
+\pr{command} \pp & \pn{output}
+\end{flalign*}
+%
+in order to incrementally introduce elements of the syntax. 
+The symbols $\pn{input}$ and $\pn{output}$ are specified with the
+rules
+%
+\begin{flalign*}
+\pr{input} \pp& \pn{chanend}\ww\sm{?}\ww\pn{variable}&\\
+\pr{output} \pp& \pn{chanend}\ww\sm{!}\ww\pn{expression}&
+\end{flalign*}
+%
+The emboldened symbols `$\sm{?}$' and `$\sm{!}$' are
+terminals and $\pn{chanend}$, $\pn{variable}$ and $\pn{expression}$ are
+defined in terms of one or more additional production rules.
+
+% Lists
+The notation $\{_c X \}$ specifies a list of $c$ or more $X$s and is equivalent
+to $X_1 X_2 \cdots X_c \cdots$, and $\{_c \oplus X\}$ specifies a list of $c$
+or more $X$s separated by $\oplus$ and is equivalent to $X_1 \oplus X_2 \oplus
+\cdots \oplus X_c \oplus \cdots$.
+
+% Explanation
+As each part of the language is introduced, fragments of the BNF are given and
+the semantics of the syntax explained.
+%
+The semantics of a small subset of the language are given informally, which
+allows the remaining portion to be defined algebraically, building on the
+subset. This approach is attractive since it provides clear semantics and
+allows simple transformations between different constructs.
+
+% Separation
+Where examples of \sire\ syntax are given the notation 
+\enclose{$\cdot$} is used to distinguish \sire\ syntax from mathematical
+notations.
+
+
+%=============================================================================
+\clearpage
+\section{Primitive commands}
+\label{sec:primitive-commands}
+%=============================================================================
+
+\begin{flalign*}
+\pr{command}\ww \pp & \ww \pn{assignment}\ww &\\
+\oo & \ww \pn{input}\ww \\
+\oo & \ww \pn{output}\ww \\
+\oo & \ww \pn{connect}\ww \\
+\oo & \ww \pn{skip}\ww \\
+\oo & \ww \pn{stop}
+\end{flalign*}
+
+A program is built from commands and the simplest of these are \emph{primitive}
+commands, which are \emph{assignment}, \emph{connect}, \emph{input},
+\emph{output}, \emph{skip} and \emph{stop}.
+
+
+\subsection{Assignment}
+
+\begin{flalign*}
+&\pr{assignment} \pp \pn{variable}\ww\sm{$\colon$=}\ww\pn{expression}&
+\end{flalign*}
+
+% Semantics
+An \emph{assignment command} evaluates the right hand side expression and
+changes the value of the variable to the result. 
+
+
+\subsection{Input and output}
+
+\begin{flalign*}
+\pr{input} & \pp \pn{chanend}\ww\sm{?}\ww\pn{variable}&\\
+\pr{output} & \pp \pn{chanend}\ww\sm{!}\ww\pn{expression}&
+\end{flalign*}
+
+% Channels
+Values are passed between processes using \emph{bidirectional communication
+channels}. These consist of two \emph{channel ends} that are associated with
+either process communicating on a channel.
+% Synchronised communication
+Communication is \emph{synchronised}, which means that an outputting process
+must wait for the inputting process to be ready before any data is sent. This
+prevents any data from being lost due to programming errors and precludes the
+use of buffering.
+
+% Semantics
+An \emph{input command} receives a value from a channel and assigns it to a
+variable and an \emph{output command} evaluates an expression and sends the
+result on a channel.
+%
+Matching pairs of input and output are a distributed form of assignment.
+
+
+\subsection{Connect}
+
+\begin{flalign*}
+\pr{connect} \pp & \ww\sm{connect}\ww\pn{chanend}\ww\sm{to}\ww\pn{chanend}&\\
+\pr{chanend} \pp & \ww\pn{element}&
+\end{flalign*}
+
+% Channels
+A \emph{connection} between two channel ends is established with a matching
+pair of \emph{connect} commands.
+% Semantics
+Each connect command connects a \emph{local} channel end to the corresponding
+\emph{remote} channel end. The commands terminate when the connection has been
+established.
+%
+The channel end itself is an element that specifies a name or field
+(see~\sect{expressions-elements}).
+
+
+% Skip and stop
+\subsection{Skip and stop}
+
+\begin{flalign*}
+\pr{skip}\ww \pp & \ww \sm{skip}\ww &\\
+\pr{stop}\ww \pp & \ww \sm{stop}\ww
+\end{flalign*}
+
+The command \ttw{skip} does nothing and terminates, the command
+\ttw{stop} never terminates, causing the process to execute no more
+actions. These commands are used primarily to explain the behaviour of other
+constructs in the language.
+
+
+% ============================================================================
+\clearpage
+\section{Structured commands}
+\label{sec:structured-commands}
+% ============================================================================
+
+\begin{flalign*}
+\pr{command}\ww \pp & \ww \pn{alternation}\ww &\\
+\oo & \ww \pn{conditional}\ww \\
+\oo & \ww \pn{loop}
+\end{flalign*}
+
+The structured commands \emph{conditional}, \emph{alternation} and
+\emph{loop} are control constructs that are used to combine commands.
+
+
+\subsection{Alternation}
+\label{sec:alternation}
+
+\begin{flalign*}
+\pr{alternation}\ww \pp & \ww \sm{alt}\ww \sm{\{}\ww \{_{0}\ww\sm{|}\ww \pn{alternative}\ww \}\ww \sm{\}}\ww &\\
+\pr{alternative}\ww \pp & \ww \pn{guarded-alternative}\ww \\
+\oo & \ww \pn{alternation}\ww \\
+\pr{guarded-alternative}\ww \pp & \ww \pn{guard}\ww \sm{:}\ww \pn{command}\ww &\\
+\pr{guard}\ww \pp & \ww \pn{input}\ww \\
+\oo & \ww \pn{expression}\ww \sm{\&}\ww \pn{input}\ww \\
+\oo & \ww \pn{expression}\ww \sm{\&}\ww \pn{skip}
+\end{flalign*}
+
+% Semantics: alternative
+An \emph{alternation command} is used to deal with non-determinism by allowing
+a process to wait for inputs on a number of different channels. 
+%
+It consists of a list of \emph{guarded command alternatives}.  A guard consists
+of an expression and an input on a channel or \ttw{skip} in the place of
+the input if none is required.
+%
+When the value of the expression is \ttw{true}, the guard behaves like the input or
+\ttw{skip}, otherwise it behaves like \ttw{stop} and does not proceed.
+Conceptually, the guard expression \emph{enables} or \emph{disables} an
+alternative.
+
+% Semantics: alternation
+When an alternation command is performed, it behaves like one of the
+alternatives that can proceed. Without any alternatives, it behaves like
+\ttw{stop}.
+% Nested
+An alternative that is itself an alternation is ready when one of its
+alternatives is ready.
+
+
+\subsection{Conditional}
+
+\begin{flalign*}
+\pr{conditional}\ww \pp & \ww \sm{if}\ww \sm{\{}\ww \{_{0}\ww\sm{|}\ww \pn{choice}\ww \sm{\}}\ww \\
+\oo & \ww \sm{if}\ww \pn{expression}\ww \sm{then}\ww \pn{command}\ww \sm{else}\ww \pn{command}\ww &\\
+\pr{choice}\ww \pp & \ww \pn{guarded-choice}\ww \\
+\oo & \ww \pn{conditional}\ww \\
+\oo & \ww \pn{specification}\ww \sm{:}\ww \pn{choice}\ww &\\
+\pr{guarded-choice}\ww \pp & \ww \pn{expression}\ww \sm{:}\ww \pn{command}
+\end{flalign*}
+
+% Semantics
+A \emph{conditional command} consists of a list of expressions enumerating a
+set of choices, with a command associated with of each.  When a conditional
+command is performed, each choice is tested in sequence and the command behaves
+like the first choice that evaluates \ttw{true}. Without any choices, it behaves like
+\ttw{skip}.
+
+% If-then-else
+An alternative \emph{if-then-else} form of the conditional command combines two
+choices, one of which is performed when the value of a condition expression is
+\ttw{true}, and the other when it is false.
+% Semantics
+Let $e$ be an expression and $C$ and $D$ be commands, then the alternative
+conditional form is defined as 
+\code{\enclose{\w{if} $e$ \w{then} $C$ \w{else} $D$} $=$ 
+  \enclose{\w{if} \{ $e$: $C$ | \w{\textasciitilde}$e$: $D$ \}}}
+
+
+\subsection{Loop}
+
+\begin{flalign*}
+\pr{loop}\ww \pp & \ww \sm{while}\ww\pn{expression}\ww\sm{do}\ww\pn{command}&
+\end{flalign*}
+
+% Semantics
+A \emph{looping command} repetitively evaluates a condition expression and
+executes a command if the value of the expression is \ttw{true}. When it is
+\ttw{false}, it terminates. 
+
+
+%% Case
+%\subsubsection{Case}
+%
+%\begin{flalign*}
+%\pr{case}\ww \pp & \ww \sm{case}\ww \sm{(}\ww \pn{expression}\ww \sm{)}\ww 
+%    \sm{\{}\ww \{_{0} \sm{|}\ww \pn{selection}\ww \}\ww \sm{\}}\ww &\\
+%\pr{selection}\ww \pp & \ww \pn{expression}\ww \sm{:}\ww \pn{command}\ww \\
+%\oo & \ww \sm{else}\ww \pn{command}\ww &
+%\end{flalign*}
+%
+%A \emph{case command} consists of a list of \emph{selections}, each with an
+%associated value. When a case command is performed, the value of the
+%\emph{selector} is evaluated, and if this is equal to one of the selection
+%values, then the case command behaves like the command in the selection.
+%Otherwise, it behaves like the command in the $\sm{else}$ selection, or like
+%$\sm{stop}$ if there is no $\sm{else}$ selection. Without any selections, it
+%behaves like $\sm{skip}$.
+
+
+
+%=============================================================================
+\clearpage
+\section{Types, names and scope}
+\label{sec:types-names-scope}
+%=============================================================================
+
+
+\subsection{Types}
+
+\subsubsection{Primitive types}
+
+\begin{flalign*}
+\pr{type}\ww \pp & \ww \pn{primitive-type}\ww &\\
+\pr{primitive-type}\ww \pp & \ww \sm{var}
+\end{flalign*}
+
+% Semantics
+There is a single primitive \emph{variable} type in \sire. 
+%
+It holds a value that can be changed by input or assignment and it is specified
+by the keyword \ttw{var}. 
+% Interpretation
+Variables are interpreted as signed integers and if no value has been assigned
+to it then the value is arbitrary.
+
+
+\subsubsection{Array types}
+
+\begin{flalign*}
+\pr{type}\ww \pp & \ww \pn{array-type}\ww &\\
+\pr{array-type}\ww \pp & \ww \pn{primitive-type} \\
+\oo & \ww \pn{array-type}\ww \sm{[}\ww \pn{expression}\ww \sm{]}
+\end{flalign*}
+
+% Semantics
+An \emph{array variable} contains a number of component variables.  
+%
+Let $T$ be a primitive type, then a 1-dimensional array of components of type
+$T$ is specified by the type $T$[$e$] where $e$ is an expression specifying the
+length of the dimension.
+% Multi-dimensional arrays
+Arrays with additional dimensions can be declared by specifying additional
+lengths in the type.
+%
+Let $T$ be a primitive type, then $T$[$e_1$][$e_2$]$\cdots$[$e_d$] specifies a
+$d$-dimensional array with $e_1\times e_2\times\cdots\times e_d$ components of
+type $T$.
+
+% Array components Element
+The components of an array variable are accessed with integer-valued subscripts
+that can appear as an element in an expression or on the left hand side of an
+assignment or input.
+% Example
+The \emph{element} $u$[$i$] selects the $i^\text{th}$ component of a
+1-dimensional array variable with the name $u$, and
+%
+the subscript $v$[$i_1$][$i_2$]$\cdots$[$i_d$] selects the $i_1^\text{th}$
+component of the first dimension and the $i_2^\text{th}$ component of the
+second dimension etc.\ of a $d$-dimensional array variable with the name $v$.
+
+
+\subsection{Scope}
+
+A name has a context in which it is valid and can be used. 
+This is called the \emph{scope}. 
+%
+The scope of a name extends from the point at which it is declared to the end
+of the \emph{block}. 
+%
+A block is enclosed by curly braces $\w{\{}\cdots\w{\}}$ or a choice or
+alternative.
+%
+The scope of a name also extends to any nested blocks.
+
+
+\subsection{Declarations}
+
+\begin{flalign*}
+\pr{declaration}\ww \pp & \ww \pn{type}\ww \{_{1} \sm{,}\ww \pn{name}\ww \}\ww &
+\end{flalign*}
+
+% Semantics
+A \emph{declaration} $T$ $n$ declares a variable of type $T$ with the name
+$n$. 
+%
+A single declaration can specify multiple names of a particular type. 
+Let $S(x)$ be a scope in which the name $x$ is free, $T$ be a type and $N_1,
+N_2, \cdots, N_n$ be names, then 
+\code{\enclose{$T$ $N_1, N_2, \cdots, N_n$ : $S$} $=$ 
+  \enclose{$T$ $N_1$ : $T$ $N_2$ : $\cdots$ : $T$ $N_n$ : $S$}}
+
+
+\subsection{Abbreviations}
+
+\begin{flalign*}
+\pr{abbreviation}\ww \pp & \ww \pn{specifier}\ww \pn{name}\ww \sm{is}\ww \pn{element}\ww \\
+\oo & \ww \sm{val}\ww \pn{name}\ww \sm{is}\ww \pn{expression}\ww &\\
+\pr{specifier}\ww \pp & \ww \pn{primitive-type}\ww \\
+\oo & \ww \pn{specifier}\ww \sm{[}\ww \sm{]}\ww \\
+\oo & \ww \pn{specifier}\ww \sm{[}\ww \pn{expression}\ww \sm{]}\ww &\\
+\pr{element}\ww \pp & \ww \pn{element}\ww \sm{[}\ww \pn{expression}\ww \sm{]}\ww \\
+\oo & \ww \pn{field}\ww &\\
+\oo & \ww \pn{name}\ww &
+\end{flalign*}
+
+An \emph{abbreviation} can be used to specify new names for variables and
+values.
+
+
+\subsubsection{Variable abbreviation}
+
+% Semantics
+A \emph{variable abbreviation} specifies the name for an \emph{element} that
+can either be a name or subscripted component of an array. 
+%
+Let $T$ be a type, $n$ be a name, $e$ be an element and $S$ be a scope. Then a
+variable abbreviation has the effect \code{\enclose{$T$ $n$ \w{is} $e$ :
+$S(n)$} $=$ \enclose{$S(e)$}}
+% Arrays
+The length specifier for an array dimension can be omitted from an abbreviation
+to define a name of an array of components of the specified type of any length
+in that dimension.
+%
+An array abbreviation is said to be \emph{compatible} with an array variable if
+the lengths of all dimensions are equal or the abbreviation does not specify
+the length of a particular dimension.
+
+
+\subsubsection{Value abbreviation}
+
+% Semantics
+A \emph{value abbreviation} specifies a name for an expression. 
+%
+Let $n$ be a name, $e$ be an expression and $S$ be a scope. Then a value
+abbreviation has the effect 
+\code{$\lb$\w{val} $n$ \w{is} $e$ : $S(n)\rb$ $=$ $\lb S(e)\rb$}
+%
+The value of the abbreviation must remain constant throughout its use. To
+ensure this, the abbreviated expression must not contain any variables that are
+updated by assignment or input in the scope of the abbreviation.
+
+
+\subsection{Specifications}
+\label{sec:specifications}
+
+\begin{flalign*}
+\pr{specification}\ww \pp & \ww \pn{declaration}\ww \\
+\oo & \ww \pn{abbreviation}\ww &\\
+\pr{command}\ww \pp & \ww \pn{specification}\ww \sm{:}\ww \pn{command}\\
+\pr{alternative}\ww \pp & \ww \pn{specification}\ww \sm{:}\ww \pn{alternative}
+\end{flalign*}
+
+% Semantics
+A \emph{specification} introduces a new name into a scope and all names
+specified within a block must be unique, however, a block can introduce a name
+that is already in scope.
+%
+In general, a free variable of a block is \emph{bound} to the most recent name
+that is still in scope.
+
+% Formally
+If $S(x)$ and $S(y)$ are scopes with the same behaviour, but $S(x)$ contains
+the free variable $x$ wherever $S(y)$ contains the free variable $y$ and
+vice versa, and $N(x)$ and $N(y)$ are identical specifications except that
+$N(x)$ specifies the name $x$ and $N(y)$ specifies the name $y$, then
+\code{\enclose{$N(x)$ : $S(x)$} $=$ \enclose{$N(y)$ : $S(y)$}}
+%
+In other words, specifications can always be added to produce a block in which
+the free variables are distinct from any scope it may be inserted into. 
+%
+This provides a basis for the semantics of substitution for process
+definitions, server definitions and functions, which are all explained
+in~\sect{procedural-abstraction}.
+
+
+\subsection{Rules}
+\label{sec:abbreviation-rules}
+
+\ben
+
+\item \emph{Declarations}. A specification can only introduce declarations that
+  have a primitive variable type. 
+
+\item \emph{Valid abbreviations}. The specifier of the element specified in the
+  abbreviation must be compatible with the type of the name.  Compatibility
+  requires the primitive types to be the same and, for array types, each
+  specified length must be also be equal in the corresponding dimension
+  (unspecified lengths can match any dimension).
+
+\item \emph{Abbreviation subscripts}. Any variables used in subscripts of an
+  abbreviated variable cannot be changed in the scope of the abbreviation.
+
+\item \emph{Value abbreviations}.  The value of an abbreviated variable may be
+  changed but to ensure the abbreviation always refers to the same array
+  component, then no variable in the subscript expression of that component can
+  be changed by assignment or input.
+
+\item \emph{Array abbreviations}. Components of an array must be identified by
+  a single name within a given scope to prevent aliasing. Therefore, components
+  of an array that has one or more abbreviated components may also be referred
+  to by abbreviations.
+
+\een
+
+
+
+%=============================================================================
+\clearpage
+\section{Composition}
+\label{sec:composition}
+%=============================================================================
+
+\begin{flalign*}
+\pr{command}\ww \pp & \ww \sm{\{}\ww\pn{sequence}\ww\sm{\}} &\\
+\oo & \ww \sm{\{}\ww\pn{parallel}\ww\sm{\}}
+\end{flalign*}
+
+\subsection{Sequence}
+
+\begin{flalign*}
+\pr{sequence}\ww \pp &\ww \{_{0}\ww \sm{;}\ww \pn{command}\ww \} &
+\end{flalign*}
+
+% Semantics
+A set of commands are composed in \emph{sequence} with the `\ttt{;}' separator.
+Execution starts with the first component command and each subsequent command
+is executed if and when the preceding command terminates. The sequence
+terminates when the last component command terminates.
+
+
+\subsection{Parallel}
+
+\begin{flalign*}
+\pr{parallel}\ww \pp & \ww \{_{0}\ww\sm{\&}\ww \pn{parallel-component}\ww \}\ww
+&\\
+\pr{parallel-component}\ww \pp & \ww \pn{process}
+\end{flalign*}
+
+% Semantics
+A \emph{parallel command} creates new \emph{processes} that execute in
+parallel, where a process is another command.
+%
+A set of processes are composed in parallel with the `\ttt{\&}' separator.  It
+causes the component processes to be executed simultaneously and it terminates
+if and only if all of the component processes have terminated.
+
+
+\subsubsection{Process interfaces}
+
+\begin{flalign*}
+\pr{process}\ww \pp & \ww \pn{interface}\ww \sm{:}\ww \pn{command}\ww \\
+\oo & \ww \pn{command}\ww &\\
+\pr{interface}\ww \pp & \ww \sm{interface}\ww \sm{(}\ww \{_{0}\ww\sm{,}\ww \pn{declaration}\ww \}\ww \sm{)}\ww &\\
+\pr{type}\ww \pp & \ww \pn{chanend-type}\ww &\\
+\pr{chanend-type}\ww \pp & \ww \sm{chanend}\ww &
+\end{flalign*}
+
+Processes executing in parallel can communicate via channels and a process can
+specify a number of local channel ends to do this.  
+%
+The set of \emph{local} channel ends belonging to a process constitutes its
+\emph{interface}, which is specified before the body of a process.
+
+Let $N_1, N_2, \cdots, N_n$ be names, then
+\code{\w{interface} (\w{chanend} $N_1$, $N_2$, $\cdots$, $N_n$)}
+specifies an interface that declares $n$ channel ends in the scope of the
+process.
+%
+No other types may be declared in a process interface.
+
+\subsubsection{Process names}
+
+\begin{flalign*}
+\pr{parallel-component}\ww \pp & \ww \pn{process-label}\ww \pn{process}\ww&\\
+\pr{process-label}\ww \pp & \ww \pn{name}\ww \sm{is} &
+\end{flalign*}
+
+% Naming
+Channel connections are established between component processes of a parallel
+command by \emph{naming} the processes. This is done by prefixing a process with a
+\emph{label} of the form `$\pn{name}\ww\sm{is}$'. 
+% Compound names
+The name of a process acts as a prefix for a \emph{compound name} for
+the channels in the interface, where each one can be selected as a \emph{field}.
+%
+Let $P$ be a process and $N_1, N_2, \cdots, N_n$ be names, then \code{p \w{is}
+\w{interface} (\w{chanend} $N_1$, $N_2$, $\cdots$, $N_n$): $P$} is a process
+with the name \ttt{p} that specifies an interface with $n$ components. Each
+component of the interface can be selected with the fields \ttt{p}.$N_1$,
+\ttt{p}.$N_2$, $\cdots$, \ttt{p}.$N_n$.
+
+% Channel connections
+A process name is visible to all of the component processes in the parallel
+command and a process that is not named and does not engage in any channel
+communication is said to be \emph{anonymous}.
+%
+A process can make a connection to another parallel process by selecting the
+channel end name as a field using the process' name and using it as the target
+of a connect statement.
+
+
+\subsubsection{Process arrays}
+
+Arrays of processes can be constructed provided they
+have the same interface. Components of a process array are selected using
+integer-valued subscripts.
+%
+Let $P_1, P_2, \dots, P_n$ be processes with the same interface, then \code{p
+  \w{is} \{$P_1$, $P_2$, $\cdots$, $P_n$\}} declares a \emph{process array}
+containing $n$ processes. The component processes are selected with the
+subscripts \ttt{p[0]} to \ttt{p[$n-1$]}. 
+%
+Process arrays can also be nested to create multidimensional arrays.
+
+
+\subsection{Rules}
+
+\ben[resume]
+
+% Disjointness of variables
+\label{sec:parallel-disjointness}
+%
+\item \emph{Process disjointness}.  Processes in a parallel command must be
+  \emph{disjoint} and only update disjoint sets of variables. This is to
+  eliminate the possibility of unwanted race conditions, i.e.\ in the absence
+  of alternation (which is explained in the next section), leaving alternation
+  as the only means of introducing non-determinism.
+
+  A variable or component of an array variable can be \emph{changed} by
+  assignment or input, or \emph{read} if it occurs as an operand or in an
+  expression.
+  %
+  Disjointness is enforced by permitting \emph{read-only access} to variables
+  or components of array variables shared between components of a parallel
+  command, and \emph{exclusive write access} when a variable or array variable
+  component appears in at most one component of a parallel command.
+  %
+  With arrays, components of an array variable may only be changed in parallel
+  if it can be determined at compile time that the array subscripts are used in
+  a linear combination to select disjoint components of the array.
+
+\item \emph{Point-to-point channels}. No channel end can be connected to by
+  more than one process. This is to ensure that no channel can be used for
+  input or output by more than one process.
+
+\item \emph{Channel end subscripts}.  If the target of a connect command is a
+  component of a process array, the name will contain a subscript and the
+  subscript must only use constants or replicator indices. This is so that the
+  process to which it belongs can be identified at compile time.
+
+\item \emph{Nesting}. Channel connections can only be established between
+  component processes of a parallel. Therefore, channel end names can only be
+  used by child processes of the single parallel command and they cannot be
+  passed to parallel commands nested in a process.
+
+% Components of arrays must have the same interface
+\item \emph{Named process arrays}. Components of a named array must all present
+  the same interface.
+
+% Only channel ends in interfaces
+\item \emph{Process interfaces}. A process interface can only declare channel
+  end components.
+
+\een
+
+
+
+%=============================================================================
+\clearpage
+\section{Servers}
+\label{sec:servers}
+%=============================================================================
+
+% Overview
+A \emph{server} is a special type of process that consists of special
+declarations that define its behaviour. It executes in parallel with the
+processes in its scope, is only active in response to \emph{calls} and
+terminates when control flow leaves the block in which it is defined.
+%
+\emph{Client} processes of a server make calls that behave in the same way to a local procedure call.
+
+% Abstraction
+Servers provide a mechanism for abstraction by building program components that
+provide a service or \emph{subroutine}, and they can be combined into larger
+\emph{server structures} to employ parallelism or distribute storage.
+
+
+\subsection{Specification}
+
+\begin{flalign*}
+\pr{server}\ww \pp & \ww \pn{interface}\ww \sm{:}\ww \pn{server-specification}\ww &\\
+\pr{server-specification}\ww \pp & \ww \pn{declaration}\ww \\
+\oo & \ww \sm{\{}\ww \{_{1}\ww\sm{:}\ww \pn{declaration}\ww \}\ww \sm{\}}
+\end{flalign*}
+
+% Specification
+The specification of a server consists of an interface that defines means of
+external interaction (consisting of calls and channel ends) and set of
+declarations that define its behaviour. These are \emph{initialisation
+commands} that are performed before it responds to anything, responses to each
+communication or call and \emph{finalisation commands} that are performed when
+it terminates.
+
+
+\subsubsection{Interface}
+
+\begin{flalign*}
+\pr{declaration}\ww \pp & \ww \sm{call}\ww \{_{1}\ww\sm{,}\ww \pn{name}\ww \sm{(}\ww \{_{0}\ww\sm{,}\ww \pn{formal}\ww \}\ww \sm{)}\ww \}\ww &\\
+\pr{abbreviation}\ww \pp & \ww \sm{call}\ww \pn{name}\ww \sm{is}\ww \pn{name}
+\end{flalign*}
+
+A call declaration
+\code{\w{call} $N$ ($f_1,f_2,\cdots,f_n$)}
+specifies $N$ as a name for a call with the formal parameters $f_1, f_2,
+\cdots, f_n$.
+%
+A single call declaration can specify multiple calls. Let $F_k$ be a sequence
+of formals $f_1, f_2, \cdots, f_n$ where $n$ is an integer defined for the
+sequence. 
+\code{\enclose{\w{call} $N_1$ ($F_1$), $N_2$, ($F_2$), $\cdots$, $N_n$ ($F_n$)}
+  $=$\\
+  \lindent\enclose{\w{call} $N_1$ ($F_1$), \w{call} $N_2$, ($F_2$), 
+    $\cdots$, \w{call} $N_n$ ($F_n$)}}
+
+
+\subsubsection{Alternation and call guards}
+
+\begin{flalign*}
+\pr{declaration}\ww \pp & \ww \pn{alternation}\ww &\\
+\pr{guard}\ww \pp & \ww \sm{accept}\ww \pn{name}\ww \sm{(}\ww \{_{0}\ww\sm{,}\ww \pn{formal}\ww \}\ww \sm{)}\ww \\
+\oo & \ww \pn{expression}\ww \sm{\&}\ww \sm{accept}\ww \pn{name}\ww \sm{(}\ww \{_{0}\ww\sm{,}\ww \pn{formal}\ww \}\ww \sm{)}
+\end{flalign*}
+
+% Alternation
+The main behaviour of a server is defined by an \emph{alternation declaration}
+that specifies an alternation command (see~\sect{alternation} for the
+definition of alternation). This, as well as containing input alternatives, can
+contain \emph{call} alternatives.
+
+% Alternatives
+An \emph{alternative} dealing with a call specifies the formal parameters that
+must match the list of formals in the specification in the interface of the
+corresponding call exactly, including the names, and a command to be executed
+when the call is invoked by a client.
+% Guarded calls
+A call alternative may be guarded with an expression in the same way as an
+input can, so that the call is ready only when the guard is \ttw{true}.  The
+effect is that the server will not respond to a call while the guard is false.
+
+
+\subsubsection{Initialisation and finalisation}
+
+\begin{flalign*}
+\pr{declaration}\ww \pp & \ww \sm{initial}\ww \pn{command}\ww &\\
+\oo & \ww \sm{final}\ww \pn{command}\ww
+\end{flalign*}
+
+% Initial
+An \emph{initialisation declaration} specifies a command to be executed before the alternation.
+% Final
+A \emph{finalisation declaration} specifies a command to be executed after the
+alternation, when the scope of the server has terminated.
+
+
+\subsection{Declarations}
+
+\begin{flalign*}
+\pr{declaration}\ww \pp & \ww \pn{server-declaration}\ww &\\
+\oo & \ww \pn{hiding-declaration}\ww &\\
+\oo & \ww \pn{simultaneous-declaration} 
+\end{flalign*}
+
+\subsubsection{Server declarations}
+
+\begin{flalign*}
+\pr{server-declaration}\ww \pp & \ww \pn{name}\ww \sm{is}\ww \pn{server}\ww &\\
+\pr{server}\ww \pp & \ww \pn{server-array}\ww &\\
+\pr{server-array}\ww \pp & \ww \sm{[}\ww \{_{1}\ww\sm{,}\ww \pn{server}\ww \}\ww \sm{]}
+\end{flalign*}
+
+% Single
+A \emph{server declaration} \code{n \w{is} $S$} declares \ttt{n} as a name for
+the server $S$ and \ttt{n} acts as a prefix for the compound names of the call
+and channel names specified in the interface of the server.
+
+% Array: different types, same interface
+Arrays of servers can be constructed provided they have the same interface. 
+%
+Let $S_1, S_2, \dots, S_n$ be servers with the same interface, then \code{s
+  \w{is} [$S_1$, $S_2$, $\cdots$, $S_n$]} declares a server array containing
+$n$ servers that are selected with the subscripts \ttt{s[0]} to \ttt{s[$n-1$]}. 
+%
+Server arrays can also be nested to create multidimensional arrays.
+
+
+\subsubsection{Hiding declarations}
+
+\begin{flalign*}
+\pr{hiding-declaration}\ww \pp & \ww \sm{from}\ww \sm{\{}\ww \{_{1}\ww\sm{:}\ww
+\pn{declaration}\ww \}\ww \sm{\}}\ww \sm{interface}\ww \pn{name} &
+\end{flalign*}
+
+% Semantics
+A \emph{hiding declaration} encloses a set of declarations and specifies one
+name declared by these to be visible to the scope of the declaration.
+%
+This is used to create minimal interfaces with collections of servers to
+perform abstraction.
+
+
+\subsubsection{Simultaneous declarations}
+
+\begin{flalign*}
+\pr{simultaneous-declaration}\ww \pp & \ww \{_{0}\ww\sm{\&}\ww
+\pn{declaration}\ww \} &
+\end{flalign*}
+
+% Semantics
+Declarations separated by the symbol `\ttt{\&}' occur \emph{simultaneously} and
+have the same scope. They are therefore visible to one another.
+%
+Simultaneous declarations are used to introduce mutually referential
+declarations, such as servers that communicate with each other.
+
+
+\subsection{Calls}
+
+\begin{flalign*}
+\pr{command}\ww \pp & \ww \pn{element}\ww \sm{(}\ww \{_{0} \sm{,}\ww
+  \pn{actual}\ww \}\ww \sm{)}\ww &
+\end{flalign*}
+
+A \emph{server call} is a command that specifies the name of the server, name
+of the call and a list of actual parameters.
+% Semantics
+The behaviour of a server call is defined in the following way. 
+Let $f_1, f_2, \dots, f_n$ be formals,
+$a_1, a_2, \dots, a_n$ be actuals, 
+and $C$ be a command; then
+\code{s \w{is} 
+  \w{interface} (\w{call} c($f_1$, $f_2$, $\cdots$, $f_n$)):\\
+$\ttt{  }$\w{alt} \{ \w{accept} c($f_1$, $f_2$, $\cdots$, $f_n$) \(C\) \}:\\
+s.c ($a_1$, $a_2$, $\cdots$, $a_n$)}
+%
+has the effect 
+\code{$f_1$ \w{is} $a_1$ : $f_2$ \w{is} $a_2$ : $\dots$ : $f_n$ \w{is} $a_n$ :
+  $C$}
+
+
+\subsection{Rules}
+
+\ben[resume]
+
+% Server channels
+\item \emph{Server channels}. A server can use channels for communication and
+  these are subject to the same rules as processes, except that connections can
+  only be established with other servers with the same scope. 
+  %
+  Since channel inputs can only appear in the alternatives in an alternation
+  declaration, output commands can only appear either in the command associated
+  with an alternative or in the initialisation or finalisation commands.
+
+\item \emph{Server calls}. A server must provide call guards for each of the
+  calls specified in its interface.
+
+\item \emph{Server interfaces}. A server interface can only contain channel
+  end and call specifier components.
+
+\item \emph{Server disjointness}. Servers are subject to the same variable- and
+  channel-disjointness rules as processes (see~\sect{parallel-disjointness}). 
+  %
+  In particular, a server can change a variable or component of an array by
+  assignment or input if no other server or process in its scope can read or
+  change that variable, and, a server can read the value from a variable or
+  component of an array only if no other server or process changes the
+  variable.
+
+\item \emph{Named server arrays}. Components of a server array must all present
+  the same interface.
+
+\een
+
+
+
+%=============================================================================
+\clearpage
+\section{Replication}
+\label{sec:replication}
+%=============================================================================
+
+\begin{flalign*}
+\pr{command}\ww \pp & \ww \sm{seq}\ww \pn{replicator}\ww\pn{command}\ww &\\
+\pr{process}\ww \pp & \ww \sm{par}\ww \pn{replicator}\ww\pn{process}\ww &\\
+\pr{conditional}\ww \pp & \ww \sm{if}\ww \pn{replicator}\ww \pn{choice}\ww &\\
+\pr{alternation}\ww \pp & \ww \sm{alt}\ww \pn{replicator}\ww \pn{alternative}\ww &\\
+\pr{server-declaration}\ww \pp & \ww \pn{name}\ww \sm{is}\ww \pn{replicator}\ww \pn{server}\ww \\
+\oo & \ww \pn{name}\ww \sm{is}\ww \sm{[}\ww \pn{expression}\ww \sm{]}\ww \pn{server}\ww &\\
+\pr{replicator}\ww \pp & \ww \sm{[}\ww \{_{1}\ww\sm{,}\ww \pn{index-range}\ww \}\ww \sm{]}\ww &\\
+\pr{index-range}\ww \pp & \ww \pn{name}\ww \sm{=}\ww \pn{expression}\ww \sm{for}\ww \pn{expression}\ww \\
+\oo & \ww \pn{name}\ww \sm{=}\ww \pn{expression}\ww \sm{for}\ww \pn{expression}\ww \sm{step}\ww \pn{expression}\ww &
+\end{flalign*}
+
+% Description
+Replicators can be used to create a number of similar commands, components of a
+construct, processes or servers.
+%
+A replicator consists of one or more \emph{index ranges}.  An index range
+declares the name of an \emph{index} variable, a \emph{base} expression, a
+\emph{count} expression and, optionally, a \emph{step} expression.  The base,
+count and step define the range of values that an index variable takes.  This
+name of the index variable is available to the replicated component and each
+replicated instance takes a unique value of the index. 
+
+
+\subsection{Constructs}
+
+% Semantics
+Let $X$ be one of \ttw{if}, \ttw{alt}, \ttw{seq} or \ttw{par};
+%
+$Y(i)$ be a choice, alternative, command or process corresponding to $X$ in
+which $i$ is free;
+%
+$\oplus$ be one of the separators `\ttt{|}', `\ttt{;}' or `\ttt{\&}'
+corresponding to $X$;
+%
+and $b$, $c$ and $s$ be integer values.
+%
+Then, the behaviour of a \emph{replicated conditional, alternative, sequence or
+  parallel} with a single index range is defined by the following. If $c\geq0$:
+%
+  \code{\enclose{$X$ [$i$=$b$ \w{for} $c$ \w{step} $s$] $Y(i)$} $=$ 
+    \enclose{$X$ \{ $Y(b)$ $\oplus$ $Y(b+s)$ $\oplus\cdots\oplus$
+  $Y(b+(c-1)s)$ \}}}
+
+\noindent 
+If $c=0$:
+\code{\enclose{\w{if} [$i$=$b$ \w{for} 0 \w{step} $s$] $Y(i)$} $=$ 
+  \enclose{\w{stop}}}
+\code{\enclose{\w{alt} [$i$=$b$ \w{for} 0 \w{step} $s$] $Y(i)$} $=$ 
+  \enclose{\w{stop}}}
+\code{\enclose{\w{seq} [$i$=$b$ \w{for} 0 \w{step} $s$] $Y(i)$} $=$ 
+  \enclose{\w{skip}}}
+\code{\enclose{\w{par} [$i$=$b$ \w{for} 0 \w{step} $s$] $Y(i)$} $=$ 
+  \enclose{\w{skip}}}
+
+\noindent
+If $c<0$:
+\code{\enclose{$X$ [$i$=$b$ \w{for} $c$ \w{step} $s$] $Y(i)$} $=$ 
+  \enclose{\w{stop}}}
+
+\noindent
+For an index range without a step expression
+\code{\enclose{$X$ [$i$=$b$ \w{for} $c$] $Y(i)$} $=$ 
+  \enclose{$X$ [$i$=$b$ \w{for} $c$ \w{step} 1] $Y(i)$}}
+
+% Multiple indices
+\noindent
+Let $I_k$ be a index range \ttt{$i_k=b_k$ \w{for} $c_k$}, where $i_k$ is a name
+and $b_k$ and $c_k$ are integer values defined for the index range.
+%
+Let $b_i$ and $c_i$ for $1\leq i \leq d$ be integer values, then
+the behaviour of \emph{replicators} with $d$ index ranges is defined by
+\code{\enclose{$X$ [$I_1, I_2, \cdots, I_d$] $Y(i_1,i_2,\cdots,i_d)$} $=$\\
+  \lindent\enclose{$X$ [$I_1$] \{ $X$ [$I_2$] \{ $\cdots$ \{ $X$ [$I_d$]
+$Y(i_1,i_2,\cdots,i_d)$ \}\}\}}}
+
+
+\subsection{Servers}
+
+% Servers
+Servers can also be replicated.
+Let $S(i)$ be a server specification in which $i$ is free; $n$ be a name; and
+$b$, $c$ and $s$ be integer values. Then, the behaviour of a \emph{replicated
+server} with a single index range is defined by
+\code{\enclose{[$i=b$ \w{for} $c$ \w{step} $s$] $S(i)$} $=$ 
+  \enclose{[$S(b)$, $S(b+s)$, $\cdots$, $S(b+(c-1)s)$]}}
+\code{\enclose{[$i=b$ \w{for} $c$] $S(i)$} $=$ 
+  \enclose{[$i=b$ \w{for} $c$ \w{step} 1] $S(i)$}} 
+
+% Multiple indices
+\noindent
+Let $I_k$ be a index range \ttt{$i_k=b_k$ \w{for} $c_k$}, where $i_k$ is a name
+and $b_k$ and $c_k$ are integer values.
+%
+Then, the behaviour of replicators with $d$ index ranges is defined by
+\code{\enclose{[$I_1$, $I_2$, $\cdots$, $I_d$] $N$} $=$ 
+  \enclose{n \w{is} [$I_1$] [ [$I_2$] [ $\cdots$ [ [$I_d$] $N$ ]]]}}
+%
+When replicated instances of a server do not require their unique indices, then
+a shorthand form of the replicator can be used. Let $e$ be an expression, then
+%
+\code{\enclose{[$e$] $N$} $=$ \enclose{[$i=0$ \w{for} $e$] $N$}}
+
+
+\subsection{Rules}
+
+\ben[resume]
+
+\item \emph{Replicator indices}. The value of any replicator index cannot be
+  changed by an assignment or input.
+
+\een
+
+%=============================================================================
+\clearpage
+\section{Expressions and elements}
+\label{sec:expressions-elements}
+%=============================================================================
+
+% Expressions
+An \emph{expression} produces a value and is composed of operands and
+operators. They cannot cause any \emph{side-effects} by changing any external
+state.
+%
+An \emph{operand} is either an element or literal or nested expression, which is
+enclosed by parentheses.
+%
+There are no precedence rules, so nested expressions must be explicitly
+bracketed.
+%
+An \emph{operator} takes either one or two operands and produces a value.
+% Elements 
+An \emph{element} is either a name, subscripted name, field, or function call.
+
+A full specification of expressions and elements is given in~\sect{operators}.
+
+
+\subsection{Valof expressions}
+
+\begin{flalign*}
+\pr{valof}\ww \pp & \ww \sm{valof}\ww \pn{command}\ww \sm{result}\ww
+  \pn{expression}\ww \\
+  \oo & \ww \pn{specification}\ww\sm{:}\ww\pn{valof}\ww &\\
+\pr{expression}\ww \pp & \ww \sm{(}\ww \pn{valof}\ww \sm{)}\ww &
+\end{flalign*}
+
+% Semantics
+A \emph{valof} expression produces a value from a command.
+%
+A valof expression $\sm{valof}$ $C$ $\sm{result}$ $e$ is a block and the scope
+of $C$ extends to the $\sm{result}$ expression $e$. 
+%
+It is evaluated by performing the command $C$ and then evaluating the
+expression $e$ to produce the result.
+
+
+\subsection{Rules}
+
+\ben[resume]
+
+% No side-effects
+% NOTE: effects on locals dont count as side-effects.
+\item \emph{Valof side-effects}.  A valof expression cannot cause
+  side-effects by changing any external state. It cannot therefore make calls
+  using a free name or assign to a free variable.
+
+\een
+
+
+%=============================================================================
+\clearpage
+\section{Procedural abstraction}
+\label{sec:procedural-abstraction}
+%=============================================================================
+
+The details of a process, server or expression can be hidden in a component
+that presents an interface to allow the behaviour to be considered abstractly.
+These components are called \emph{procedures} and \emph{functions}.
+
+
+\subsection{Procedures}
+\label{sec:procedures}
+
+\subsubsection{Definition}
+
+\begin{flalign*}
+\pr{definition}\ww \pp & \ww \pn{procedure}\ww \\
+\pr{procedure}\ww \pp & \ww \sm{process}\ww \pn{name}\ww \sm{(}\ww \{_{0}\ww\sm{,}\ww \pn{formal}\ww \}\ww \sm{)}\ww \sm{is}\ww \pn{process}\ww \\
+\oo & \ww \sm{server}\ww \pn{name}\ww \sm{(}\ww \{_{0}\ww\sm{,}\ww
+  \pn{formal}\ww \}\ww \sm{)}\ww \sm{is}\ww \pn{server}\ww\\
+\pr{formal}\ww \pp & \ww \pn{specifier}\ww \{_{1}\ww\sm{,}\ww \pn{name}\ww \}\ww \\
+\oo & \ww \sm{val}\ww \{_{1}\ww\sm{,}\ww \pn{name}\ww \}\ww &
+\end{flalign*}
+
+A procedure specifies a name, a process or server and a set of
+\emph{formal parameters}. Since there is no global scope in \sire\ the set of
+formal parameters are the free elements of the process or server.
+
+% Formals
+Let $S$ be a specifier, then a formal parameter of the form $S$ $n$ specifies a
+name $n$ with type given by $S$. 
+%
+A single formal can also specify multiple names.
+% Name specifier
+Let $S$ be a specifier and $N_1, N_2, \cdots, N_n$ be names, then \code{$S$
+$N_1, N_2, \cdots, N_n$ $=$ $S$ $N_1$, $S$ $N_2$, $\cdots$, $S$ $N_n$} $S$ may
+specify a variable or array variable of a primitive or channel end type, or a
+compound channel end or array of compound channel ends.
+% Value specifiers
+For value specifications \code{\sm{val} $N_1, N_2, \cdots, N_n$ $=$ \w{val}
+$N_1$, \w{val} $N_2$, $\cdots$, \w{val} $N_n$.}
+% TODO: call formal parameters Definition
+Let $X$ be one of \ttw{process} or \ttw{server}, $Y$ be a process or server
+corresponding to $X$ and $f_1, f_2, \cdots, f_n$ be formal parameters. Then,
+the definition \code{$X$ $N$ ($f_1,f_2,\cdots,f_n$) \w{is} $Y$} defines the
+name $N$ to be a procedure that behaves like $Y$.
+% Array types
+If $f_i$ is an array type, it must specify the length of each dimension with an
+expression that consists of only of constant values or variables specified by
+other the other formals $f_1,f_2,\cdots,f_{i-1},f_{i+1},\cdots,f_n$.
+
+
+\subsubsection{Channel end and server call parameters for procedures}
+
+\begin{flalign*}
+\pr{primitive-type}\ww \pp & \ww \pn{process-type}\ww \\
+\oo & \ww \pn{server-type}\ww \\
+\pr{process-type}\ww \pp & \ww \sm{process}\ww \pn{name}\ww \\
+\oo & \ww \sm{process}\ww \pn{interface}\ww &\\
+\pr{server-type}\ww \pp & \ww \sm{server}\ww \pn{name}\ww \\
+\oo & \ww \sm{server}\ww \pn{interface}\ww &
+\end{flalign*}
+
+A procedure can specify parameters for channel ends and server calls.
+%
+These may be specified directly or with a compound name from a process or
+server reference with the keywords \ttw{process} or \ttw{server}
+respectively, its interface and a name.
+%
+The interface can either be specified \emph{explicitly} by listing the
+components, or \emph{implicitly} by giving the name of a procedure that defines
+a process or server with the interface.
+
+
+\subsubsection{Passing procedures as parameters}
+
+\begin{flalign*}
+\pr{formal}\ww\pp & \ww \pn{call-type}\ww \{_{1}\ww\sm{,}\ww \pn{name}\ww \sm{(}\ww \{_{0}\ww\sm{,}\ww \pn{formal}\ww \}\ww \sm{)}\ww \}\ww \\
+\pr{abbreviation}\ww \pp & \ww \pn{call-type}\ww \pn{name}\ww \sm{(}\ww \{_{0}\ww\sm{,}\ww \pn{formal}\ww \}\ww \sm{)}\ww \sm{is}\ww \pn{name}\ww &\\
+\pr{call-type}\ww \pp & \ww \sm{process}\\
+                      & \ww \sm{function}
+\end{flalign*}
+
+A procedure or server call can specify procedures as parameters.
+%
+This is so that different implementations of a procedure with the same formals
+can be supplied to a procedure instance or server call.
+%
+With a procedure parameter to a server call, the supplied procedure is executed
+remotely.
+
+A formal parameter of the form
+\code{\w{process} $N$ ($f_1$, $f_2$, $\cdots$, $f_n$\ttt)} 
+specifies $N$ as the name for a procedure parameter.
+%
+A single procedure can specify multiple calls. Let $F_k$ be a sequence
+of formals $f_1, f_2, \cdots, f_n$ where $n$ is an integer defined for the
+sequence. 
+\code{\enclose{\w{process} $N_1$ ($F_1$), $N_2$, ($F_2$), $\cdots$, $N_n$ ($F_n$)}
+  $=$\\
+  \lindent\enclose{\w{process} $N_1$ ($F_1$), \w{process} $N_2$, ($F_2$), 
+    $\cdots$, \w{process} $N_n$ ($F_n$)}}
+
+
+\subsection{Instances}
+\label{sec:instances}
+
+\begin{flalign*}
+\pr{process}\ww \pp & \ww \pn{instance}\ww &\\
+\pr{server}\ww \pp & \ww \pn{instance}\ww &\\
+\pr{command}\ww \pp & \ww \pn{instance}\ww &\\
+\pr{instance}\ww \pp & \ww \pn{name}\ww \sm{(}\ww \{_{0}\ww\sm{,}\ww
+  \pn{actual}\ww \}\ww \sm{)}\ww &\\
+\pr{actual}\ww \pp & \ww \pn{element}\ww \\
+\oo & \ww \pn{expression}\ww &
+\end{flalign*}
+
+% Description
+An \emph{instance} of a procedure is created by specifying its name and a list
+of \emph{actual parameters}.
+%
+When an \emph{instance} of the procedure is created, each formal serves as the
+left hand side of an abbreviation of an \emph{actual parameter}, $a$, that is
+supplied to the instance. This provides a binding of each free variable to the
+scope in which it is instantiated.
+%
+Each actual is an element or expression with a compatible type with the formal
+parameter.
+
+% Substitution
+The scoping rules mean that an instance of a process type can be substituted
+in-place for the process it names by inserting abbreviations of each formal
+with the actual parameter.
+%
+This is defined in the following way.
+Let $X$ be one of \ttw{process} or \ttw{server}, 
+$Y$ be a process or server corresponding to $X$,
+$f_1, f_2, \cdots, f_n$ be formals, $a_1,a_2,\cdots,a_n$ be actuals.
+Then, if $X$ is a program in which no name is
+specified more than once and it contains the definition
+%
+\code{$X$ $N$ ($f_1, f_2, \cdots, f_n$) \w{is} $Y$ }
+%
+then, within its scope
+%
+\code{$N$ ($a_1, a_2, \dots, a_n$) $=$ $f_1$ \w{is} $a_1$ : $f_2$ \w{is} $a_2$
+  : $\dots$ : $f_n$ \w{is} $a_n$ : $P$}
+%
+provided each abbreviation is valid.
+%
+This allows procedures to be compiled either as a closed subroutine or by
+substituting the body of the definition directly with the instance.
+
+
+\subsection{Hiding definitions}
+
+\begin{flalign*}
+\pr{definition}\ww \pp & \ww\sm{server}\ww \pn{name}\ww \sm{(}\ww \{_{0} \sm{,}\ww
+\pn{formal}\ww \}\ww \sm{)}\ww \sm{inherits}\ww \pn{hiding-declaration}\ww &
+\end{flalign*}
+
+% Description
+A different way to define a server is to inherit an interface from a
+server in a set of declarations. This can be used to combine a number of
+servers into a single reusable module, exposing a single server declaration as
+an interface.
+
+% Semantics
+Let $i_1, i_2, \cdots, i_m$ be specifiers for components of an interface,
+then the definition
+\code{\w{server} $N$($f_1$, $f_2$, $\cdots$, $f_n$) \w{inherits}\\
+  $\ttt{  }$\w{from}\\
+  $\ttt{  }$ $\vdots$\\
+  $\ttt{  }$ s \w{is} \w{interface} ($i_1$, $i_2$, $\cdots$, $i_m$) \w{to} $D$\\
+  $\ttt{  }$ $\vdots$\\
+  $\ttt{  }$\w{interface} s}
+%
+defines $N$ as the name of a server type who inherits the interface from the
+server with name \ttw{s} in the hiding declaration.
+%
+Let $X$ be a program in form where no name is specified more than once, then if
+$X$ contains the above definition, in the scope of $N$
+\code{\enclose{x \w{is} $N$($a_1,a_2,\cdots,a_n$) : $S$} $=$\\
+$\ttt{  }$\enclose{$\ttt{  }$$f_1$ \w{is} $a_1$ : $f_2$ \w{is} $a_2$ : $\dots$ : $f_n$ \w{is} $a_n$ :\\
+$\ttt{  }$$\ttt{  }$s \w{is} \w{interface}($i_1, i_2, \cdots, i_n$): $D$ : 
+$\cdots$ : $S$}} 
+where $S$ is the scope of the declaration.
+
+
+\subsection{Functions}
+
+\subsubsection{Definitions and instances}
+
+\begin{flalign*}
+\pr{definition}\ww \pp & \ww \sm{function}\ww \pn{name}\ww \sm{(}\ww \{_{0}
+  \sm{,}\ww \pn{formal}\ww \}\ww \sm{)}\ww \sm{is}\ww \pn{valof}\ww &\\
+\pr{expression}\ww \pp & \ww \pn{instance}
+\end{flalign*}
+
+A valof expression can be reused by defining a \emph{function}.
+%
+Each formal parameter of a function must be a value abbreviation and functions
+cannot contain calls to processes.
+%
+The definition
+\code{\w{function} $N$ ($f_1, f_2, \cdots, f_n$) \w{is} \w{valof} $C$
+  \w{result} $e$}
+defines $N$ as the name of a function with the valof expression \ttw{valof}
+$C$ $\sm{result}$ $e$.
+
+% Substitution
+Let $X$ be a program in a form where no name is specified more than once, then
+if $X$ contains the above function definition, in the scope of $N$
+\code{\enclose{$N$ ($a_0, a_1, \cdots, a_n$)} $=$\\ 
+\lindent\enclose{(\w{valof} $f_0$ \w{is} $a_0$ : $f_1$ \w{is} $a_1$
+  : $\cdots$ : $f_n$ \w{is} $a_n$ : $C$ \w{result} $e$)}}
+provided each abbreviation is valid.
+%
+This allows functions to be compiled either as a closed subroutine or by
+substitution.
+
+
+\subsubsection{Functions as parameters}
+
+\begin{flalign*}
+\pr{call-type}\ww \pp & \ww \sm{function}\ww &
+\end{flalign*}
+
+Functions can be passed as parameters in the same way as procedures.
+
+
+\subsection{Rules}
+
+\ben[resume]
+
+\item \emph{Parameters}. The rules for procedures, hiding definitions and
+  functions follow those for abbreviations (see~\sect{abbreviation-rules}). The
+  following two rules further define compatibility for interface, call and
+  procedure types.
+
+\item \emph{Matching interface parameters.} 
+  %
+  A compound name that references a single process or server can only be
+  supplied as an actual parameter if it is compatible. This requires the
+  interface to be the same as the one specified by the formal parameter. 
+
+\item \emph{Matching call and procedure parameters}.  
+  %
+  A call or procedure name can only be supplied as an actual parameter if it is
+  compatible. This requires (1) the type of the formal parameter are the same
+  and (2) each of the types of the formals in the definition of the call or
+  procedure are the same as the formals specified in the parameter (which are
+  specified in braces).
+
+\item \emph{Array parameters}. 
+  %
+  Each array parameter of a process or server type must specify its length by
+  an expression that can contain only constant values or the names of other
+  value parameters.
+
+\item \emph{Recursion}.
+  %
+  Recursive procedures or functions are not permitted.
+
+\een
+
+
+%=============================================================================
+\clearpage
+\section{Program}
+\label{sec:program}
+%=============================================================================
+
+\begin{flalign*}
+\pr{program}\ww \pp & \ww \pn{program-specification}\ww \sm{:}\ww \pn{program}\ww \\
+\oo & \ww \pn{sequence}\ww &\\
+\pr{program-specification}\ww \pp & \ww \pn{specification}\ww \\
+\oo & \ww \pn{definition}\ww &\\
+\pr{definition}\ww \pp & \ww \pn{simultaneous-definition}\ww &\\
+\pr{simultaneous-definition}\ww \pp & \ww \{_{0}\ww\sm{\&}\ww \pn{definition}\ww \}\ww &
+\end{flalign*}
+
+% Program
+A \emph{program} is a single command sequence, or process, with a specification
+that can contain definitions of process types, server types and functions.
+
+
+\subsubsection{Simultaneous definitions}
+
+Definitions separated by the symbol \ttw{\&} occur \emph{simultaneously} and
+share the same scope; they are therefore visible to one another. Simultaneous
+definitions are used to introduce mutually referential definitions, such as
+processes or servers that communicate with each other.
+
+
+\subsection{Rules}
+
+\ben[resume]
+
+\item \emph{No global scope}. A program specification can only contain
+  definitions and abbreviations.
+
+\een
+
+\end{document}
+

@@ -64,17 +64,17 @@ int main(int argc, char *argv[]) {
     }
 
     // Lexer debug
-    Lexer::Token t = LEX.readToken();
-    while (t != Lexer::t_EOF) {
-      printf("%3d %s ", (int) t, LEX.tokenStr(t));
-      if(t == Lexer::t_NUMBER) printf("%d", LEX.value);
-      if(t == Lexer::t_NAME)   printf("%s", LEX.s.c_str());
-      if(t == Lexer::t_STRING) printf("%s", LEX.s.c_str());
-      printf("\n");
-      t = LEX.readToken();
-    }
+    //Lexer::Token t = LEX.readToken();
+    //while (t != Lexer::t_EOF) {
+    //  printf("%3d %s ", (int) t, LEX.tokenStr(t));
+    //  if(t == Lexer::t_NUMBER) printf("%d", LEX.value);
+    //  if(t == Lexer::t_NAME)   printf("%s", LEX.s.c_str());
+    //  if(t == Lexer::t_STRING) printf("%s", LEX.s.c_str());
+    //  printf("\n");
+    //  t = LEX.readToken();
+    //}
 
-    //Tree tree = SYN.formTree();
+    Tree *tree = SYN.formTree();
     //TRN.translateTree();
   }
   catch(FatalError &e) {

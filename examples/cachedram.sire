@@ -47,8 +47,7 @@ server Store() is
   from { 
     s is [N] Store():
     m is Access(s) 
-  }
-  interface m
+  } interface m
 :
 
 m is RAM():

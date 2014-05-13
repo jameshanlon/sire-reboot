@@ -1,0 +1,266 @@
+% symbol is   <x>
+% terminal is "x"
+% produces is "="
+% or is       "|"
+% end is      ";"
+% Separate everything with spaces
+
+% ============================================================================
+[[Program]]
+% ============================================================================
+
+program                     = <program-specification> ":" <program>
+                            | <sequence>;
+program-specification       = <specification>
+                            | <definition>;
+definition                  = <simultaneous-definition>;
+simultaneous-definition     = {0 "&" <definition>};
+
+
+% ============================================================================
+[[Specifications]]
+% ============================================================================
+
+specification               = <declaration>
+                            | <abbreviation>;
+
+[Declarations]
+declaration                 = <type> {1 "," <name>};
+type                        = <primitive-type>
+                            | <array-type>;
+primitive-type              = "var";
+array-type                  = <primitive-type>
+                            | <array-type> "[" <expression> "]";
+
+[Abbreviations]
+abbreviation                = <specifier> <name> "is" <element>
+                            | "val" <name> "is" <expression>;
+specifier                   = <primitive-type>
+                            | <specifier> "[" "]" 
+                            | <specifier> "[" <expression> "]";
+
+
+% ============================================================================
+[[Sequence]] 
+% ============================================================================
+
+sequence                    = {0 ";" <command>};
+command                     = <primitive-command> 
+                            | <structured-command>
+                            | <specification> ":" <command>;
+
+[Primitive commands]                      
+primitive-command           = <skip>
+                            | <stop>
+                            | <assingment>
+                            | <input>
+                            | <output>
+                            | <connect>;
+skip                        = "skip";
+stop                        = "stop";
+assignment                  = <variable> ":=" <expression>;
+input                       = <chanend> "?" <variable>;
+output                      = <chanend> "!" <expression>;
+connect                     = "connect" <chanend> "to" <chanend>;
+                         
+[Structured commands]
+structured-command          = <alternation>
+                            | <conditional>
+                            | <case>
+                            | <loop> 
+                            | "{" <sequence> "}"
+                            | "{" <parallel> "}";
+% Test                   
+conditional                 = "if" "{" {0 "|" <choice> "}"
+                            | "if" <expression> "do" <command>
+                            | "if" <expression> "then" <command> "else" <command>;
+choice                      = <guarded-choice>
+                            | <conditional>
+                            | <specification> ":" <choice>;
+guarded-choice              = <expression> ":" <command>;
+                         
+% Case                                         
+case                        = "case" "(" <expression> ")" "{" {0 "|" <selection>} "}";
+selection                   = <expression> ":" <command>
+                            | "else" <process>;
+
+% Alternative
+alternation                 = "alt" "{" {0 "|" <alternative>} "}";
+alternative                 = <guarded-alternative>
+                            | <alternation>
+                            | <specification> ":" <alternative>;
+guarded-alternative         = <guard> ":" <command>;
+guard                       = <input>
+                            | <expression> "&" <input>
+                            | <expression> "&" <skip>;
+
+% Loop 
+loop                        = "while" <expression> "do" <command>
+                            | "until" <expression> "do" <command>
+                            | "do" <command> "while" <expr>;
+
+% Parallel
+parallel                    = {0 "&" <parallel-component>};
+parallel-component          = <process-label> <process>
+                            | <process>;
+process-label               = <name> "is";
+
+
+% ============================================================================
+[[Process]]
+% ============================================================================
+
+process                     = <interface> ":" <command>
+                            | <command>;
+interface                   = "interface" "(" {0 "," <declaration>} ")";
+primitive-type              = <chanend-type>;
+chanend-type                = "chanend";
+
+
+% ============================================================================
+[[Server]]
+% ============================================================================
+
+[Specification]
+server                      = <interface> ":" <server-specification>;
+
+% Server interface specifiers (for declaration and abbreviation)
+primitive-type              = <call-type>;
+call-type                   = "call";
+declaration                 = <type> {1 "," <name> "(" {0 "," <formal> } ")" };
+
+% Server declarations and simlutaneous declaration
+server-specification        = <declaration> 
+                            | "{" {1 ":" <declaration>} "}";
+declaration                 = "initial" <command>
+                            | "final" <command>
+                            | <alternation>;
+
+% Alternation (for servers, call guard)
+guard                       = "accept" <name> "(" {0 "," <formal>} ")"
+                            | <expression> "&" "accept" <name> "(" {0 "," <formal>} ")";
+
+[Declarations]
+declaration                 = <server-declaration>
+                            | <hiding-declaration>
+                            | <simultaneous-declaration>;
+server-declaration          = <name> "is" <server>;
+server                      = <server-array>;
+server-array                = "[" {1 "," <server> } "]";
+hiding-declaration          = "from" "{" {1 ":" <declaration>} "}" "interface" <name>;
+simultaneous-declaration    = {0 "&" <declaration>};
+
+[Call]
+command                     = <server-call>;
+server-call                 = <element> "(" {0 "," <actual>} ")";
+
+
+% ============================================================================
+[[Replication]]
+% ============================================================================
+
+command                     = "seq" <replicator> <command>;
+process                     = "par" <replicator> <process>;
+conditional                 = "if" <replicator> <choice>;
+case                        = "case" <replicator> <selection>;
+alternation                 = "alt" <replicator> <alternative>;
+server-declaration          = <name> "is" <replicator> <server>
+                            | <name> "is" "[" <expression> "]" <server>;
+declaration                 = "alt" <replicator> <alternative>;
+replicator                  = "[" {1 "," <index-range>} "]";
+index-range                 = <name> "=" <expression> "for" <expression>
+                            | <name> "=" <expression> "for" <expression> "step" <expression>;
+
+
+% ============================================================================
+[[Expressions]]
+% ============================================================================
+expression                  = <unary-operator> <operand>
+                            | <operand> <binary-operator> <operand>
+                            | <operand>;
+operand                     = <element>
+                            | <literal>
+                            | "(" <expression> ")";
+
+[Valof]
+valof                       = "valof" <process> "result" <expression>
+                            | <specification> ":" <valof>;
+expression                  = "(" <valof> ")";
+
+
+% ============================================================================
+[[Elements]]
+% ============================================================================
+chanend                     = <element>;
+element                     = <element> "[" <expression> "]"
+                            | <field>
+                            | <name>;
+field                       = <element> "." <name>;
+variable                    = <element>;
+literal                     = <decimal-integer>
+                            | "#" <hexdecimal-integer>
+                            | <byte>
+                            | "true"
+                            | "false";
+hexdecimal-integer          = <hexdecimal-digit>
+                            | <hexdecimal-digit> <hexdecimal-integer>;
+decimal-integer             = <digit>
+                            | <digit> <decimal-integer>;
+byte                        = "'" <character> "'";
+
+
+% ============================================================================
+[[Abstraction]]
+% ============================================================================
+
+[Definitions]
+definition                  = <procedure>
+                            | <function>;
+procedure                   = "process" <name> "(" {0 "," <formal>} ")" "is" <process>
+                            | "server" <name> "(" {0 "," <formal>} ")" "is" <server>
+                            | "server" <name> "(" {0 "," <formal>} ")" "inherits" <hiding-declaration>;
+function                    = "function" <name> "(" {0 "," <formal>} ")" "is" <valof>;
+
+formal                      = <specifier> {1 "," <name>}
+                            | <call-type> {1 "," <name> "(" {0 "," <formal> } ")" }
+                            | "val" {1 "," <name>};
+abbreviation                = <specifier> <name> "(" {0 "," <formal> } ")" "is"
+                            | <call-type> <name> "(" {0 "," <formal> } ")" "is" <name>;
+
+primitive-type              = <process-type>
+                            | <server-type>;
+process-type                = "process" <name>
+                            | "process" <interface>;
+server-type                 = "server" <name>
+                            | "server" <interface>;
+call-type                   = "process"
+                            | "function";
+
+[Instances]
+process                     = <instance>;
+server                      = <instance>;
+command                     = <instance>;
+expression                  = <instance>;
+instance                    = <name> "(" {0 "," <actual>} ")";
+actual                      = <element>
+                            | <expression>;
+
+
+% ============================================================================
+[[Compiler transformations]]
+% ============================================================================
+
+[Process distribution]
+process                     = "on" <expression> "do" <process>;
+
+[Channel end references]
+absolute-reference          = "(" <expression> ":" <expression> ":" <expression> ")";
+% Interfaces
+interface                   = "interface" "(" {0 "," <declaration>} ")" "@" <absolute-reference>;
+% Calls
+server-call                 = <local-chanend> "!" <element> "(" {0 "," <actual>} ")";
+local-chanend               = <element> "@" <absolute-reference>;
+% Connects
+chanend                     = <remote-chanend>;
+remote-chanend              = "@" <absolute-reference> "." <expression>;
+
