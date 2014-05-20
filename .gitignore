@@ -1,2 +1,8 @@
 *.o
+*.aux
+*.log
+*.pdf
+doc/syntax/collected.tex
+doc/syntax/ordered.tex
+doc/syntax/keywords.tex
 sire

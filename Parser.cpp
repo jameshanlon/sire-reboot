@@ -15,24 +15,57 @@ void Parser::checkFor(Lexer::Token t, const char *msg) {
   LEX.readToken();
 }
 
+void Parser::error(const char *msg) {
+  LEX.error(msg);
+  LEX.readToken();
+}
+
 Tree *Parser::formTree() {
   Tree *t = readProg();
   return t;
 }
 
-// program = <specification> : <cmd>
+// program       = <specification> : <program>
+//               | <sequence>;
+// specification = <declaration>
+//               | <abbreviation>
+//               | <definition>
+// definition    = {0 & <definition>}
 Tree *Parser::readProg() {
   Tree *tree = new Tree();
+  
   // Read specifications
   while(curTok == Lexer::t_VAL 
      || curTok == Lexer::t_VAR 
      || curTok == Lexer::t_PROCESS 
      || curTok == Lexer::t_SERVER 
-     || curTok == Lexer::t_FUNCTION)
-    tree->spec.push_back(readSpec());
+     || curTok == Lexer::t_FUNCTION) {
+    Spec *spec = readSpec();
+    
+    // Read a sequential specification
+    if (spec->type == Lexer::t_COLON)
+      tree->spec.push_back(readSpec());
+    // Read simultaneous definitions
+    else if (curTok == Lexer::t_AND) {
+      if (spec->type != Spec::DEF)
+        error("cannot make a simultaneous declaration");
+      std::vector<Def*> defs = new std::vector<Def*>();
+      defs.push_back(spec);
+      do {
+        getNextToken();
+        defs.push_back(readDef());
+      } while (curTok == Lexer::AND);
+      SimDef *simDef = new SimDef(defs); 
+      tree->spec.push_back(simDef);
+    }
+    else
+      error("invalid separator for specification");
+  }
+
   // Read program command sequence
-  while(curTok != Lexer::t_EOF)
+  while (curTok != Lexer::t_EOF)
     tree->prog.push_back(readCmd());
+  
   return tree;
 }
 
@@ -44,8 +77,7 @@ Spec *Parser::readSpec() {
   default:                assert(0 && "invalid token");
   case Lexer::t_EOF:      return NULL;
   case Lexer::t_VAR:      return readDecl();
-  case Lexer::t_VAL:      return readAbbr();
-  case Lexer::t_NAME:     return readAbbr();
+  case Lexer::t_VAL:      return readDecl();
   case Lexer::t_FUNCTION: return readFunc();
   case Lexer::t_PROCESS:  return readProc();
   case Lexer::t_SERVER:   return readServ();
@@ -53,11 +85,53 @@ Spec *Parser::readSpec() {
 }
 
 Decl *Parser::readDecl() {
+  Spef *s = readSpef();
+  Name *n = readName();
+  switch (curTok) {
+  default:
+  // Abbreviation
+  case Lexer::t_IS:
+    return VarAbbr(s, n, readElem());  
+  // Name list
+  case Lexer::t_COMMA: {
+    std::vector<Name*> names = new std::vector<Name*>();
+    readNames(names);
+    return 
+    }
+  // End
+  case Lexer::t_COLON:
+  }
   return (Decl *) NULL;
 }
 
-Decl *Parser::readAbbr() {
-  return (Decl *) NULL;
+// specifier      = <primitive-type>
+//                | <specifier> [ ]
+//                | <specifier> [ <expr> ]
+// primitive-type = var
+Spef *Parser::readSpef() {
+  switch (curTok) {
+  default: error("invalid specifier");
+  
+  // Value specifier
+  case Lexer::t_VAL:
+    return ValSpef();
+
+  case Lexer::t_VAR:
+    getNextToken();
+
+    // Variable specifier
+    if (curTok == Lexer::t_NAME)
+      return VarSpef();
+
+    // Array specififer
+    std::vector<Expr*> lengths = new std::vector<Expr*>();
+    while (curTok == Lexer::t_LSQUARE) {
+      lengths.push_pack(readExpr());
+      checkFor(Lexer::t_RSQUARE, "']' missing");
+      getNextToken();
+    }
+    return ArraySpef(lengths);
+  }
 }
 
 // def = process <name> ( {0, <formal>} ) inherits ...
@@ -138,8 +212,8 @@ Name *Parser::readName() {
 
 void Parser::readNames(std::vector<Name*> &names) {
   do {
-    names.push_back(readName());
     getNextToken();
+    names.push_back(readName());
   } while(curTok != Lexer::t_COMMA);
 }
 

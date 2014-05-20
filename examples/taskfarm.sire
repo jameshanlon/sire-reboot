@@ -7,7 +7,7 @@ server Farmer() is
     result(val w, val r)) to
 { var results[N]:
   var work:
-  initial work := 0
+  initial work := 0:
   alt { 
     % provide a worker with work if any remains or NONE if not
     accept request(var w):
@@ -20,7 +20,7 @@ server Farmer() is
     % accept a result from a worker
   | accept return(val w, val r): 
       results[w] := r
-  } 
+  }
 }
 
 & process Worker(server Farmer f) is
@@ -40,6 +40,6 @@ server Farmer() is
   }
 }:
 
-f is Farmer(): 
+f is Farmer():
 par [i=0 for N] Worker(f)
 

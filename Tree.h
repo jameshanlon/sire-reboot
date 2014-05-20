@@ -112,6 +112,7 @@ struct Name : public Elem {
 struct Spec : public Node {
   typedef enum {
     DEF,
+    SIMDEF,
     DECL,
     ABBR
   } Type;
@@ -123,6 +124,13 @@ protected:
     type(t), 
     name(n) {}
 };
+
+struct SimDef : public Spec {
+  std::vector<Def*> *defs;
+  SimDef(std::vector<Def*> *d) :
+    Spec(SIMDEF, NULL),
+    defs(d) {}
+}
 
 struct Def : public Spec {
   typedef enum {
