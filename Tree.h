@@ -50,10 +50,8 @@ struct ValSpef : public Spef {
 
 struct ArraySpef : public Spef {
   std::vector<Expr*> *lengths;
-  ArraySpef(Type t, 
-            std::vector<Expr*> *l) :
-    Spef(t),
-    lengths(l) {}
+  ArraySpef(Type t, std::vector<Expr*> *l) :
+    Spef(t), lengths(l) {}
 };
 
 // Formals ====================================================================
@@ -71,18 +69,14 @@ protected:
 
 struct FmlSingle : public Fml {
   Name *name;
-  FmlSingle(Spef *s,
-            Name *n) :
-    Fml(s),
-    name(n) {}
+  FmlSingle(Spef *s, Name *n) :
+    Fml(s), name(n) {}
 };
 
 struct FmlList : public Fml {
   std::vector<Name*> names;
-  FmlList(Spef *s,
-          std::vector<Name*> n) :
-    Fml(s),
-    names(n) {}
+  FmlList(Spef *s, std::vector<Name*> n) :
+    Fml(s), names(n) {}
 };
 
 // Elements ===================================================================
@@ -103,8 +97,7 @@ protected:
 struct Name : public Elem {
   std::string str;
   Name(std::string &s) :
-    Elem(NAME),
-    str(s) {}
+    Elem(NAME), str(s) {}
 };
 
 // Specifications =============================================================
@@ -117,12 +110,15 @@ struct Spec : public Node {
     ABBR
   } Type;
   Type type;
-  Name *name;
+  union {
+    Name *name;
+    std::vector<Name*> *names;
+  };
 protected:
-  Spec(Type t, 
-       Name *n) : 
-    type(t), 
-    name(n) {}
+  Spec(Type t, Name *n) : 
+    type(t), name(n) {}
+  Spec(Type t, std::vector<Name*> *n) : 
+    type(t), names(n) {}
 };
 
 struct SimDef : public Spec {
@@ -141,14 +137,8 @@ struct Def : public Spec {
   DefType tDef;
   std::vector<Fml*> *args;
   Cmd *body;
-  Def(DefType t,
-      Name *n,
-      std::vector<Fml*> *f,
-      Cmd *c) :
-    Spec(DEF, name),
-    tDef(t),
-    args(f), 
-    body(c) {}
+  Def(DefType t, Name *n, std::vector<Fml*> *f, Cmd *c) :
+    Spec(DEF, name), tDef(t), args(f), body(c) {}
 };
 
 struct Decl : public Spec {
@@ -158,26 +148,24 @@ struct Decl : public Spec {
   } DeclType;
   DeclType tDecl;
 protected:
-  Decl(DeclType t, 
-       Name *n) :
-    Spec(DECL, n),
-    tDecl(VAR) {}
+  Decl(DeclType t, Name *n) :
+    Spec(DECL, n), tDecl(VAR) {}
 };
 
 struct VarDecl : public Decl {
   Spef *spef;
-  VarDecl(Spef *s,
-          Name *n) :
-    Decl(VAR, n),
-    spef(s) {}
+  VarDecl(Spef *s, Name *n) :
+    Decl(VAR, n), spef(s) {}
+  VarDecl(Spef *s, std::vector<Name*> *n) :
+    Decl(VAR, n), spef(s) {}
 };
 
 struct ArrayDecl : public Decl {
   ArraySpef *spef;
-  ArrayDecl(Name *n,
-            ArraySpef *s) :
-    Decl(ARRAY, n),
-    spef(s) {}
+  ArrayDecl(ArraySpef *s, Name *n) :
+    Decl(ARRAY, n), spef(s) {}
+  ArrayDecl(ArraySpef *s, std::vector<Name*> *n) :
+    Decl(ARRAY, n), spef(s) {}
 };
 
 struct Abbr : public Spec {
@@ -187,40 +175,28 @@ struct Abbr : public Spec {
   } Type;
   Type type;
 protected:
-  Abbr(Type t, 
-       Name *n) :
-    Spec(Spec::ABBR, n), 
-    type(t) {}
+  Abbr(Type t, Name *n) :
+    Spec(Spec::ABBR, n), type(t) {}
 };
 
 struct ValAbbr : public Abbr {
   Expr *expr;
-  ValAbbr(Name *n,
-          Expr *e) :
-    Abbr(Abbr::VAL, n),
-    expr(e) {}
+  ValAbbr(Name *n, Expr *e) :
+    Abbr(Abbr::VAL, n), expr(e) {}
 };
 
 struct VarAbbr : public Abbr {
   Spef *spef;
   Elem *elem;
-  VarAbbr(Spef *s,
-          Name *n,
-          Elem* e) :
-    Abbr(Abbr::VAR, n),
-    spef(s),
-    elem(e) {}
+  VarAbbr(Spef *s, Name *n, Elem* e) :
+    Abbr(Abbr::VAR, n), spef(s), elem(e) {}
 };
 
 struct ArrayAbbr : public Abbr {
   ArraySpef *spef;
   Elem *elem;
-  ArrayAbbr(ArraySpef *s,
-            Name *n, 
-            Elem* e) :
-    Abbr(Abbr::VAR, n),
-    spef(s),
-    elem(e) {}
+  ArrayAbbr(ArraySpef *s, Name *n, Elem* e) :
+    Abbr(Abbr::VAR, n), spef(s), elem(e) {}
 };
 
 // Commands ===================================================================
@@ -260,35 +236,27 @@ struct Ass : public Cmd {
   Elem *lhs;
   Expr *rhs;
   Ass(Elem *lhs, Expr *rhs) : 
-    Cmd(Cmd::ASS),
-    lhs(lhs), 
-    rhs(rhs) {}
+    Cmd(Cmd::ASS), lhs(lhs),  rhs(rhs) {}
 };
 
 struct In : public Cmd {
   Elem *lhs, *rhs;
   In(Elem *lhs, Elem *rhs) : 
-    Cmd(Cmd::IN),
-    lhs(lhs),
-    rhs(rhs) {}
+    Cmd(Cmd::IN), lhs(lhs), rhs(rhs) {}
 };
 
 struct Out : public Cmd {
   Elem *lhs;
   Expr *rhs;
   Out(Elem *lhs, Expr *rhs) : 
-    Cmd(Cmd::OUT),
-    lhs(lhs),
-    rhs(rhs) {}
+    Cmd(Cmd::OUT), lhs(lhs), rhs(rhs) {}
 };
 
 struct Connect : public Cmd {
   Elem *local;
   Elem *remote;
   Connect(Elem *l, Elem *r) : 
-    Cmd(CONN),
-    local(l),
-    remote(r) {}
+    Cmd(CONN), local(l), remote(r) {}
 };
 
 struct Altn {
@@ -297,8 +265,7 @@ struct Altn {
 struct Alt : public Cmd {
   std::vector<Altn> *altns;
   Alt(std::vector<Altn> *altns) : 
-    Cmd(Cmd::ALT),
-    altns(altns) {}
+    Cmd(Cmd::ALT), altns(altns) {}
 };
 
 struct Choice {
@@ -307,8 +274,7 @@ struct Choice {
 struct Cond : public Cmd {
   std::vector<Choice> *choices;
   Cond(std::vector<Choice> *choices) : 
-    Cmd(Cmd::COND),
-    choices(choices) {}
+    Cmd(Cmd::COND), choices(choices) {}
 };
 
 struct IfTE : public Cmd {
@@ -321,16 +287,13 @@ struct Loop : public Cmd {
   Expr *cond;
   Cmd *body;
   Loop(Expr *cond, Cmd *body) : 
-    Cmd(Cmd::LOOP),
-    cond(cond),
-    body(body) {}
+    Cmd(Cmd::LOOP), cond(cond), body(body) {}
 };
 
 struct Seq : public Cmd {
   std::vector<Cmd*> cmds;
   Seq(std::vector<Cmd*> &cmds) : 
-    Cmd(Cmd::SEQ),
-    cmds(cmds) {}
+    Cmd(Cmd::SEQ), cmds(cmds) {}
 };
 
 struct Par : public Cmd {

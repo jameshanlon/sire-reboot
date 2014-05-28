@@ -43,10 +43,15 @@ Tree *Parser::readProg() {
     Spec *spec = readSpec();
     
     // Read a sequential specification
-    if (spec->type == Lexer::t_COLON)
+    switch(curTok) {
+    default:
+      error("invalid separator for specification");
+      break;
+    case Lexer::t_COLON:
       tree->spec.push_back(readSpec());
+      break;
     // Read simultaneous definitions
-    else if (curTok == Lexer::t_AND) {
+    case Lexer::t_AND:
       if (spec->type != Spec::DEF)
         error("cannot make a simultaneous declaration");
       std::vector<Def*> defs = new std::vector<Def*>();
@@ -57,9 +62,8 @@ Tree *Parser::readProg() {
       } while (curTok == Lexer::AND);
       SimDef *simDef = new SimDef(defs); 
       tree->spec.push_back(simDef);
+      break;
     }
-    else
-      error("invalid separator for specification");
   }
 
   // Read program command sequence
@@ -76,46 +80,54 @@ Spec *Parser::readSpec() {
   switch(curTok) {
   default:                assert(0 && "invalid token");
   case Lexer::t_EOF:      return NULL;
+  case Lexer::t_VAL:      return readValAbbr();
   case Lexer::t_VAR:      return readDecl();
-  case Lexer::t_VAL:      return readDecl();
   case Lexer::t_FUNCTION: return readFunc();
   case Lexer::t_PROCESS:  return readProc();
   case Lexer::t_SERVER:   return readServ();
   }
 }
 
+// abbreviation = <specifier> <name> is <element>
+Decl *Parser::readValAbbr() {
+  getNextToken();
+  Spef *s = readSpef();
+  Name *n = readName();
+  return VarAbbr(s, n, readElem());  
+}
+
+// declaration  = <specifier> {1 , <name> }
+// abbreviation = <specifier> <name> is <element>
 Decl *Parser::readDecl() {
   Spef *s = readSpef();
   Name *n = readName();
   switch (curTok) {
-  default:
-  // Abbreviation
-  case Lexer::t_IS:
-    return VarAbbr(s, n, readElem());  
+  default: assert(0 && "invalid token");
+  
   // Name list
   case Lexer::t_COMMA: {
     std::vector<Name*> names = new std::vector<Name*>();
     readNames(names);
-    return 
+    return VarDecl(names);
     }
-  // End
-  case Lexer::t_COLON:
+  
+  // Abbreviation
+  case Lexer::t_IS:
+    return VarAbbr(s, n, readElem());  
   }
+
+  checkFor(Lexer::t_COLON, "expected ':' after declaration or abbreviation");
   return (Decl *) NULL;
 }
 
-// specifier      = <primitive-type>
-//                | <specifier> [ ]
-//                | <specifier> [ <expr> ]
-// primitive-type = var
+// specifier = <type>
+//           | <specifier> [ ]
+//           | <specifier> [ <expr> ]
+// type      = var
 Spef *Parser::readSpef() {
   switch (curTok) {
   default: error("invalid specifier");
   
-  // Value specifier
-  case Lexer::t_VAL:
-    return ValSpef();
-
   case Lexer::t_VAR:
     getNextToken();
 
@@ -134,9 +146,30 @@ Spef *Parser::readSpef() {
   }
 }
 
-// def = process <name> ( {0, <formal>} ) inherits ...
-//     | process <name> ( {0, <formal>} ) is <cmd>
+// def = process <name> ( {0, <formal>} ) is <cmd>
 Def *Parser::readProc() {
+  getNextToken();
+  Name *name = readName();
+  checkFor(Lexer::t_LPAREN, "'(' missing");
+  std::vector<Fml*> *args = new std::vector<Fml*>();
+  readFmls(*args);
+  checkFor(Lexer::t_RPAREN, "')' missing");
+
+  checkFor(Lexer::t_IS, "'is' missing");
+  if(curTok == Lexer::t_INTERFACE) {
+    std::vector<Decl*> *interfaces = new std::vector<Decl*>();
+    readInterfaces(*interfaces);
+    checkFor(Lexer::t_TO, "'to' missing");
+  }
+  Cmd *cmd = readCmd();
+  return new Def(Def::PROCESS, name, args, cmd);
+}
+
+// definition  = server <name> ( {0, <formal>} ) inherits <hiding-decl>
+//             | server <name> ( {0, <formal>} ) is <cmd>
+// hiding-decl = from { {1 : <declaration> } } interface <name>
+Def *Parser::readServ() {
+  getNextToken();
   Name *name = readName();
   checkFor(Lexer::t_LPAREN, "'(' missing");
   std::vector<Fml*> *args = new std::vector<Fml*>();
@@ -158,12 +191,8 @@ Def *Parser::readProc() {
   return new Def(Def::PROCESS, name, args, cmd);
 }
 
-// def := <name> ( {0, <formal>} ) is ...
-Def *Parser::readServ() {
-  return NULL;
-}
-
-// def := function <name> ( {0, <formal>} ) is <valof>
+// def = function <name> ( {0, <formal>} ) is <valof>
+//     | function <name> ( {0, <formal>} ) is <expr>
 Def *Parser::readFunc() {
   return (Def*) NULL;
 }
