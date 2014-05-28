@@ -4,7 +4,7 @@
 #include "Lexer.h"
 #include "Tree.h"
 
-#include <vector>
+#include <list>
 
 #define SYN Parser::get()
 
@@ -21,20 +21,25 @@ private:
   Lexer::Token curTok;
   void getNextToken();
   void checkFor(Lexer::Token, const char*);
+  void error(const char *);
   Tree *readProg();
   Spec *readSpec();
-  Decl *readDecl();
-  Decl *readAbbr();
+  Abbr *readValAbbr();
+  Spec *readDeclAbbr();
+  Spef *readSpef();
+  Def *readDef();
   Def *readProc();
   Def *readServ();
   Def *readFunc();
-  void readFmls(std::vector<Fml*>&);
-  void readInterfaces(std::vector<Decl*>&);
   Fml *readFml();
   Decl *readInterface();
   Cmd *readCmd();
+  Elem *readElem();
+  Expr *readExpr();
   Name *readName();
-  void readNames(std::vector<Name*>&);
+  std::list<Fml*> *readFmls();
+  std::list<Decl*> *readInterfaces();
+  std::list<Name*> *readNames();
 };
 
 #endif

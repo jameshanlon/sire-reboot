@@ -1,15 +1,15 @@
 #ifndef TREE_H
 #define TREE_H
 
-#include <vector>
+#include <list>
 #include <string>
 
 struct Node;
 
 // The syntax tree base struct
 struct Tree {
-  std::vector<Node*> spec;
-  std::vector<Node*> prog;
+  std::list<Node*> spec;
+  std::list<Node*> prog;
   //void print();
 };
 
@@ -49,9 +49,9 @@ struct ValSpef : public Spef {
 };
 
 struct ArraySpef : public Spef {
-  std::vector<Expr*> *lengths;
-  ArraySpef(Type t, std::vector<Expr*> *l) :
-    Spef(t), lengths(l) {}
+  std::list<Expr*> *lengths;
+  ArraySpef(std::list<Expr*> *l) :
+    Spef(ARRAY), lengths(l) {}
 };
 
 // Formals ====================================================================
@@ -62,21 +62,14 @@ struct Fml : public Node {
     LIST
   } Type;
   Spef *spef;
-protected:
-  Fml(Spef *s) :
-    spef(s) {}
-};
-
-struct FmlSingle : public Fml {
-  Name *name;
-  FmlSingle(Spef *s, Name *n) :
-    Fml(s), name(n) {}
-};
-
-struct FmlList : public Fml {
-  std::vector<Name*> names;
-  FmlList(Spef *s, std::vector<Name*> n) :
-    Fml(s), names(n) {}
+  union {
+    Name *name;
+    std::list<Name*> *names;
+  };
+  Fml(Spef *s, Name *n) :
+    spef(s), name(n) {}
+  Fml(Spef *s, std::list<Name*> *n) :
+    spef(s), names(n) {}
 };
 
 // Elements ===================================================================
@@ -112,21 +105,14 @@ struct Spec : public Node {
   Type type;
   union {
     Name *name;
-    std::vector<Name*> *names;
+    std::list<Name*> *names;
   };
 protected:
   Spec(Type t, Name *n) : 
     type(t), name(n) {}
-  Spec(Type t, std::vector<Name*> *n) : 
+  Spec(Type t, std::list<Name*> *n) : 
     type(t), names(n) {}
 };
-
-struct SimDef : public Spec {
-  std::vector<Def*> *defs;
-  SimDef(std::vector<Def*> *d) :
-    Spec(SIMDEF, NULL),
-    defs(d) {}
-}
 
 struct Def : public Spec {
   typedef enum {
@@ -135,10 +121,16 @@ struct Def : public Spec {
     FUNCTION
   } DefType;
   DefType tDef;
-  std::vector<Fml*> *args;
+  std::list<Fml*> *args;
   Cmd *body;
-  Def(DefType t, Name *n, std::vector<Fml*> *f, Cmd *c) :
+  Def(DefType t, Name *n, std::list<Fml*> *f, Cmd *c) :
     Spec(DEF, name), tDef(t), args(f), body(c) {}
+};
+
+struct SimDef : public Spec {
+  std::list<Def*> *defs;
+  SimDef(std::list<Def*> *d) :
+    Spec(SIMDEF, (Name *) NULL), defs(d) {}
 };
 
 struct Decl : public Spec {
@@ -150,13 +142,15 @@ struct Decl : public Spec {
 protected:
   Decl(DeclType t, Name *n) :
     Spec(DECL, n), tDecl(VAR) {}
+  Decl(DeclType t, std::list<Name*> *n) :
+    Spec(DECL, n), tDecl(VAR) {}
 };
 
 struct VarDecl : public Decl {
   Spef *spef;
   VarDecl(Spef *s, Name *n) :
     Decl(VAR, n), spef(s) {}
-  VarDecl(Spef *s, std::vector<Name*> *n) :
+  VarDecl(Spef *s, std::list<Name*> *n) :
     Decl(VAR, n), spef(s) {}
 };
 
@@ -164,7 +158,7 @@ struct ArrayDecl : public Decl {
   ArraySpef *spef;
   ArrayDecl(ArraySpef *s, Name *n) :
     Decl(ARRAY, n), spef(s) {}
-  ArrayDecl(ArraySpef *s, std::vector<Name*> *n) :
+  ArrayDecl(ArraySpef *s, std::list<Name*> *n) :
     Decl(ARRAY, n), spef(s) {}
 };
 
@@ -263,8 +257,8 @@ struct Altn {
 };
 
 struct Alt : public Cmd {
-  std::vector<Altn> *altns;
-  Alt(std::vector<Altn> *altns) : 
+  std::list<Altn> *altns;
+  Alt(std::list<Altn> *altns) : 
     Cmd(Cmd::ALT), altns(altns) {}
 };
 
@@ -272,8 +266,8 @@ struct Choice {
 };
 
 struct Cond : public Cmd {
-  std::vector<Choice> *choices;
-  Cond(std::vector<Choice> *choices) : 
+  std::list<Choice> *choices;
+  Cond(std::list<Choice> *choices) : 
     Cmd(Cmd::COND), choices(choices) {}
 };
 
@@ -291,8 +285,8 @@ struct Loop : public Cmd {
 };
 
 struct Seq : public Cmd {
-  std::vector<Cmd*> cmds;
-  Seq(std::vector<Cmd*> &cmds) : 
+  std::list<Cmd*> cmds;
+  Seq(std::list<Cmd*> &cmds) : 
     Cmd(Cmd::SEQ), cmds(cmds) {}
 };
 
