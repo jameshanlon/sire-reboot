@@ -2,7 +2,7 @@ val N is 16:
 val SQRTN is 4:
 
 process Node(val i, process Node[SQRTN] p, Source s, Sink t) is
-  interface(chanend in, out):
+  interface(chan in, out):
 { if
   { i = 0:
     { connect in to s.out;
@@ -25,8 +25,8 @@ process Node(val i, process Node[SQRTN] p, Source s, Sink t) is
   }
 }
 
-& process Source(chanend in) is
-    interface(chanend c):
+& process Source(chan in) is
+    interface(chan c):
 { connect c to in;
   % generate the first prime, 2
   c ! 2;
@@ -34,8 +34,8 @@ process Node(val i, process Node[SQRTN] p, Source s, Sink t) is
   seq [i=3 for N step 2] c ! i 
 }:
 
-& process Sink(chanend out) is
-    interface(chanend c):
+& process Sink(chan out) is
+    interface(chan c):
 { connect c to out;
   var i:
   var[N] primes:

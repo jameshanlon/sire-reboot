@@ -39,7 +39,7 @@ Lexer::Token Lexer::readToken() {
   case '0': case '1': case '2': case '3': case '4':
   case '5': case '6': case '7': case '8': case '9':
     readNumber();
-    return t_NUMBER;
+    return t_NUM;
   
   // Name: [a-zA-Z][a-zA-Z0-9]*
   case 'a': case 'b': case 'c': case 'd': case 'e':
@@ -60,8 +60,8 @@ Lexer::Token Lexer::readToken() {
   // Symbols
   case '{': tok = t_LCURLY;  break;
   case '}': tok = t_RCURLY;  break;
-  case '[': tok = t_LSQUARE; break;
-  case ']': tok = t_RSQUARE; break;  
+  case '[': tok = t_LSQ;     break;
+  case ']': tok = t_RSQ;     break;  
   case '(': tok = t_LPAREN;  break;
   case ')': tok = t_RPAREN;  break;   
   case ',': tok = t_COMMA;   break; 
@@ -113,7 +113,7 @@ Lexer::Token Lexer::readToken() {
     s.clear();
     while(ch!='"' && ch!=EOF)
       s += readStrCh();
-    tok = t_STRING;
+    tok = t_STR;
     break;
   
   case '\'':
@@ -207,9 +207,10 @@ void Lexer::declare(const char *keyword, Lexer::Token t) {
 
 void Lexer::declareKeywords() {
   declare("accept",    Lexer::t_ACCEPT); 
-  declare("alt",       Lexer::t_ALT);    
+  declare("alt",       Lexer::t_ALT);  
   declare("call",      Lexer::t_CALL);
-  declare("chanend",   Lexer::t_CHANEND);
+  declare("case",      Lexer::t_CASE);
+  declare("chan",      Lexer::t_CHAN);
   declare("connect",   Lexer::t_CONNECT); 
   declare("do",        Lexer::t_DO);    
   declare("else",      Lexer::t_ELSE);  
@@ -217,24 +218,25 @@ void Lexer::declareKeywords() {
   declare("final",     Lexer::t_FINAL);   
   declare("for",       Lexer::t_FOR);    
   declare("from",      Lexer::t_FROM);
-  declare("function",  Lexer::t_FUNCTION);
+  declare("function",  Lexer::t_FUNC);
   declare("if",        Lexer::t_IF);
-  declare("inherits",  Lexer::t_INHERITS); 
-  declare("initial",   Lexer::t_INITIAL);
-  declare("interface", Lexer::t_INTERFACE);
+  declare("inherits",  Lexer::t_INHRT); 
+  declare("initial",   Lexer::t_INIT);
+  declare("interface", Lexer::t_INTF);
   declare("is",        Lexer::t_IS);     
   declare("on",        Lexer::t_ON);     
   declare("par",       Lexer::t_PAR);
-  declare("process",   Lexer::t_PROCESS);
-  declare("result",    Lexer::t_RESULT);  
+  declare("process",   Lexer::t_PROC);
+  declare("result",    Lexer::t_RES);  
   declare("seq",       Lexer::t_SEQ);  
-  declare("server",    Lexer::t_SERVER);  
+  declare("server",    Lexer::t_SERV);  
   declare("skip",      Lexer::t_SKIP);
   declare("step",      Lexer::t_STEP);   
   declare("stop",      Lexer::t_STOP);    
   declare("then",      Lexer::t_THEN);    
   declare("to",        Lexer::t_TO);
-  declare("true",      Lexer::t_TRUE);    
+  declare("true",      Lexer::t_TRUE);
+  declare("until",     Lexer::t_UNTIL);
   declare("val",       Lexer::t_VAL);   
   declare("valof",     Lexer::t_VALOF);   
   declare("var",       Lexer::t_VAR);
@@ -245,8 +247,14 @@ void Lexer::error(const char *msg) {
   printf("Error near line %d: %s\n", lineNum, msg);
   printChBuf();
   ERR.record();
-  skipLine();
-  readToken();
+  // Skip up to a safer point
+  Lexer::Token tok = readToken();
+  while(tok != t_EOF 
+      || tok != t_SEMI 
+      || tok != t_AND 
+      || tok != t_RCURLY 
+      || tok != t_LCURLY)
+    tok = readToken();
 }
 
 const char *Lexer::tokenStr(Lexer::Token t) {
@@ -254,43 +262,43 @@ const char *Lexer::tokenStr(Lexer::Token t) {
     default:        return "unknown";
     case t_ERROR:   return "Error";
     // Literals
-    case t_NUMBER:  return "Number";  case t_NAME:      return "Name";
+    case t_NUM:     return "Number";  case t_NAME:    return "Name";
     // Symbols
-    case t_LCURLY:  return "Lcurly";  case t_RCURLY:    return "Rcurly"; 
-    case t_LSQUARE: return "Lsquare"; case t_RSQUARE:   return "Rsquare";
-    case t_LPAREN:  return "Lparen";  case t_RPAREN:    return "Rparen"; 
-    case t_COMMA:   return "Comma";   case t_DOT:       return "Dot";
-    case t_SEMI:    return "Semi";    case t_IN:        return "In";     
-    case t_OUT:     return "Out";     case t_EQ:        return "Eq";
-    case t_ADD:     return "Add";     case t_SUB:       return "Sub";    
-    case t_MUL:     return "Mul";     case t_DIV:       return "Div";
-    case t_XOR:     return "Xor";     case t_REM:       return "Rem";     
-    case t_AT:      return "At";      case t_NEQ:       return "Neq";
-    case t_NOT:     return "Not";     case t_LEQ:       return "Leq";     
-    case t_LSH:     return "Lsh";     case t_LT:        return "Lt";
-    case t_GEQ:     return "Geq";     case t_RSH:       return "Rsh";      
-    case t_GT:      return "Gt";      case t_ASS:       return "Ass";
-    case t_COLON:   return "Colon";   case t_LAND:      return "Land";     
-    case t_AND:     return "And";     case t_LOR:       return "Lor";
-    case t_OR:      return "Or";      case t_STRING:    return "String";
+    case t_LCURLY:  return "Lcurly";  case t_RCURLY:  return "Rcurly"; 
+    case t_LSQ:     return "Lsquare"; case t_RSQ:     return "Rsquare";
+    case t_LPAREN:  return "Lparen";  case t_RPAREN:  return "Rparen"; 
+    case t_COMMA:   return "Comma";   case t_DOT:     return "Dot";
+    case t_SEMI:    return "Semi";    case t_IN:      return "In";     
+    case t_OUT:     return "Out";     case t_EQ:      return "Eq";
+    case t_ADD:     return "Add";     case t_SUB:     return "Sub";    
+    case t_MUL:     return "Mul";     case t_DIV:     return "Div";
+    case t_XOR:     return "Xor";     case t_REM:     return "Rem";     
+    case t_AT:      return "At";      case t_NEQ:     return "Neq";
+    case t_NOT:     return "Not";     case t_LEQ:     return "Leq";     
+    case t_LSH:     return "Lsh";     case t_LT:      return "Lt";
+    case t_GEQ:     return "Geq";     case t_RSH:     return "Rsh";      
+    case t_GT:      return "Gt";      case t_ASS:     return "Ass";
+    case t_COLON:   return "Colon";   case t_LAND:    return "Land";     
+    case t_AND:     return "And";     case t_LOR:     return "Lor";
+    case t_OR:      return "Or";      case t_STR:     return "String";
     case t_CHAR:    return "Char";
     // Keywords
-    case t_ACCEPT:  return "Accept";  case t_ALT:       return "Alt"; 
-    case t_CALL:    return "Call";    case t_CHANEND:   return "Chanend";
-    case t_CONNECT: return "Connet";  case t_DO:        return "Do";   
-    case t_ELSE:    return "Else";    case t_FALSE:     return "False";
-    case t_FINAL:   return "Final";   case t_FOR:       return "For";
-    case t_FROM:    return "From";    case t_FUNCTION:  return "Function";
-    case t_IF:      return "If";      case t_INHERITS:  return "Inherits";
-    case t_INITIAL: return "Initial"; case t_INTERFACE: return "Interface";
-    case t_IS:      return "Is";      case t_ON:        return "On"; 
-    case t_PAR:     return "Par";     case t_PROCESS:   return "Process";
-    case t_RESULT:  return "Result";  case t_SEQ:       return "Seq";
-    case t_SERVER:  return "Server";  case t_SKIP:      return "Skip";
-    case t_STEP:    return "Step";    case t_STOP:      return "Stop";
-    case t_THEN:    return "Then";    case t_TO:        return "To";
-    case t_TRUE:    return "True";    case t_VAL:       return "Val";     
-    case t_VALOF:   return "Valof";   case t_VAR:       return "Var";
+    case t_ACCEPT:  return "Accept";  case t_ALT:     return "Alt"; 
+    case t_CALL:    return "Call";    case t_CHAN:    return "Chan";
+    case t_CONNECT: return "Connet";  case t_DO:      return "Do";   
+    case t_ELSE:    return "Else";    case t_FALSE:   return "False";
+    case t_FINAL:   return "Final";   case t_FOR:     return "For";
+    case t_FROM:    return "From";    case t_FUNC:    return "Function";
+    case t_IF:      return "If";      case t_INHRT:   return "Inherits";
+    case t_INIT:    return "Initial"; case t_INTF:    return "Interface";
+    case t_IS:      return "Is";      case t_ON:      return "On"; 
+    case t_PAR:     return "Par";     case t_PROC:    return "Process";
+    case t_RES:     return "Result";  case t_SEQ:     return "Seq";
+    case t_SERV:    return "Server";  case t_SKIP:    return "Skip";
+    case t_STEP:    return "Step";    case t_STOP:    return "Stop";
+    case t_THEN:    return "Then";    case t_TO:      return "To";
+    case t_TRUE:    return "True";    case t_VAL:     return "Val";     
+    case t_VALOF:   return "Valof";   case t_VAR:     return "Var";
     case t_WHILE:   return "While"; 
   }
 }

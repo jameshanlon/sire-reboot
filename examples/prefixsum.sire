@@ -1,17 +1,17 @@
 val D is 3:
 val N is 1 << D:
 
-process Root(chanend root) is
-  interface(chanend c) to
+process Root(chan root) is
+  interface(chan c) to
 { connect c to root;
   var v:
   root ! 0;
   root ? v
 }
 
-& process Branch(val i, chanend m, 
+& process Branch(val i, chan m, 
     process Branch[N-1] b, Leaf[N] l) is
-  interface(chanend root, left, right) to
+  interface(chan root, left, right) to
 { if i = 0
   then connect root to m
   else if i rem 2 = 1
@@ -33,7 +33,7 @@ process Root(chanend root) is
 }
 
 & process Leaf(val i, process Branch[N-1] b) is
-  interface(chanend root) to
+  interface(chan root) to
 { if i rem 2 = 1
   then connect root to b[N-(i/2)].left
   else connect root to b[N-(i/2)].right;

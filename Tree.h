@@ -19,6 +19,7 @@ struct Node {
 
 // Base Tree Node types
 struct Spec;
+struct Decl;
 struct Cmd;
 struct Fml;
 struct Expr;
@@ -29,29 +30,34 @@ struct Name;
 
 struct Spef : public Node {
   typedef enum {
-    VAR,
     VAL,
-    ARRAY
+    VAR,
+    CHAN,
+    CALL,
+    INTF,
+    PROC,
+    SERV,
+    FUNC
   } Type;
   Type type;
-protected:
-  Spef(Type t) : type(t) {}
-};
-
-struct VarSpef : public Spef {
-  VarSpef() :
-    Spef(VAR) {}
-};
-
-struct ValSpef : public Spef {
-  ValSpef() :
-    Spef(VAL) {}
-};
-
-struct ArraySpef : public Spef {
+  bool val;
   std::list<Expr*> *lengths;
-  ArraySpef(std::list<Expr*> *l) :
-    Spef(ARRAY), lengths(l) {}
+  Spef(Type t, bool v, std::list<Expr*> *l) : 
+    type(t), val(v), lengths(NULL) {}
+};
+
+// Interface specifier
+struct IntfSpef : public Spef {
+  std::list<Decl*> *intf;
+  IntfSpef(Type t, std::list<Decl*> *i, std::list<Expr*> *l) :
+    Spef(t, false, l), intf(i) {}
+};
+
+// Named specifier
+struct NamedSpef : public Spef {
+  Name *name;
+  NamedSpef(Type t, Name *n, std::list<Expr*> *l) :
+    Spef(t, false, l), name(n) {}
 };
 
 // Formals ====================================================================
@@ -87,6 +93,7 @@ protected:
     type(t) {}
 };
 
+// Name
 struct Name : public Elem {
   std::string str;
   Name(std::string &s) :
@@ -98,7 +105,7 @@ struct Name : public Elem {
 struct Spec : public Node {
   typedef enum {
     DEF,
-    SIMDEF,
+    SDEF,
     DECL,
     ABBR
   } Type;
@@ -114,25 +121,52 @@ protected:
     type(t), names(n) {}
 };
 
+// Definition
 struct Def : public Spec {
   typedef enum {
-    SERVER,
-    PROCESS,
-    FUNCTION
+    PROC,
+    SERV,
+    FUNC
   } DefType;
-  DefType tDef;
+  DefType defType;
   std::list<Fml*> *args;
-  Cmd *body;
-  Def(DefType t, Name *n, std::list<Fml*> *f, Cmd *c) :
-    Spec(DEF, name), tDef(t), args(f), body(c) {}
+protected:
+  Def(DefType t, Name *n, std::list<Fml*> *a) :
+    Spec(DEF, n), defType(t), args(a) {}
 };
 
+// Process definition
+struct Proc : public Def {
+  std::list<Decl*> *intf;
+  Cmd *cmd;
+  Proc(Name *n, std::list<Fml*> *a, std::list<Decl*> *i, Cmd *c) :
+    Def(PROC, n, a), intf(i), cmd(c) {}
+};
+
+// Server definition
+struct Serv : public Def {
+  Cmd *body;
+  std::list<Decl*> *intf;
+  std::list<Decl*> *decls;
+  Serv(Name *n, std::list<Fml*> *a, std::list<Decl*> *i, std::list<Decl*> *d) :
+    Def(SERV, n, a), intf(i), decls(d) {}
+};
+
+// Function definition
+struct Func : public Def {
+  Expr *expr;
+  Func(Name *n, std::list<Fml*> *a, Expr *e) :
+    Def(FUNC, n, a), expr(e) {}
+};
+
+// Simultaneous definition
 struct SimDef : public Spec {
   std::list<Def*> *defs;
   SimDef(std::list<Def*> *d) :
-    Spec(SIMDEF, (Name *) NULL), defs(d) {}
+    Spec(SDEF, (Name *) NULL), defs(d) {}
 };
 
+// Declaration
 struct Decl : public Spec {
   typedef enum {
     VAR,
@@ -146,6 +180,7 @@ protected:
     Spec(DECL, n), tDecl(VAR) {}
 };
 
+// Variable declaration
 struct VarDecl : public Decl {
   Spef *spef;
   VarDecl(Spef *s, Name *n) :
@@ -154,14 +189,20 @@ struct VarDecl : public Decl {
     Decl(VAR, n), spef(s) {}
 };
 
-struct ArrayDecl : public Decl {
-  ArraySpef *spef;
-  ArrayDecl(ArraySpef *s, Name *n) :
-    Decl(ARRAY, n), spef(s) {}
-  ArrayDecl(ArraySpef *s, std::list<Name*> *n) :
-    Decl(ARRAY, n), spef(s) {}
+// Call declaration
+struct CallDecl : public Decl {
+  Spef *spef;
+  union {
+    std::list<Fml*> *args;
+    std::list<std::list<Fml*>*> *argss;
+  };
+  CallDecl(Spef *s, Name *n, std::list<Fml*> *a) :
+    Decl(VAR, n), spef(s), args(a) {}
+  CallDecl(Spef *s, std::list<Name*> *n, std::list<std::list<Fml*>*> *a) :
+    Decl(VAR, n), spef(s), argss(a) {}
 };
 
+// Abbreviation
 struct Abbr : public Spec {
   typedef enum {
     VAL,
@@ -173,12 +214,14 @@ protected:
     Spec(Spec::ABBR, n), type(t) {}
 };
 
+// Value abbreviation 
 struct ValAbbr : public Abbr {
   Expr *expr;
   ValAbbr(Name *n, Expr *e) :
     Abbr(Abbr::VAL, n), expr(e) {}
 };
 
+// Variable abbreviation
 struct VarAbbr : public Abbr {
   Spef *spef;
   Elem *elem;
@@ -186,25 +229,25 @@ struct VarAbbr : public Abbr {
     Abbr(Abbr::VAR, n), spef(s), elem(e) {}
 };
 
-struct ArrayAbbr : public Abbr {
-  ArraySpef *spef;
-  Elem *elem;
-  ArrayAbbr(ArraySpef *s, Name *n, Elem* e) :
-    Abbr(Abbr::VAR, n), spef(s), elem(e) {}
-};
-
 // Commands ===================================================================
 
 struct Cmd : public Node {
   typedef enum {
+    INSTANCE,
+    CALL,
+    RSEQ,
+    SPEC,
+    // Primitive
     SKIP,
     STOP,
     ASS,
     IN,
     OUT,
     CONN,
+    // Structured
     ALT,
     COND,
+    IFD,
     IFTE,
     LOOP,
     SEQ,
@@ -216,16 +259,50 @@ protected:
     type(t) {}
 };
 
+// Instance
+struct Instance : public Cmd {
+  Name *name;
+  std::list<Expr*> *actuals;
+  Instance(Name *n, std::list<Expr*> *a) :
+    Cmd(INSTANCE), name(n), actuals(a) {}
+};
+
+// Call
+struct Call : public Cmd {
+  Name *name;
+  Name *field;
+  std::list<Expr*> *actuals;
+  Call(Name *n, Name *f, std::list<Expr*> *a) : 
+    Cmd(CALL), name(n), field(f), actuals(a) {}
+};
+
+// Replicated sequence
+struct RSeq : public Cmd {
+  RSeq() :
+    Cmd(RSEQ) {}
+};
+
+// Command specification
+struct CmdSpec : public Cmd {
+  Spec *spec;
+  Cmd *cmd;
+  CmdSpec(Spec *s, Cmd *c) :
+    Cmd(SPEC), spec(s), cmd(c) {}
+};
+
+// Skip
 struct Skip : public Cmd {
   Skip() : 
     Cmd(SKIP) {}
 };
 
+// Stop
 struct Stop : public Cmd {
   Stop() : 
     Cmd(STOP) {}
 };
 
+// Assignment
 struct Ass : public Cmd {
   Elem *lhs;
   Expr *rhs;
@@ -233,12 +310,14 @@ struct Ass : public Cmd {
     Cmd(Cmd::ASS), lhs(lhs),  rhs(rhs) {}
 };
 
+// Input
 struct In : public Cmd {
   Elem *lhs, *rhs;
   In(Elem *lhs, Elem *rhs) : 
     Cmd(Cmd::IN), lhs(lhs), rhs(rhs) {}
 };
 
+// Output
 struct Out : public Cmd {
   Elem *lhs;
   Expr *rhs;
@@ -246,6 +325,7 @@ struct Out : public Cmd {
     Cmd(Cmd::OUT), lhs(lhs), rhs(rhs) {}
 };
 
+// Connect
 struct Connect : public Cmd {
   Elem *local;
   Elem *remote;
@@ -253,30 +333,43 @@ struct Connect : public Cmd {
     Cmd(CONN), local(l), remote(r) {}
 };
 
+// Alternation
 struct Altn {
 };
 
+// Alternative
 struct Alt : public Cmd {
   std::list<Altn> *altns;
   Alt(std::list<Altn> *altns) : 
     Cmd(Cmd::ALT), altns(altns) {}
 };
 
+// Choice
 struct Choice {
 };
 
+// Conditional
 struct Cond : public Cmd {
   std::list<Choice> *choices;
   Cond(std::list<Choice> *choices) : 
     Cmd(Cmd::COND), choices(choices) {}
 };
 
+// If do
+struct IfD : public Cmd {
+  Cmd *ifCmd;
+  IfD() :
+    Cmd(Cmd::IFD) {}
+};
+
+// If then else
 struct IfTE : public Cmd {
   Cmd *ifCmd, *elseCmd;
   IfTE() :
     Cmd(Cmd::IFTE) {}
 };
 
+// Loop
 struct Loop : public Cmd {
   Expr *cond;
   Cmd *body;
@@ -284,12 +377,14 @@ struct Loop : public Cmd {
     Cmd(Cmd::LOOP), cond(cond), body(body) {}
 };
 
+// Sequence
 struct Seq : public Cmd {
   std::list<Cmd*> cmds;
   Seq(std::list<Cmd*> &cmds) : 
     Cmd(Cmd::SEQ), cmds(cmds) {}
 };
 
+// Parallel
 struct Par : public Cmd {
   Par() : 
     Cmd(Cmd::PAR) {}

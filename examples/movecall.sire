@@ -1,10 +1,10 @@
 val N is 10:
 
 server Store() is
-  interface(call 
-      read(val i, var v), 
-      write(val i, val v), 
-      apply(process f(var[n] a, val n))
+  interface( 
+    call read(val i, var v), 
+    call write(val i, val v), 
+    call apply(process f(var[n] a, val n))
   ) to
 { var[N] a:
   alt 
@@ -18,11 +18,11 @@ server Store() is
 :
 
 function foo(var[n] a, val n) is
-  seq [i=0 for n]: a[i] := 0
+  seq [i=0 for n] a[i] := 0
 :
 
 s is Store():
 var v:
-seq [i=0 for N]: s.write(i, 1);
+seq [i=0 for N] s.write(i, 1);
 s.apply(foo)
 

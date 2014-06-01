@@ -2,8 +2,8 @@ val SQRTN is 4:
 val N is 16:
 val NONE is false:
 
-server Control(chanend pin, pout) is
-  interface(chanend out, in, 
+server Control(chan pin, pout) is
+  interface(chan out, in, 
     call isPrime(val p, var r)) to
   var i, v:
   initial
@@ -23,7 +23,7 @@ server Control(chanend pin, pout) is
 }:
 
 server Node(val i, server Control m, Node[SQRTN] p) is
-  interface(chanend in, out) to
+  interface(chan in, out) to
 { var p, mp:
   initial
   { if i = 0

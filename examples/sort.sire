@@ -17,7 +17,7 @@ function nbr(val id, val d) is
   valof result id xor (1<<d)
 :
   
-process distribute(val id, chanend[D+1] c, var[n] a, val n) is
+process distribute(val id, chan[D+1] c, var[n] a, val n) is
 { var lvl, len, base: 
   lvl := level(id);
   % receive $2^{\ttt{level}(\ttt{id})}$ elements of 'a' from the parent
@@ -31,7 +31,7 @@ process distribute(val id, chanend[D+1] c, var[n] a, val n) is
     seq [j=base for len] c[i] ! a[j]; 
     base := base-len } } :
   
-process collect(val id, chanend[D+1] c, var[n] a, val n) is
+process collect(val id, chan[D+1] c, var[n] a, val n) is
 { var lvl, len, lenPart: 
   lvl := level(id);
   % receive portions of array from each child
@@ -45,7 +45,7 @@ process collect(val id, chanend[D+1] c, var[n] a, val n) is
   seq [i=0 for lenPart] c[lvl] ! a[i]
 }:
 
-process sort(val id, chanend[D+1] c, var a) is
+process sort(val id, chan[D+1] c, var a) is
 { var swp:
   % perform D pairwise exchanges
   seq [i=0 for D]
@@ -63,7 +63,7 @@ process sort(val id, chanend[D+1] c, var a) is
 }:
 
 process Master(process Node n) is
-    interface(chanend c) to
+    interface(chan c) to
 { connect c to n.c[0];
   var a[N];
   seq [i=0 for N] c ! N-i-1; % input the array to the hypercube
@@ -71,7 +71,7 @@ process Master(process Node n) is
 }
 
 & process Node(val id, process Master m, Node[N] n) is
-    interface(chanend[D+1] c) to
+    interface(chan[D+1] c) to
 { seq [i=1 for D] connect c[i-1] to n[nbr(id, i)].c;
   if { id = 0: connect c[0] to m.c };
   var a[N]:
