@@ -233,6 +233,7 @@ void Lexer::declareKeywords() {
   declare("skip",      Lexer::t_SKIP);
   declare("step",      Lexer::t_STEP);   
   declare("stop",      Lexer::t_STOP);    
+  declare("test",      Lexer::t_TEST);    
   declare("then",      Lexer::t_THEN);    
   declare("to",        Lexer::t_TO);
   declare("true",      Lexer::t_TRUE);
@@ -296,9 +297,10 @@ const char *Lexer::tokenStr(Lexer::Token t) {
     case t_RES:     return "Result";  case t_SEQ:     return "Seq";
     case t_SERV:    return "Server";  case t_SKIP:    return "Skip";
     case t_STEP:    return "Step";    case t_STOP:    return "Stop";
-    case t_THEN:    return "Then";    case t_TO:      return "To";
-    case t_TRUE:    return "True";    case t_VAL:     return "Val";     
-    case t_VALOF:   return "Valof";   case t_VAR:     return "Var";
+    case t_TEST:    return "Test";    case t_THEN:    return "Then";    
+    case t_TO:      return "To";      case t_TRUE:    return "True";    
+    case t_UNTIL:   return "Until";   case t_VAL:     return "Val";     
+    case t_VALOF:   return "Valof";   case t_VAR:     return "Var";     
     case t_WHILE:   return "While"; 
   }
 }

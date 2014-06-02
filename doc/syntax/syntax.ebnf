@@ -71,7 +71,7 @@ structured-command          = <alternation>
                             | "{" <sequence> "}"
                             | "{" <parallel> "}";
 % Test                   
-conditional                 = "if" "{" {0 "|" <choice> "}"
+conditional                 = "test" "{" {0 "|" <choice> "}"
                             | "if" <expression> "do" <command>
                             | "if" <expression> "then" <command> "else" <command>;
 choice                      = <guarded-choice>
@@ -183,7 +183,7 @@ operand                     = <element>
                             | "(" <expression> ")";
 
 [Valof]
-valof                       = "valof" <process> "result" <expression>
+valof                       = "valof" <cmd> "result" <expression>
                             | <specification> ":" <valof>;
 expression                  = "(" <valof> ")";
 

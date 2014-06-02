@@ -393,7 +393,8 @@ Cmd *Parser::readCmd() {
     case Lexer::t_OUT:
       getNextToken();
       return new Out(name, readExpr());
-    
+
+    // Instance
     case Lexer::t_LPAREN: {
       getNextToken();
       std::list<Expr*> *actuals = readActuals();
@@ -401,6 +402,7 @@ Cmd *Parser::readCmd() {
       return new Instance(name, actuals);
     }
     
+    // Call
     case Lexer::t_DOT: {
         getNextToken();
         Name *field = readName();
@@ -413,13 +415,40 @@ Cmd *Parser::readCmd() {
   } 
 
   // Structured commands
+  // cond = "if" <expr> "do" <cmd>
+  //      | "if" <expr> "then" <cmd> "else" <cmd>
+  case Lexer::t_IF: {
+    getNextToken();
+    Expr* expr = readExpr();
+    switch(curTok) {
+      default:
+        error("expecting 'do' or 'then'");
+        return NULL;
+
+      case Lexer::t_DO:
+        return IfD(expr, readCmd());
+      
+      case Lexer::t_THEN: {
+        Cmd *thenCmd = readCmd();
+        checkFor(Lexer::t_ELSE, "'else' missing");
+        return IfTE(expr, thenCmd, readCmd());
+    }
+    return NULL;
+  }
+
+  // cond = "test" "{" {0 "|" <choice> } "}" 
+  case Lexer::t_TEST: {
+    getNextToken();
+    checkFor(Lexer::t_LPAREN, "'{' missing");
+    std::list<Choice*> *choices = readChoices();
+    checkFor(Lexer::t_RPAREN, "'}' missing");
+    return Test(choices);
+  }
+
   case Lexer::t_ALT:
     return NULL;
 
   case Lexer::t_CASE:
-    return NULL;
-
-  case Lexer::t_IF:
     return NULL;
 
   case Lexer::t_WHILE:
@@ -448,23 +477,6 @@ Cmd *Parser::readCmd() {
     return new CmdSpec(NULL, readCmd());
 
   }
-}
-
-// elem = ...
-Elem *Parser::readElem() {
-  return NULL;
-}
-
-// <name>
-Name *Parser::readName() {
-  std::string *s = &LEX.s;
-  checkFor(Lexer::t_NAME, "name expected");
-  return new Name(*s);
-}
-
-// expr = ...
-Expr *Parser::readExpr() {
-  return NULL;
 }
 
 // "(" {0 "," <formal> } ")"
@@ -501,6 +513,23 @@ std::list<Decl*> *Parser::readIntfs() {
   } while (curTok != Lexer::t_COMMA);
   checkFor(Lexer::t_RPAREN, "')' missing");
   return interfaces;
+}
+
+// elem = ...
+Elem *Parser::readElem() {
+  return NULL;
+}
+
+// <name>
+Name *Parser::readName() {
+  std::string *s = &LEX.s;
+  checkFor(Lexer::t_NAME, "name expected");
+  return new Name(*s);
+}
+
+// expr = ...
+Expr *Parser::readExpr() {
+  return NULL;
 }
 
 // {0 "," <name> }

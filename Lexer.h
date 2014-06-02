@@ -36,7 +36,7 @@ public:
     t_RES,     t_SEQ,    t_SERV,  t_SKIP,
     t_STEP,    t_STOP,   t_THEN,  t_TO,
     t_TRUE,    t_VAL,    t_VALOF, t_VAR,
-    t_WHILE,   t_UNTIL,  t_CASE                           
+    t_WHILE,   t_UNTIL,  t_CASE,  t_TEST                      
   } Token;
 
   static Lexer instance;
