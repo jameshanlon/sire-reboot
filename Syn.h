@@ -33,7 +33,9 @@ private:
   Def  *readServ();
   Def  *readFunc();
   Fml  *readFml();
+  std::list<Fml*> *readFmls();
   Decl *readIntf();
+  std::list<Decl*> *readIntfs();
   Cmd  *readCmd();
   Choice *readChoice();
   Altn *readAltn();
