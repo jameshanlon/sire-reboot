@@ -35,13 +35,19 @@ private:
   Fml  *readFml();
   Decl *readIntf();
   Cmd  *readCmd();
+  Choice *readChoice();
+  Altn *readAltn();
+  Rep  *readRep();
+  IndexRange *readIndexRange();
   Elem *readElem();
   Expr *readExpr();
   Name *readName();
-  std::list<Fml*> *readFmls();
-  std::list<Expr*> *readActuals();
-  std::list<Decl*> *readIntfs();
   std::list<Name*> *readNames();
+
+  template<typename T>
+    std::list<T*> *readOptions(T *(Parser::*)());
+  template<typename T>
+    std::list<T*> *readList(T *(Parser::*)());
 };
 
 #endif
