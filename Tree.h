@@ -246,10 +246,12 @@ struct Cmd : public Node {
     CONN,
     // Structured
     ALT,
-    COND,
+    TEST,
     IFD,
     IFTE,
-    LOOP,
+    WHILE,
+    UNTIL,
+    DO,
     SEQ,
     PAR
   } Type;
@@ -257,6 +259,14 @@ struct Cmd : public Node {
 protected:
   Cmd(Type t) :
     type(t) {}
+};
+
+// Command specification
+struct CmdSpec : public Cmd {
+  Spec *spec;
+  Cmd *cmd;
+  CmdSpec(Spec *s, Cmd *c) :
+    Cmd(SPEC), spec(s), cmd(c) {}
 };
 
 // Instance
@@ -282,14 +292,6 @@ struct RSeq : public Cmd {
     Cmd(RSEQ) {}
 };
 
-// Command specification
-struct CmdSpec : public Cmd {
-  Spec *spec;
-  Cmd *cmd;
-  CmdSpec(Spec *s, Cmd *c) :
-    Cmd(SPEC), spec(s), cmd(c) {}
-};
-
 // Skip
 struct Skip : public Cmd {
   Skip() : 
@@ -307,14 +309,14 @@ struct Ass : public Cmd {
   Elem *lhs;
   Expr *rhs;
   Ass(Elem *lhs, Expr *rhs) : 
-    Cmd(Cmd::ASS), lhs(lhs),  rhs(rhs) {}
+    Cmd(ASS), lhs(lhs),  rhs(rhs) {}
 };
 
 // Input
 struct In : public Cmd {
   Elem *lhs, *rhs;
   In(Elem *lhs, Elem *rhs) : 
-    Cmd(Cmd::IN), lhs(lhs), rhs(rhs) {}
+    Cmd(IN), lhs(lhs), rhs(rhs) {}
 };
 
 // Output
@@ -322,7 +324,7 @@ struct Out : public Cmd {
   Elem *lhs;
   Expr *rhs;
   Out(Elem *lhs, Expr *rhs) : 
-    Cmd(Cmd::OUT), lhs(lhs), rhs(rhs) {}
+    Cmd(OUT), lhs(lhs), rhs(rhs) {}
 };
 
 // Connect
@@ -335,61 +337,118 @@ struct Connect : public Cmd {
 
 // Alternation
 struct Altn {
+  typedef enum {
+    ALTN_UNGUARDED,
+    ALTN_GUARDED,
+    ALTN_SKIP,
+    ALTN_NESTED,
+    SPEC,
+  } Type;
+  Type type;
+  Expr *expr;
+  Elem *src;
+  Elem *dst;
+  Cmd *cmd;
+  Altn(Cmd *c) : 
+    type(ALTN_NESTED), expr(NULL), src(NULL), dst(NULL) cmd(NULL) {};
+  Altn(Type t, Cmd *c) : 
+    type(t), expr(e), src(s), dst(d) cmd(c) {};
+};
+
+struct AltnSpec : public Altn {
+  Spec *spec;
+  Altn *altn;
+  AltnSpec(Spec *s, Altn *a) : 
+    Altn(SPEC), spec(s), altn(a) {}
 };
 
 // Alternative
 struct Alt : public Cmd {
   std::list<Altn> *altns;
-  Alt(std::list<Altn> *altns) : 
-    Cmd(Cmd::ALT), altns(altns) {}
+  Alt(std::list<Altn> *a) : 
+    Cmd(ALT), altns(a) {}
 };
 
 // Choice
 struct Choice {
+  typedef enum {
+    CHOICE,
+    SPEC,
+  } Type;
+  Type type;
+  Expr *expr;
+  Cmd *cmd;
+  Choice(Expr *e, Cmd *c) : 
+    type(CHOICE) {};
+};
+
+// Choice specification
+struct ChoiceSpec : public Choice {
+  Spec *spec;
+  Choice *choice;
+  ChoiceSpec(Spec *s, Choice *c) : 
+    Choice(SPEC), spec(s), choice(c) {}
 };
 
 // Conditional
-struct Cond : public Cmd {
+struct Test : public Cmd {
   std::list<Choice> *choices;
-  Cond(std::list<Choice> *choices) : 
-    Cmd(Cmd::COND), choices(choices) {}
+  Cond(std::list<Choice*> *c) : 
+    Cmd(TEST), choices(c) {}
 };
 
 // If do
 struct IfD : public Cmd {
   Cmd *ifCmd;
   IfD() :
-    Cmd(Cmd::IFD) {}
+    Cmd(IFD) {}
 };
 
 // If then else
 struct IfTE : public Cmd {
   Cmd *ifCmd, *elseCmd;
   IfTE() :
-    Cmd(Cmd::IFTE) {}
+    Cmd(IFTE) {}
 };
 
 // Loop
 struct Loop : public Cmd {
   Expr *cond;
   Cmd *body;
-  Loop(Expr *cond, Cmd *body) : 
-    Cmd(Cmd::LOOP), cond(cond), body(body) {}
+  Loop(Expr *e, Cmd *c) :
+    Cmd(LOOP), cond(e), body(c) {}
 };
 
 // Sequence
 struct Seq : public Cmd {
   std::list<Cmd*> cmds;
-  Seq(std::list<Cmd*> &cmds) : 
-    Cmd(Cmd::SEQ), cmds(cmds) {}
+  Seq(std::list<Cmd*> *c) : 
+    Cmd(SEQ), cmds(c) {}
 };
 
 // Parallel
 struct Par : public Cmd {
   Par() : 
-    Cmd(Cmd::PAR) {}
+    Cmd(PAR) {}
 };
 
+// Index range
+struct IndexRange {
+  Name *name;
+  Expr *base;
+  Expr *count;
+  Expr *step;
+  IndexRange(Name *n, Expr *b, Expr *c) :
+    name(n), base(b), count(c), step(NULL) {}
+  IndexRange(Name *n, Expr *b, Expr *c, Expr *s) :
+    name(n), base(b), count(c), step(s) {}
+};
+
+// Replicator
+struct Rep {
+  std::list<IndexRange*> *ranges;
+  Rep(std::list<IndexRange*> r) : ranges(r) {}
+};
 
 // Expressions ================================================================
 

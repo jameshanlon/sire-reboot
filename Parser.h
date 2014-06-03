@@ -33,14 +33,19 @@ private:
   Def  *readServ();
   Def  *readFunc();
   Fml  *readFml();
+  std::list<Fml*> *readFmls();
   Decl *readIntf();
+  std::list<Decl*> *readIntfs();
   Cmd  *readCmd();
+  std::list<Expr*> *readActuals();
+  Choice *readChoice();
+  std::list<Choice*> *readChoices();
+  Choice *readAltn();
+  std::list<Altn*> *readAltns();
+  Rep  *readRep();
   Elem *readElem();
   Expr *readExpr();
   Name *readName();
-  std::list<Fml*> *readFmls();
-  std::list<Expr*> *readActuals();
-  std::list<Decl*> *readIntfs();
   std::list<Name*> *readNames();
 };
 

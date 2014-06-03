@@ -25,12 +25,12 @@ Tree *Parser::formTree() {
   return t;
 }
 
-// program       = <specification> ":" <program>
-//               | <sequence>;
-// specification = <declaration>
-//               | <abbreviation>
-//               | <definition>
-// definition    = {0 "&" <definition>}
+// program       = <spec> ":" <program>
+//               | <seq>;
+// specification = <decl>
+//               | <abbr>
+//               | <def>
+// definition    = {0 "&" <def>}
 Tree *Parser::readProg() {
   Tree *tree = new Tree();
   
@@ -74,9 +74,9 @@ Tree *Parser::readProg() {
   return tree;
 }
 
-// specification = <declaration>
-//               | <abbreviation>
-//               | <definition>
+// specification = <decl>
+//               | <abbr>
+//               | <def>
 Spec *Parser::readSpec() {
   switch(curTok) {
   default:            assert(0 && "invalid token");
@@ -101,8 +101,8 @@ Def *Parser::readDef() {
   }
 }
 
-// abbreviation = <specifier> <name> "is" <element>
-//              | "call" <name> "(" {0 "," <formal> } ")" "is" <name>
+// abbr = <spef> <name> "is" <elem>
+//      | "call" <name> "(" {0 "," <fml> } ")" "is" <name>
 Abbr *Parser::readValAbbr() {
   getNextToken();
   Spef *s = readSpef(true);
@@ -110,10 +110,10 @@ Abbr *Parser::readValAbbr() {
   return new VarAbbr(s, n, readElem()); 
 }
 
-// specification = <declaration>
-//               | <abbreviation>
-// declaration   = <specifier> {1 "," <name> }
-// abbreviation  = <specifier> <name> "is" <element>
+// spec = <decl>
+//      | <abbr>
+// decl = <spec> {1 "," <name> }
+// abbr = <spec> <name> "is" <element>
 Spec *Parser::readDeclAbbr() {
   Spef *spef = readSpef(false);
   Name *name = readName();
@@ -141,17 +141,17 @@ Spec *Parser::readDeclAbbr() {
   return res;
 }
 
-// specifier = <type>
-//           | <type> <name>
-//           | <specifier> "[" "]"
-//           | <specifier> "[" <expr> "]"
-// type      = "var"
-//           | "chanend"
-//           | "call"
-//           | "interface" "(" {0 "," <decl> } ")"
-//           | "process"
-//           | "server"
-//           | "function"
+// spec = <type>
+//      | <type> <name>
+//      | <spef> "[" "]"
+//      | <spef> "[" <expr> "]"
+// type = "var"
+//      | "chan"
+//      | "call"
+//      | "interface" "(" {0 "," <decl> } ")"
+//      | "process"
+//      | "server"
+//      | "function"
 Spef *Parser::readSpef(bool val) {
   Lexer::Token t = curTok;
   getNextToken();
@@ -200,7 +200,7 @@ std::list<Expr*> *Parser::readDims() {
   }
 }
 
-// def = process <name> "(" {0 "," <formal>} ")" "is" <cmd>
+// def = process <name> "(" {0 "," <fml>} ")" "is" <cmd>
 Def *Parser::readProc() {
   assert(curTok == Lexer::t_PROC);
   getNextToken();
@@ -217,9 +217,9 @@ Def *Parser::readProc() {
   return new Proc(name, args, intfs, readCmd());
 }
 
-// definition  = "server" <name> "(" {0, <formal>} ")" "inherits" <hiding-decl>
-//             | "server" <name> "(" {0, <formal>} ")" "is" <cmd>
-// hiding-decl = "from" { {1 : <declaration> } } "interface" <name>
+// definition  = "server" <name> "(" {0, <fml>} ")" "inherits" <hiding-decl>
+//             | "server" <name> "(" {0, <fml>} ")" "is" <cmd>
+// hiding-decl = "from" { {1 : <decl> } } "interface" <name>
 Def *Parser::readServ() {
   assert(curTok == Lexer::t_SERV);
   getNextToken();
@@ -244,7 +244,7 @@ Def *Parser::readServ() {
   return new Serv(name, args, intfs, NULL);
 }
 
-// def = "function" <name> "(" {0 "," <formal>} ")" "is" <expr>
+// def = "function" <name> "(" {0 "," <fml>} ")" "is" <expr>
 Def *Parser::readFunc() {
   assert(curTok == Lexer::t_FUNC);
   getNextToken();
@@ -256,8 +256,8 @@ Def *Parser::readFunc() {
   return new Func(name, args, readExpr());
 }
 
-// <declaration>
-// declaration = "call" {1 "," <name> "(" <formal> ")" }
+// <decl>
+// decl = "call" {1 "," <name> "(" <fml> ")" }
 Decl *Parser::readIntf() {
   switch(curTok) {
     default: 
@@ -302,8 +302,8 @@ Decl *Parser::readIntf() {
   }
 }
 
-// formal = <specifier> {1 "," <name> }
-//        | "val" <specifier> {1 "," <name> }
+// fml = <spef> {1 "," <name> }
+//     | "val" <spef> {1 "," <name> }
 Fml *Parser::readFml() {
   bool val = false;
   if (curTok == Lexer::t_VAL) {
@@ -337,12 +337,12 @@ Fml *Parser::readFml() {
 //            | <struct-cmd>
 //            | <instance>
 //            | <call>
-//            | "seq" <replicator> ":" <cmd>
-//            | <specification> ":" <cmd>
-// prim-cmd   = <assignment>
+//            | "seq" <rep> ":" <cmd>
+//            | <spec> ":" <cmd>
+// prim-cmd   = <ass>
 //            | <connect> 
-//            | <input>
-//            | <output>
+//            | <in>
+//            | <out>
 //            | <skip>
 //            | <stop>
 // struct-cmd = "{" <par>" "}"
@@ -436,33 +436,59 @@ Cmd *Parser::readCmd() {
     return NULL;
   }
 
-  // cond = "test" "{" {0 "|" <choice> } "}" 
-  case Lexer::t_TEST: {
+  // cond = "test" "{" {0 "|" <choice> } "}"
+  //      | "test" <rep> <choice>
+  case Lexer::t_TEST:
     getNextToken();
-    checkFor(Lexer::t_LPAREN, "'{' missing");
-    std::list<Choice*> *choices = readChoices();
-    checkFor(Lexer::t_RPAREN, "'}' missing");
-    return Test(choices);
-  }
+    switch (curTok) {
+  
+    case Lexer::t_LPAREN:
+      return new Test(readChoices());
+    
+    case Lexer::t_LSQ:
+      return new RepTest(readRep(), readChoice());
+    }
 
+  // alt = "alt" "{" {0 "|" <altn> } "}"
+  //     | "alt" <rep> <choice>
   case Lexer::t_ALT:
-    return NULL;
+    getNextToken();
+    switch (curTok) {
 
+    case Lexer::t_LPAREN:
+      return new Alt(readAltns());
+    
+    case Lexer::t_LSQ:
+      return new RepAlt(readRep(), readAltns());
+    }
+
+  // case = "case" <expr> "{" {0 "|" <selection> } "}"
+  //      | "alt" <rep> <selection>
   case Lexer::t_CASE:
+    // TODO
     return NULL;
 
+  // loop = "while" <expr> "do" <cmd>
   case Lexer::t_WHILE:
+    // TODO
     return NULL;
 
+  // loop = "do" <cmd> "while" <expr>
   case Lexer::t_DO:
+    // TODO
     return NULL;
 
+  // loop = "until" <expr> "do" <cmd>
   case Lexer::t_UNTIL:
+    // TODO
     return NULL;
 
   // Declaration or abbreviation
   case Lexer::t_VAL: 
-  case Lexer::t_VAR: {
+  case Lexer::t_VAR:
+  case Lexer::t_CHAN: 
+  case Lexer::t_CALL: 
+  case Lexer::t_INTF: {
     Spec *spec = readSpec();
     checkFor(Lexer::t_COLON, "':' missing");
     return new CmdSpec(spec, readCmd());
@@ -479,7 +505,115 @@ Cmd *Parser::readCmd() {
   }
 }
 
-// "(" {0 "," <formal> } ")"
+// choice = <cond>
+//        | <spec> ":" <choice>
+//        | <expr> ":" <cmd>
+Choice *Parser::readChoice() {
+  switch(curTok) {
+  
+  // Nested test
+  case Lexer::t_TEST:
+    return new Choice(NULL, readCmd());
+
+  // Choice specification
+  case Lexer::t_VAL:
+  case Lexer::t_VAR: 
+  case Lexer::t_CHAN: 
+  case Lexer::t_CALL: 
+  case Lexer::t_INTF: {
+    Spec *spec = readSpec();
+    checkFor(Lexer::t_COLON, "':' missing");
+    return new ChoiceSpec(spec, readChoice());
+  }
+  
+  // Disallowed specifications
+  case Lexer::t_PROC:
+  case Lexer::t_SERV:
+  case Lexer::t_FUNC:
+    error("definition in specification of choice");
+    readSpec();
+    return new ChoiceSpec(NULL, readCmd());
+  }
+
+  // Choice (assume <expr>)
+  Expr *expr = readExpr();
+  checkFor(Lexer::t_COLON, "':' missing");
+  return new Choice(expr, readCmd());
+}
+
+// {0 "|" <choice> }
+std::list<Choice*> *Parser::readChoices() {
+  checkFor(Lexer::t_LPAREN, "'{' missing");
+  std::list<Choice*> choices = new std::list<Choice*>();
+  do {
+    choices->push_back(readChoice());
+    getNextToken();
+  } while (curTok != Lexer::t_BAR);
+  checkFor(Lexer::t_RPAREN, "'}' missing");
+  return choices;
+}
+
+// altn  = <alt>
+//       | <spec> ":" <altn>
+//       | <guard> ":" <cmd>
+// guard = <elem> "?" <elem>
+//       | <expr> "&" <elem> "?" <elem>
+//       | <expr> "&" <skip>
+Choice *Parser::readAltn() {
+  switch(curTok) {
+  
+  // Nested alt
+  case Lexer::t_ALT:
+    return new Altn(readCmd());
+
+  // Alternative specification
+  case Lexer::t_VAL:
+  case Lexer::t_VAR: 
+  case Lexer::t_CHAN: 
+  case Lexer::t_CALL: 
+  case Lexer::t_INTF: {
+    Spec *spec = readSpec();
+    checkFor(Lexer::t_COLON, "':' missing");
+    return new AltnSpec(spec, readAltn());
+  }
+  
+  // Disallowed specifications
+  case Lexer::t_PROC:
+  case Lexer::t_SERV:
+  case Lexer::t_FUNC:
+    error("definition in specification of alternative");
+    readSpec();
+    return new AltnSpec(NULL, readCmd());
+  }
+
+  // Alternative
+  // TODO: unguarded, guarded, skip
+  //Expr *expr = readExpr();
+  //checkFor(Lexer::t_COLON, "':' missing");
+  //return new Altn(expr, elem, elem, readCmd());
+}
+
+// {0 "|" <altn> }
+std::list<Choice*> *Parser::readAltns() {
+  checkFor(Lexer::t_LPAREN, "'{' missing");
+  std::list<Altn*> altns = new std::list<Altn*>();
+  do {
+    altns->push_back(readAltn());
+    getNextToken();
+  } while (curTok != Lexer::t_BAR);
+  checkFor(Lexer::t_RPAREN, "'}' missing");
+  return altns;
+}
+
+// rep         = "[" {1 "," <index-range> "]"
+// index-range = <name> "=" <expr> "for" <expr>
+//             | <name> "=" <expr> "for" <expr> "step" <expr>
+Rep *Parser::readRep() {
+  // TODO
+  return NULL;
+}
+
+// "(" {0 "," <fml> } ")"
 std::list<Fml*> *Parser::readFmls() {
   checkFor(Lexer::t_LPAREN, "'(' missing");
   std::list<Fml*> *fmls = new std::list<Fml*>();
@@ -503,7 +637,7 @@ std::list<Expr*> *Parser::readActuals() {
   return actuals;
 }
 
-// "(" {0 "," <decl>} ")";
+// "(" {0 "," <decl> } ")";
 std::list<Decl*> *Parser::readIntfs() {
   checkFor(Lexer::t_LPAREN, "'(' missing");
   std::list<Decl*> *interfaces = new std::list<Decl*>();
