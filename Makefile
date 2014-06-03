@@ -5,10 +5,10 @@ TARGET=sire
 SOURCES=\
   main.cpp \
   Error.cpp \
-  SymTable.cpp \
-  Lexer.cpp \
+  Table.cpp \
   Tree.cpp \
-  Parser.cpp
+  Lex.cpp \
+  Syn.cpp
 OBJECTS=$(SOURCES:.cpp=.o)
 
 all: $(TARGET)

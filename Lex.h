@@ -5,9 +5,9 @@
 #include <string>
 
 #define BUF_SIZE 64
-#define LEX Lexer::get()
+#define LEX Lex::get()
 
-class Lexer {
+class Lex {
 
 // The lexical analyser
 
@@ -39,8 +39,8 @@ public:
     t_WHILE,   t_UNTIL,  t_CASE,  t_TEST                      
   } Token;
 
-  static Lexer instance;
-  static Lexer &get() { return instance; }
+  static Lex instance;
+  static Lex &get() { return instance; }
 
   FILE* fp;
   int lineNum;
@@ -52,17 +52,17 @@ public:
   char chBuf[BUF_SIZE];
   bool nlPending;
 
-  Lexer() : lineNum(1), chCount(0) {
+  Lex() : lineNum(1), chCount(0) {
     for(int i=0; i<BUF_SIZE; i++) 
       chBuf[i] = 0;
   }
-  ~Lexer() {}
+  ~Lex() {}
   void init(FILE *p);
   void error(const char *msg);
   void readChar();
   Token readToken();
   void declareKeywords();
-  const char *tokenStr(Lexer::Token t);
+  const char *tokStr(Lex::Token t);
   
 private:
   void readNumber();

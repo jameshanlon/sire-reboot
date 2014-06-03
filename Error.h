@@ -1,7 +1,7 @@
 #ifndef ERROR_H
 #define ERROR_H
 
-#include "Lexer.h"
+#include "Lex.h"
 
 #include <string>
 #include <exception>

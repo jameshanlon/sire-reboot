@@ -1,19 +1,19 @@
-#include "Lexer.h"
-#include "SymTable.h"
+#include "Lex.h"
+#include "Table.h"
 #include "Error.h"
 
 #include <cstdlib>
 
-Lexer Lexer::instance;
+Lex Lex::instance;
 
-void Lexer::init(FILE *p) {
+void Lex::init(FILE *p) {
   fp = p;
   declareKeywords();
   readChar();
 }
 
-Lexer::Token Lexer::readToken() {
-  Lexer::Token tok;
+Lex::Token Lex::readToken() {
+  Lex::Token tok;
   switch(ch) {
  
   // Newlines (skip)
@@ -55,7 +55,7 @@ Lexer::Token Lexer::readToken() {
   case 'U': case 'V': case 'W': case 'X': case 'Y':
   case 'Z':
     readName();
-    return (Lexer::Token) TAB.lookup(s);
+    return (Lex::Token) TAB.lookup(s);
 
   // Symbols
   case '{': tok = t_LCURLY;  break;
@@ -139,12 +139,12 @@ Lexer::Token Lexer::readToken() {
   return tok;
 }
 
-void Lexer::readChar() {
+void Lex::readChar() {
   ch = fgetc(fp);
   chBuf[++chCount & (BUF_SIZE-1)] = ch;
 }
 
-void Lexer::printChBuf() {
+void Lex::printChBuf() {
   printf("\n...");
   for(int i=chCount+1; i<chCount+BUF_SIZE; i++) {
     char c = chBuf[i & (BUF_SIZE-1)];
@@ -154,13 +154,13 @@ void Lexer::printChBuf() {
   printf("\n");
 }
 
-void Lexer::skipLine() {
+void Lex::skipLine() {
   do readChar(); while (ch!=EOF && ch!='\n');
   if(ch=='\n')
     lineNum++;
 }
 
-void Lexer::readNumber() {
+void Lex::readNumber() {
   s.clear();
   do {
     s += ch; 
@@ -169,7 +169,7 @@ void Lexer::readNumber() {
   value = (int) strtol(s.c_str(), NULL, 0);
 }
 
-void Lexer::readName() {
+void Lex::readName() {
   s.clear();
   s = ch;
   readChar();
@@ -181,7 +181,7 @@ void Lexer::readName() {
   }
 }
 
-char Lexer::readStrCh() {
+char Lex::readStrCh() {
   char res = ch;
   if(ch == '\n') {
     lineNum++;
@@ -201,55 +201,55 @@ char Lexer::readStrCh() {
   return res;
 }
 
-void Lexer::declare(const char *keyword, Lexer::Token t) {
+void Lex::declare(const char *keyword, Lex::Token t) {
   TAB.insert(std::string(keyword), t);
 }
 
-void Lexer::declareKeywords() {
-  declare("accept",    Lexer::t_ACCEPT); 
-  declare("alt",       Lexer::t_ALT);  
-  declare("call",      Lexer::t_CALL);
-  declare("case",      Lexer::t_CASE);
-  declare("chan",      Lexer::t_CHAN);
-  declare("connect",   Lexer::t_CONNECT); 
-  declare("do",        Lexer::t_DO);    
-  declare("else",      Lexer::t_ELSE);  
-  declare("false",     Lexer::t_FALSE);
-  declare("final",     Lexer::t_FINAL);   
-  declare("for",       Lexer::t_FOR);    
-  declare("from",      Lexer::t_FROM);
-  declare("function",  Lexer::t_FUNC);
-  declare("if",        Lexer::t_IF);
-  declare("inherits",  Lexer::t_INHRT); 
-  declare("initial",   Lexer::t_INIT);
-  declare("interface", Lexer::t_INTF);
-  declare("is",        Lexer::t_IS);     
-  declare("on",        Lexer::t_ON);     
-  declare("par",       Lexer::t_PAR);
-  declare("process",   Lexer::t_PROC);
-  declare("result",    Lexer::t_RES);  
-  declare("seq",       Lexer::t_SEQ);  
-  declare("server",    Lexer::t_SERV);  
-  declare("skip",      Lexer::t_SKIP);
-  declare("step",      Lexer::t_STEP);   
-  declare("stop",      Lexer::t_STOP);    
-  declare("test",      Lexer::t_TEST);    
-  declare("then",      Lexer::t_THEN);    
-  declare("to",        Lexer::t_TO);
-  declare("true",      Lexer::t_TRUE);
-  declare("until",     Lexer::t_UNTIL);
-  declare("val",       Lexer::t_VAL);   
-  declare("valof",     Lexer::t_VALOF);   
-  declare("var",       Lexer::t_VAR);
-  declare("while",     Lexer::t_WHILE);                         
+void Lex::declareKeywords() {
+  declare("accept",    Lex::t_ACCEPT); 
+  declare("alt",       Lex::t_ALT);  
+  declare("call",      Lex::t_CALL);
+  declare("case",      Lex::t_CASE);
+  declare("chan",      Lex::t_CHAN);
+  declare("connect",   Lex::t_CONNECT); 
+  declare("do",        Lex::t_DO);    
+  declare("else",      Lex::t_ELSE);  
+  declare("false",     Lex::t_FALSE);
+  declare("final",     Lex::t_FINAL);   
+  declare("for",       Lex::t_FOR);    
+  declare("from",      Lex::t_FROM);
+  declare("function",  Lex::t_FUNC);
+  declare("if",        Lex::t_IF);
+  declare("inherits",  Lex::t_INHRT); 
+  declare("initial",   Lex::t_INIT);
+  declare("interface", Lex::t_INTF);
+  declare("is",        Lex::t_IS);     
+  declare("on",        Lex::t_ON);     
+  declare("par",       Lex::t_PAR);
+  declare("process",   Lex::t_PROC);
+  declare("result",    Lex::t_RES);  
+  declare("seq",       Lex::t_SEQ);  
+  declare("server",    Lex::t_SERV);  
+  declare("skip",      Lex::t_SKIP);
+  declare("step",      Lex::t_STEP);   
+  declare("stop",      Lex::t_STOP);    
+  declare("test",      Lex::t_TEST);    
+  declare("then",      Lex::t_THEN);    
+  declare("to",        Lex::t_TO);
+  declare("true",      Lex::t_TRUE);
+  declare("until",     Lex::t_UNTIL);
+  declare("val",       Lex::t_VAL);   
+  declare("valof",     Lex::t_VALOF);   
+  declare("var",       Lex::t_VAR);
+  declare("while",     Lex::t_WHILE);                         
 }
 
-void Lexer::error(const char *msg) {
+void Lex::error(const char *msg) {
   printf("Error near line %d: %s\n", lineNum, msg);
   printChBuf();
   ERR.record();
   // Skip up to a safer point
-  Lexer::Token tok = readToken();
+  Lex::Token tok = readToken();
   while(tok != t_EOF 
       || tok != t_SEMI 
       || tok != t_AND 
@@ -258,7 +258,7 @@ void Lexer::error(const char *msg) {
     tok = readToken();
 }
 
-const char *Lexer::tokenStr(Lexer::Token t) {
+const char *Lex::tokStr(Lex::Token t) {
   switch(t) { 
     default:        return "unknown";
     case t_ERROR:   return "Error";

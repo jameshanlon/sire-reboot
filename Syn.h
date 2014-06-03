@@ -1,26 +1,26 @@
 #ifndef PARSER_H
 #define PARSER_H
 
-#include "Lexer.h"
+#include "Lex.h"
 #include "Tree.h"
 
 #include <list>
 
-#define SYN Parser::get()
+#define SYN Syn::get()
 
-class Parser {
+class Syn {
 public:
-  static Parser instance;
-  static Parser &get() { return instance; }
-  Parser() {};
-  ~Parser() {};
+  static Syn instance;
+  static Syn &get() { return instance; }
+  Syn() {};
+  ~Syn() {};
   void init() {};
   Tree *formTree();
 
 private:
-  Lexer::Token curTok;
+  Lex::Token curTok;
   void getNextToken();
-  void checkFor(Lexer::Token, const char*);
+  void checkFor(Lex::Token, const char*);
   void error(const char *);
   Tree *readProg();
   Spec *readSpec();
@@ -45,9 +45,9 @@ private:
   std::list<Name*> *readNames();
 
   template<typename T>
-    std::list<T*> *readOptions(T *(Parser::*)());
-  template<typename T>
-    std::list<T*> *readList(T *(Parser::*)());
+    std::list<T*> *readList(
+        Lex::Token, Lex::Token, Lex::Token, 
+        T *(Syn::*)());
 };
 
 #endif
