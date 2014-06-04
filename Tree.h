@@ -24,8 +24,7 @@ struct Cmd;
 struct Alt;
 struct Altn;
 struct Choice;
-struct Rep;
-struct IndexRange;
+struct Range;
 struct Fml;
 struct Expr;
 struct Elem;
@@ -296,8 +295,9 @@ struct Call : public Cmd {
 
 // Replicated sequence
 struct RSeq : public Cmd {
-  RSeq() :
-    Cmd(RSEQ) {}
+  std::list<Range*> *ranges;
+  RSeq(std::list<Range*> *r) :
+    Cmd(RSEQ), ranges(r) {}
 };
 
 // Skip
@@ -351,10 +351,10 @@ struct Alt : public Cmd {
 };
 
 struct RepAlt : public Cmd {
-  Rep *rep;
+  std::list<Range*> *ranges;
   Altn *altn;
-  RepAlt(Rep *r, Altn *a) : 
-    Cmd(RALT), rep(r), altn(a) {}
+  RepAlt(std::list<Range*> *r, Altn *a) : 
+    Cmd(RALT), ranges(r), altn(a) {}
 };
 
 // Alternation
@@ -416,10 +416,10 @@ struct Test : public Cmd {
 };
 
 struct RepTest : public Cmd {
-  Rep *rep;
+  std::list<Range*> *ranges;
   Choice *choice;
-  RepTest(Rep *r, Choice *c) : 
-    Cmd(RTEST), rep(r), choice(c) {}
+  RepTest(std::list<Range*> *r, Choice *c) : 
+    Cmd(RTEST), ranges(r), choice(c) {}
 };
 
 struct IfD : public Cmd {
@@ -490,19 +490,13 @@ struct Par : public Cmd {
     Cmd(PAR) {}
 };
 
-// Replicator
-struct Rep {
-  std::list<IndexRange*> *ranges;
-  Rep(std::list<IndexRange*> *r) : ranges(r) {}
-};
-
 // Index range
-struct IndexRange {
+struct Range {
   Name *name;
   Expr *base;
   Expr *count;
   Expr *step;
-  IndexRange(Name *n, Expr *b, Expr *c, Expr *s) :
+  Range(Name *n, Expr *b, Expr *c, Expr *s) :
     name(n), base(b), count(c), step(s) {}
 };
 

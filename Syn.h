@@ -20,36 +20,38 @@ public:
 private:
   Lex::Token curTok;
   void getNextToken();
-  void checkFor(Lex::Token, const char*);
+  void checkFor(Lex::Token);
   void error(const char *);
-  Tree *readProg();
-  Spec *readSpec();
-  Abbr *readValAbbr();
-  Spec *readDeclAbbr();
-  std::list<Expr*> *readDims();
-  Spef *readSpef(bool);
-  Def  *readDef();
-  Def  *readProc();
-  Def  *readServ();
-  Def  *readFunc();
-  Fml  *readFml();
-  std::list<Fml*> *readFmls();
-  Decl *readIntf();
-  std::list<Decl*> *readIntfs();
-  Cmd  *readCmd();
+  
+  Tree   *readProg();
+  Spec   *readSpec();
+  Abbr   *readValAbbr();
+  Spec   *readDeclAbbr();
+  Spef   *readSpef(bool);
+  Def    *readDef();
+  Def    *readProc();
+  Def    *readServ();
+  Def    *readFunc();
+  Fml    *readFml();
+  Decl   *readIntf();
+  Cmd    *readCmd();
   Choice *readChoice();
-  Altn *readAltn();
-  Rep  *readRep();
-  IndexRange *readIndexRange();
-  Elem *readElem();
-  Expr *readExpr();
-  Name *readName();
-  std::list<Name*> *readNames();
-
-  template<typename T>
-    std::list<T*> *readList(
-        Lex::Token, Lex::Token, Lex::Token, 
-        T *(Syn::*)());
+  Altn   *readAltn();
+  Range  *readRange();
+  Elem   *readElem();
+  Expr   *readExpr();
+  Name   *readName();
+  
+  std::list<Expr*>   *readDims();
+  std::list<Name*>   *readNames();
+  std::list<Fml*>    *readFmls();
+  std::list<Decl*>   *readIntfs();
+  std::list<Expr*>   *readActuals();
+  std::list<Range*>  *readRep();
+  std::list<Choice*> *readChoices();
+  std::list<Altn*>   *readAltns();
+  template<typename T> std::list<T*> *readList(
+        Lex::Token, Lex::Token, Lex::Token, T *(Syn::*)());
 };
 
 #endif
