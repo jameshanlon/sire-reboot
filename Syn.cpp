@@ -29,12 +29,13 @@ Tree *Syn::formTree() {
   return t;
 }
 
-// program = <spec> ":" <program>
+// prog    = <spec> ":" <prog>
 //         | <seq>;
 // spec    = <decl>
 //         | <abbr>
 //         | <def>
-// def     = {0 "&" <def>}
+//         | <sim-def>
+// sim-def = {0 "&" <def> }
 Tree *Syn::readProg() {
   Tree *tree = new Tree();
   
@@ -85,11 +86,11 @@ Spec *Syn::readSpec() {
   switch(curTok) {
   default:            assert(0 && "invalid token");
   case Lex::tEOF:  return NULL;
-  case Lex::tVAL:  return readValAbbr();
+  case Lex::tVAL:  return readDeclAbbr();
   case Lex::tVAR:  return readDeclAbbr();
-  case Lex::tPROC: return readProc();
-  case Lex::tSERV: return readServ();
-  case Lex::tFUNC: return readFunc();
+  case Lex::tPROC: return readProcDef();
+  case Lex::tSERV: return readServDef();
+  case Lex::tFUNC: return readFuncDef();
   }
 }
 
@@ -99,50 +100,84 @@ Spec *Syn::readSpec() {
 Def *Syn::readDef() {
   switch(curTok) {
   default:            error("expecting definition");
-  case Lex::tPROC: return readProc();
-  case Lex::tSERV: return readServ();
-  case Lex::tFUNC: return readFunc();
+  case Lex::tPROC: return readProcDef();
+  case Lex::tSERV: return readServDef();
+  case Lex::tFUNC: return readFuncDef();
   }
 }
 
-// abbr = <spef> <name> "is" <elem>
-//      | "call" <name> "(" {0 "," <fml> } ")" "is" <name>
-Abbr *Syn::readValAbbr() {
-  getNextToken();
-  Spef *s = readSpef(true);
-  Name *n = readName();
-  return new VarAbbr(s, n, readElem()); 
-}
-
-// spec = <decl>
-//      | <abbr>
-// decl = <spec> {1 "," <name> }
-// abbr = <spec> <name> "is" <element>
+// decl        = <spec> {1 "," <name> }
+//             | <server-decl>
+//             | <hiding-decl>
+//             | <sim-decl>
+// abbr        = <spef> <name> "is" <elem>
+//             | "val" <spef> <name> "is" <elem>
+//             | "call" <name> "(" {0 "," <fml> } ")" "is" <elem>
+// server-decl = <name> "is" "[" <expr> "]" <server>
+//             | <name> "is" <rep> <server>
+//             | <name> "is" <server>
+// hiding-decl = "from" {1 ":" <decl> "inferface" <name>
+// sim-decl    = {0 "&" <decl> }
 Spec *Syn::readDeclAbbr() {
-  Spef *spef = readSpef(false);
+  // "val" ...
+  bool val = false;
+  if (curTok == Lex::tVAL) {
+    getNextToken();
+    val = true;
+  }
+  // ... <spef> <name> ...
+  Spef *spef = readSpef(val);
   Name *name = readName();
   Spec *res;
   switch (curTok) {
   default: assert(0 && "invalid token");
   
-  // Single-name declaration
+  // ...
   case Lex::tCOLON:
+    if (val) 
+      error("invalid use of val specifier");
     res = new VarDecl(spef, name);
     break;
 
-  // Name list declaration
+  // ... "," {1 "," <name> } ...
   case Lex::tCOMMA:
+    if (val) 
+      error("invalid use of val specifier");
     res = new VarDecl(spef, readNames());
     break;
-  
-  // Abbreviation
+
+  // ... "is" <elem> ...
   case Lex::tIS:
     res = new VarAbbr(spef, name, readElem());
     break;
+ 
+  // ... "(" {0 "," <fml> } ")" "is" <elem> ...
+  case Lex::tLPAREN:
+    std::list<Fml*> args = readFmls();
+    checkFor(Lex::tIS);
+    res = new CallAbbr(spef, name, args, readElem());
+    break;
   }
 
+  // ... ":"
   checkFor(Lex::tCOLON);
   return res;
+}
+
+// decl = <hiding>
+// hiding = "from" "[" {1 ":" <decl> } "]" "interface" <elem>
+Hiding *Syn::readHidingDecl() {
+  checkFor(Lex::tFROM);
+  std::list<Decl*> *decls = readHiddenDecls();
+  checkFor(Lex::tINTF);
+  return new Hiding(readName(), decls);
+}
+
+// decl = <spec> {1 "," <name> }
+//      | <hiding-decl>
+//      | <server-decl>
+//      | <sim-decl>
+Decl *Syn::readDecl() {
 }
 
 // spec = <type>
@@ -189,16 +224,18 @@ Spef *Syn::readSpef(bool val) {
   }
 }
 
-// def = process <name> "(" {0 "," <fml>} ")" "is" <cmd>
-Def *Syn::readProc() {
+// def     = "process" <name> "(" {0 "," <fml>} ")" "is" <process>
+// process = <interface> "to" <cmd>
+//         | <cmd>
+Def *Syn::readProcDef() {
+  // "process" <name> "(" {0 "," <fml>} ")" "is" ...
   assert(curTok == Lex::tPROC);
   getNextToken();
   Name *name = readName();
-  checkFor(Lex::tLPAREN);
   std::list<Fml*> *args = readFmls();
-  checkFor(Lex::tRPAREN);
   checkFor(Lex::tIS);
   std::list<Decl*> *intfs = NULL;
+  // <interface> "to"
   if(curTok == Lex::tINTF) {
     intfs = readIntfs();
     checkFor(Lex::tTO);
@@ -206,41 +243,41 @@ Def *Syn::readProc() {
   return new Proc(name, args, intfs, readCmd());
 }
 
-// definition  = "server" <name> "(" {0, <fml>} ")" "inherits" <hiding-decl>
-//             | "server" <name> "(" {0, <fml>} ")" "is" <cmd>
-// hiding-decl = "from" { {1 : <decl> } } "interface" <name>
-Def *Syn::readServ() {
+// definition   = "server" <name> "(" {0, <fml>} ")" "inherits" <hiding-decl>
+//              | "server" <name> "(" {0, <fml>} ")" "is" <server>
+// server       = <interface> ":" <server-spec>
+// server-sepec = <declaration>
+//              | "{" {0 ":" <decl> "}"
+// hiding-decl  = "from" "[" {1 "," <decl> } "]" "interface" <name>
+Def *Syn::readServDef() {
+  // "server" <name> "(" {0, <fml>} ")" ...
   assert(curTok == Lex::tSERV);
   getNextToken();
   Name *name = readName();
-  checkFor(Lex::tLPAREN);
   std::list<Fml*> *args = readFmls();
-  checkFor(Lex::tRPAREN);
 
-  // Inheriting definition
+  // ... "inherits" <hiding-decl>
   if(curTok == Lex::tINHRT) {
-    // TODO
-    // return ...
+    getNextToken();
+    return new InhrtServ(name, args, readHidingDecl());
   }
 
+  // ... "is" <cmd>
   checkFor(Lex::tIS);
   std::list<Decl*> *intfs = NULL;
   if(curTok == Lex::tINTF) {
     intfs = readIntfs();
     checkFor(Lex::tTO);
   }
-  // read server decls
   return new Serv(name, args, intfs, NULL);
 }
 
 // def = "function" <name> "(" {0 "," <fml>} ")" "is" <expr>
-Def *Syn::readFunc() {
+Def *Syn::readFuncDef() {
   assert(curTok == Lex::tFUNC);
   getNextToken();
   Name *name = readName();
-  checkFor(Lex::tLPAREN);
   std::list<Fml*> *args = readFmls();
-  checkFor(Lex::tRPAREN);
   checkFor(Lex::tIS);
   return new Func(name, args, readExpr());
 }
@@ -303,6 +340,12 @@ Fml *Syn::readFml() {
   default: 
       error("invalid argument");
       return NULL;
+  
+  // "val" ...
+  // "interface" ...
+  // "process" ...
+  // "server" ...
+  // "function" ...
   case Lex::tVAR:
   case Lex::tINTF:
   case Lex::tPROC:
@@ -346,14 +389,17 @@ Cmd *Syn::readCmd() {
     error("bad command");
     return NULL;
   
+  // "skip"
   case Lex::tSKIP:
     getNextToken();
     return new Skip();
   
+  // "stop"
   case Lex::tSTOP:
     getNextToken();
     return new Stop();
 
+  // "connect" <elem> "to" <elem>
   case Lex::tCONNECT: {
     getNextToken();
     Elem *source = readElem();
@@ -362,7 +408,11 @@ Cmd *Syn::readCmd() {
     return new Connect(source, target);
   }
 
-  // assignment, input, output, instance, call
+  // ass      = <name> ":=" <expr>
+  // in       = <elem> "?" <elem>
+  // out      = <elem> "!" <elem>
+  // instance = <name> "(" {0 "," <expr> } ")"
+  // call     = <name> "." <name> "(" {0 "," <expr> } ")"
   case Lex::tNAME: {
     Name *name = readName();
     getNextToken();
@@ -371,19 +421,22 @@ Cmd *Syn::readCmd() {
       error("expecting assignment, input, output, instance or call");
       return NULL;
     
+    // ":=" <expr>
     case Lex::tASS:
       getNextToken();
       return new Ass(name, readExpr());
     
+    // "?" <elem>
     case Lex::tIN:
       getNextToken();
       return new In(name, readElem());
     
+    // "!" <expr>
     case Lex::tOUT:
       getNextToken();
       return new Out(name, readExpr());
 
-    // Instance
+    // ... "(" {0 "," <expr> } ")"
     case Lex::tLPAREN: {
       getNextToken();
       std::list<Expr*> *actuals = readActuals();
@@ -391,7 +444,7 @@ Cmd *Syn::readCmd() {
       return new Instance(name, actuals);
     }
     
-    // Call
+    // ... "." <name> "(" {0 "," <expr> } ")"
     case Lex::tDOT: {
         getNextToken();
         Name *field = readName();
@@ -403,7 +456,6 @@ Cmd *Syn::readCmd() {
     }
   } 
 
-  // Structured commands
   // cond = "if" <expr> "do" <cmd>
   //      | "if" <expr> "then" <cmd> "else" <cmd>
   case Lex::tIF: {
@@ -459,27 +511,48 @@ Cmd *Syn::readCmd() {
     }
 
   // case = "case" <expr> "{" {0 "|" <selection> } "}"
-  //      | "alt" <rep> <selection>
-  case Lex::tCASE:
-    // TODO
-    return NULL;
+  //      | "case" <expr> <rep> <selection>
+  case Lex::tCASE: {
+    getNextToken();
+    Expr *expr = readExpr();
+    switch (curTok) {
+    default:
+      error("expecting '{' or '['");
+      return NULL;
+    
+    case Lex::tLCURLY:
+      return new Case(expr, readSelects());
+    
+    case Lex::tLSQ:
+      return new RepCase(expr, readRep(), readSelect());
+    }
+  }
 
   // loop = "while" <expr> "do" <cmd>
-  case Lex::tWHILE:
-    // TODO
-    return NULL;
+  case Lex::tWHILE: {
+    getNextToken();
+    Expr *expr = readExpr();
+    checkFor(Lex::tDO);
+    return new While(expr, readCmd());
+  }
 
   // loop = "do" <cmd> "while" <expr>
-  case Lex::tDO:
-    // TODO
-    return NULL;
+  case Lex::tDO: {
+    getNextToken();
+    Cmd *cmd = readCmd();
+    checkFor(Lex::tWHILE);
+    return new Do(cmd, readExpr());
+  }
 
   // loop = "until" <expr> "do" <cmd>
-  case Lex::tUNTIL:
-    // TODO
-    return NULL;
+  case Lex::tUNTIL: {
+    getNextToken();
+    Expr *expr = readExpr();
+    checkFor(Lex::tDO);
+    return new Until(expr, readCmd());
+  }
 
-  // Declaration or abbreviation
+  // <spec> ":" <cmd>
   case Lex::tVAL: 
   case Lex::tVAR:
   case Lex::tCHAN: 
@@ -507,11 +580,11 @@ Choice *Syn::readChoice() {
   switch(curTok) {
   default: break;
   
-  // Nested test
+  // <cond>
   case Lex::tTEST:
     return new NestedChoice((Test*) readCmd());
 
-  // Choice specification
+  // <spec> ":" <choice>
   case Lex::tVAL:
   case Lex::tVAR: 
   case Lex::tCHAN: 
@@ -531,7 +604,7 @@ Choice *Syn::readChoice() {
     return new SpecChoice(NULL, readChoice());
   }
 
-  // Choice (assume <expr>)
+  // <expr> ":" <cmd>
   Expr *expr = readExpr();
   checkFor(Lex::tCOLON);
   return new GuardedChoice(expr, readCmd());
@@ -547,11 +620,11 @@ Altn *Syn::readAltn() {
   switch(curTok) {
   default: break;
   
-  // Nested alt
+  // <alt>
   case Lex::tALT:
     return new NestedAltn((Alt*) readCmd());
 
-  // Alternative specification
+  // <spec> ":" <altn>
   case Lex::tVAL:
   case Lex::tVAR: 
   case Lex::tCHAN: 
@@ -571,12 +644,44 @@ Altn *Syn::readAltn() {
     return new SpecAltn(NULL, readAltn());
   }
 
-  // Alternative
-  // TODO: unguarded, guarded, skip
-  //Expr *expr = readExpr();
-  //checkFor(Lex::tCOLON);
-  //return new Altn(expr, elem, elem, readCmd());
-  return NULL;
+  // <elem> "?" <elem> ":" <cmd>
+  if (curTok == Lex::tNAME) {
+    Elem *dst = readElem();
+    checkFor(Lex::tIN);
+    Elem *src = readElem();
+    checkFor(Lex::tCOLON);
+    return new UnguardedAltn(dst, src, readCmd());
+  }
+
+  // <expr> "&" ...
+  Expr *expr = readExpr();
+  checkFor(Lex::tAND);
+  // ... <skip> ":" <cmd>
+  if (curTok == Lex::tSKIP) {
+    getNextToken();
+    checkFor(Lex::tCOLON);
+    return new SkipAltn(expr, readCmd());
+  }
+  // ... <elem> "?" <elem> ":" <cmd>
+  Elem *dst = readElem();
+  checkFor(Lex::tIN);
+  Elem *src = readElem();
+  checkFor(Lex::tCOLON);
+  return new GuardedAltn(expr, dst, src, readCmd());  
+}
+
+// select = <expr> ":" <cmd>
+//        | "else" <cmd>
+Select *Syn::readSelect() {
+  // "else" <cmd>
+  if (curTok == Lex::tELSE) {
+    getNextToken();
+    return new ElseSelect(readCmd());
+  }
+  // <expr> ":" <cmd>
+  Expr *expr = readExpr();
+  checkFor(Lex::tCOLON);
+  return new GuardedSelect(expr, readCmd());
 }
 
 // index-range = <name> "=" <expr> "for" <expr>
@@ -595,45 +700,64 @@ Range *Syn::readRange() {
   return new Range(name, base, count, step);
 }
 
+// "(" {0 "," <fml> } ")"
 inline std::list<Fml*> *Syn::readFmls() {
   return readList<Fml>(
       Lex::tLPAREN, Lex::tRPAREN, Lex::tCOMMA, 
       &Syn::readFml);
 }
 
+// "(" {0 "," <decl> } ")"
 inline std::list<Decl*> *Syn::readIntfs() {
   return readList<Decl>(
-      Lex::tLSQ, Lex::tRSQ, Lex::tCOMMA, 
+      Lex::tLPAREN, Lex::tRPAREN, Lex::tCOMMA, 
       &Syn::readIntf);
 }
 
+// "[" {1 ":" <decl> } "]"
+inline std::list<Decl*> *Syn::readHiddenDecls() {
+  return readList<Decl>(
+      Lex::tLSQ, Lex::tRSQ, Lex::tCOLON, 
+      &Syn::readDecl);
+}
+
+// "(" {0 "," <expr> } ")"
 inline std::list<Expr*> *Syn::readActuals() {
   return readList<Expr>(
       Lex::tLPAREN, Lex::tRPAREN, Lex::tCOMMA, 
       &Syn::readExpr);
 }
 
+// "[" {1 "," <index-range> } "]"
 inline std::list<Range*> *Syn::readRep() {
   return readList<Range>(
       Lex::tLSQ, Lex::tRSQ, Lex::tCOMMA,
       &Syn::readRange);
 }
 
+// "{" {0 "|" <choice> } "}"
 inline std::list<Choice*> *Syn::readChoices() {
   return readList<Choice>(
       Lex::tLCURLY, Lex::tRCURLY, Lex::tOR, 
       &Syn::readChoice);
 }
 
+// "{" {0 "|" <altn> } "}"
 inline std::list<Altn*> *Syn::readAltns() {
   return readList<Altn>(
       Lex::tLCURLY, Lex::tRCURLY, Lex::tOR, 
       &Syn::readAltn);
 }
 
+// "{" {0 "|" <select> } "}"
+inline std::list<Select*> *Syn::readSelects() {
+  return readList<Select>(
+      Lex::tLCURLY, Lex::tRCURLY, Lex::tOR, 
+      &Syn::readSelect);
+}
+
 // Read a list of T
 // <left> {0 <sep> <item> } <right>
-// item = Fml | Decl | Expr | Range
 template<typename T>
 std::list<T*> *Syn::readList(
     Lex::Token left, Lex::Token right, Lex::Token sep, 

@@ -25,18 +25,20 @@ private:
   
   Tree   *readProg();
   Spec   *readSpec();
-  Abbr   *readValAbbr();
   Spec   *readDeclAbbr();
+  Hiding *readHidingDecl();
+  Decl   *readDecl();
   Spef   *readSpef(bool);
   Def    *readDef();
-  Def    *readProc();
-  Def    *readServ();
-  Def    *readFunc();
+  Def    *readProcDef();
+  Def    *readServDef();
+  Def    *readFuncDef();
   Fml    *readFml();
   Decl   *readIntf();
   Cmd    *readCmd();
   Choice *readChoice();
   Altn   *readAltn();
+  Select *readSelect();
   Range  *readRange();
   Elem   *readElem();
   Expr   *readExpr();
@@ -46,10 +48,12 @@ private:
   std::list<Name*>   *readNames();
   std::list<Fml*>    *readFmls();
   std::list<Decl*>   *readIntfs();
+  std::list<Decl*>   *readHiddenDecls();
   std::list<Expr*>   *readActuals();
   std::list<Range*>  *readRep();
   std::list<Choice*> *readChoices();
   std::list<Altn*>   *readAltns();
+  std::list<Select*> *readSelects();
   template<typename T> std::list<T*> *readList(
         Lex::Token, Lex::Token, Lex::Token, T *(Syn::*)());
 };

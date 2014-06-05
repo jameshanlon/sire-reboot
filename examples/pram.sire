@@ -36,14 +36,12 @@ server Access(server Store[N] s) is
 }:
 
 server ParallelRAM() inherits
-  from
-  { s is [N] Store():
-    a is [M] Access(s) }
+  from [ s is [N] Store(), a is [M] Access(s) ] 
   interface a
 
 m is ParallelRAM():
-par[i=0 for CLIENTS]
-{ m[i].write(addr, 42); 
+par[i=0 for CLIENTS] {
+  m[i].write(addr, 42); 
   m[i].read(addr, v)
 }
 

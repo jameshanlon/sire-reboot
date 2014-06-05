@@ -20,10 +20,12 @@ struct Node {
 // Forward declarations
 struct Spec;
 struct Decl;
+struct Hiding;
 struct Cmd;
 struct Alt;
 struct Altn;
 struct Choice;
+struct Select;
 struct Range;
 struct Fml;
 struct Expr;
@@ -130,6 +132,7 @@ struct Def : public Spec {
   typedef enum {
     PROC,
     SERV,
+    ISERV,
     FUNC
   } DefType;
   DefType defType;
@@ -149,11 +152,18 @@ struct Proc : public Def {
 
 // Server definition
 struct Serv : public Def {
-  Cmd *body;
   std::list<Decl*> *intf;
   std::list<Decl*> *decls;
   Serv(Name *n, std::list<Fml*> *a, std::list<Decl*> *i, std::list<Decl*> *d) :
     Def(SERV, n, a), intf(i), decls(d) {}
+};
+
+// Inheriting server definition
+struct InhrtServ : public Def {
+  std::list<Decl*> *intf;
+  Hiding *decl; 
+  InhrtServ(Name *n, std::list<Fml*> *a, Hiding *d) :
+    Def(ISERV, n, a), decl(d) {}
 };
 
 // Function definition
@@ -174,7 +184,8 @@ struct SimDef : public Spec {
 struct Decl : public Spec {
   typedef enum {
     VAR,
-    ARRAY
+    ARRAY,
+    HIDING
   } DeclType;
   DeclType tDecl;
 protected:
@@ -206,11 +217,18 @@ struct CallDecl : public Decl {
     Decl(VAR, n), spef(s), argss(a) {}
 };
 
+// Hiding declaration
+struct Hiding : public Decl {
+  std::list<Decl*> *decls;
+  Hiding(Name *n, std::list<Decl*> *d) :
+    Decl(HIDING, n), decls(d) {}
+};
+
 // Abbreviation
 struct Abbr : public Spec {
   typedef enum {
-    VAL,
-    VAR
+    VAR,
+    CALL
   } Type;
   Type type;
 protected:
@@ -218,19 +236,21 @@ protected:
     Spec(Spec::ABBR, n), type(t) {}
 };
 
-// Value abbreviation 
-struct ValAbbr : public Abbr {
-  Expr *expr;
-  ValAbbr(Name *n, Expr *e) :
-    Abbr(Abbr::VAL, n), expr(e) {}
-};
-
 // Variable abbreviation
 struct VarAbbr : public Abbr {
   Spef *spef;
   Elem *elem;
   VarAbbr(Spef *s, Name *n, Elem* e) :
-    Abbr(Abbr::VAR, n), spef(s), elem(e) {}
+    Abbr(VAR, n), spef(s), elem(e) {}
+};
+
+// Call abbreviation
+struct CallAbbr : public Abbr {
+  Spef *spef;
+  std::list<Fml*> *args;
+  Elem *elemi;
+  VarAbbr(Spef *s, Name *n, std::list<Fml*> *a, Elem* e) :
+    Abbr(CALL, n), spef(s), args(a), elem(e) {}
 };
 
 // Commands ===================================================================
@@ -250,17 +270,20 @@ struct Cmd : public Node {
     CONN,
     // Structured
     ALT,
-    RALT,
     TEST,
-    RTEST,
     IFD,
     IFTE,
+    CASE,
     WHILE,
     UNTIL,
     DO,
     SEQ,
-    RSEQ,
-    PAR
+    PAR,
+    // Replicated
+    RALT,
+    RTEST,
+    RCASE,
+    RSEQ
   } Type;
   Type type;
 protected:
@@ -372,20 +395,20 @@ protected:
 };
 
 struct UnguardedAltn : public Altn {
-  Elem *src;
   Elem *dst;
+  Elem *src;
   Cmd *cmd;
-  UnguardedAltn(Elem *s, Elem *d, Cmd *c) :
-    Altn(UNGUARDED), src(s), dst(d), cmd(c) {}
+  UnguardedAltn(Elem *d, Elem *s, Cmd *c) :
+    Altn(UNGUARDED), dst(d), src(s), cmd(c) {}
 };
 
 struct GuardedAltn : public Altn {
   Expr *expr;
-  Elem *src;
   Elem *dst;
+  Elem *src;
   Cmd *cmd;
-  GuardedAltn(Expr *e, Elem *s, Elem *d, Cmd *c) :
-    Altn(GUARDED), expr(e), src(s), dst(d), cmd(c) {}
+  GuardedAltn(Expr *e, Elem *d, Elem *s, Cmd *c) :
+    Altn(GUARDED), expr(e), dst(d), src(s), cmd(c) {}
 };
 
 struct SkipAltn : public Altn {
@@ -469,12 +492,65 @@ struct SpecChoice : public Choice {
     Choice(SPEC), spec(s), choice(c) {}
 };
 
+// Case
+struct Case : public Cmd {
+  Expr *expr;
+  std::list<Select*> *selects;
+  Case(Expr *e, std::list<Select*> *s) : 
+    Cmd(CASE), expr(e), selects(s) {}
+};
+
+struct RepCase : public Cmd {
+  Expr *expr;
+  std::list<Range*> *ranges;
+  Select *select;
+  RepCase(Expr *e, std::list<Range*> *r, Select *s) : 
+    Cmd(RCASE), expr(e), ranges(r), select(s) {}
+};
+
+// Select
+struct Select {
+  typedef enum {
+    GUARDED,
+    ELSE
+  } Type;
+  Type type;
+  Cmd *cmd;
+protected:
+  Select(Type t, Cmd *c) : type(t), cmd(c) {}
+};
+
+struct GuardedSelect : public Select {
+  Expr *expr;
+  GuardedSelect(Expr *e, Cmd *c) :
+    Select(GUARDED, c), expr(e) {}
+};
+
+struct ElseSelect : public Select {
+  ElseSelect(Cmd *c) :
+    Select(ELSE, c) {}
+};
+
 // Loop
 struct While : public Cmd {
-  Expr *cond;
-  Cmd *body;
+  Expr *expr;
+  Cmd *cmd;
   While(Expr *e, Cmd *c) :
-    Cmd(WHILE), cond(e), body(c) {}
+    Cmd(WHILE), expr(e), cmd(c) {}
+};
+
+struct Do : public Cmd {
+  Cmd *cmd;
+  Expr *expr;
+  Do(Cmd *c, Expr *e) :
+    Cmd(DO), cmd(c), expr(e) {}
+};
+
+struct Until : public Cmd {
+  Expr *expr;
+  Cmd *cmd;
+  Until(Expr *e, Cmd *c) :
+    Cmd(UNTIL), expr(e), cmd(c) {}
 };
 
 // Sequence

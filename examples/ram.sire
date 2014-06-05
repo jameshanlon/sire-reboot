@@ -26,10 +26,8 @@ server Store() is
   }
 
 & server RAM() inherits
-  from 
-  { s is [N] Store():
-    m is Access(s) 
-  } interface m
+  from [ s is [N] Store(), m is Access(s) ] 
+  interface m
 :
 
 m is RAM():
