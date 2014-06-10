@@ -25,9 +25,7 @@ private:
   
   Tree   *readProg();
   Spec   *readSpec();
-  Spec   *readDeclAbbr();
-  Hiding *readHidingDecl();
-  Decl   *readDecl();
+  Hiding *readHiding();
   Spef   *readSpef(bool);
   Def    *readDef();
   Def    *readProcDef();
@@ -48,7 +46,7 @@ private:
   std::list<Name*>   *readNames();
   std::list<Fml*>    *readFmls();
   std::list<Decl*>   *readIntfs();
-  std::list<Decl*>   *readHiddenDecls();
+  std::list<Spec*>   *readHiddens();
   std::list<Expr*>   *readActuals();
   std::list<Range*>  *readRep();
   std::list<Choice*> *readChoices();

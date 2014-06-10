@@ -11,7 +11,7 @@ server Store() is
   } 
 }:
 
-s is Store():
+server s is Store():
 var v:
 seq [i=0 for N] s.write(i, N-i);
 seq [i=0 for N] s.read(i, v)

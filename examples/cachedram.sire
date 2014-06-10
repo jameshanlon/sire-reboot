@@ -50,7 +50,7 @@ server Store() is
   } interface m
 :
 
-m is RAM():
+server m is RAM():
 var v:
 m.write(99, 42); 
 m.read(99, v);

@@ -111,9 +111,9 @@ struct Name : public Elem {
 struct Spec : public Node {
   typedef enum {
     DEF,
-    SDEF,
     DECL,
-    ABBR
+    ABBR,
+    SSPEC
   } Type;
   Type type;
   union {
@@ -173,11 +173,11 @@ struct Func : public Def {
     Def(FUNC, n, a), expr(e) {}
 };
 
-// Simultaneous definition
-struct SimDef : public Spec {
-  std::list<Def*> *defs;
-  SimDef(std::list<Def*> *d) :
-    Spec(SDEF, (Name *) NULL), defs(d) {}
+// Simultaneous specification
+struct SimSpec : public Spec {
+  std::list<Spec*> *specs;
+  SimSpec(std::list<Spec*> *s) :
+    Spec(SSPEC, (Name *) NULL), specs(s) {}
 };
 
 // Declaration
@@ -219,8 +219,8 @@ struct CallDecl : public Decl {
 
 // Hiding declaration
 struct Hiding : public Decl {
-  std::list<Decl*> *decls;
-  Hiding(Name *n, std::list<Decl*> *d) :
+  std::list<Spec*> *decls;
+  Hiding(Name *n, std::list<Spec*> *d) :
     Decl(HIDING, n), decls(d) {}
 };
 
@@ -248,8 +248,8 @@ struct VarAbbr : public Abbr {
 struct CallAbbr : public Abbr {
   Spef *spef;
   std::list<Fml*> *args;
-  Elem *elemi;
-  VarAbbr(Spef *s, Name *n, std::list<Fml*> *a, Elem* e) :
+  Elem *elem;
+  CallAbbr(Spef *s, Name *n, std::list<Fml*> *a, Elem* e) :
     Abbr(CALL, n), spef(s), args(a), elem(e) {}
 };
 

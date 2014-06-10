@@ -45,139 +45,147 @@ Tree *Syn::readProg() {
      || curTok == Lex::tPROC 
      || curTok == Lex::tSERV 
      || curTok == Lex::tFUNC) {
-    Spec *spec = readSpec();
     
-    // Read a sequential specification
-    switch(curTok) {
-    default:
-      error("bad separator for specification");
+    // <spec>
+    Spec *spec = readSpec();
+    tree->spec.push_back(spec);
+    
+    // ... ":"
+    if (curTok == Lex::tCOLON)
+      getNextToken();
+    else
       break;
-    // End of specification
-    case Lex::tCOLON:
-      tree->spec.push_back(spec);
-      break;
-    // Read simultaneous definitions
-    case Lex::tAND:
-      if (spec->type != Spec::DEF)
-        error("cannot make a simultaneous declaration");
-      std::list<Def*> *defs = new std::list<Def*>();
-      defs->push_back((Def *) spec);
-      do {
-        getNextToken();
-        defs->push_back(readDef());
-      } while (curTok == Lex::tAND);
-      SimDef *simDef = new SimDef(defs); 
-      tree->spec.push_back(simDef);
-      break;
-    }
   }
 
-  // Read program command sequence
+  // ... {1 ";" <cmd> }
   while (curTok != Lex::tEOF)
     tree->prog.push_back(readCmd());
   
   return tree;
 }
 
-// spec = <decl>
-//      | <abbr>
-//      | <def>
-Spec *Syn::readSpec() {
-  switch(curTok) {
-  default:            assert(0 && "invalid token");
-  case Lex::tEOF:  return NULL;
-  case Lex::tVAL:  return readDeclAbbr();
-  case Lex::tVAR:  return readDeclAbbr();
-  case Lex::tPROC: return readProcDef();
-  case Lex::tSERV: return readServDef();
-  case Lex::tFUNC: return readFuncDef();
-  }
-}
-
-// def = "process" ...
-//     | "server" ...
-//     | "function" ...
-Def *Syn::readDef() {
-  switch(curTok) {
-  default:            error("expecting definition");
-  case Lex::tPROC: return readProcDef();
-  case Lex::tSERV: return readServDef();
-  case Lex::tFUNC: return readFuncDef();
-  }
-}
-
+// spec        = <decl>
+//             | <abbr>
+//             | <def>
+//             | <sim-spec> // TODO: sanity check this
 // decl        = <spec> {1 "," <name> }
 //             | <server-decl>
 //             | <hiding-decl>
-//             | <sim-decl>
 // abbr        = <spef> <name> "is" <elem>
 //             | "val" <spef> <name> "is" <elem>
 //             | "call" <name> "(" {0 "," <fml> } ")" "is" <elem>
-// server-decl = <name> "is" "[" <expr> "]" <server>
-//             | <name> "is" <rep> <server>
-//             | <name> "is" <server>
-// hiding-decl = "from" {1 ":" <decl> "inferface" <name>
+// server-decl = "server" <name> "is" {0 "[" <expr> "]" } <server>
+//             | "server" <name> "is" <rep> <server>
+//             | "server" <name> "is" <server>
 // sim-decl    = {0 "&" <decl> }
-Spec *Syn::readDeclAbbr() {
-  // "val" ...
-  bool val = false;
-  if (curTok == Lex::tVAL) {
-    getNextToken();
-    val = true;
-  }
-  // ... <spef> <name> ...
-  Spef *spef = readSpef(val);
-  Name *name = readName();
+Spec *Syn::readSpec() {
   Spec *res;
-  switch (curTok) {
-  default: assert(0 && "invalid token");
+  switch(curTok) {
+  default:            assert(0 && "invalid token");
+  case Lex::tEOF:  return NULL;
   
-  // ...
-  case Lex::tCOLON:
-    if (val) 
-      error("invalid use of val specifier");
-    res = new VarDecl(spef, name);
-    break;
+  // <decl> | <abbr>
+  case Lex::tVAL:  
+  case Lex::tVAR: { 
+      // "val" ...
+      bool val = false;
+      if (curTok == Lex::tVAL) {
+        getNextToken();
+        val = true;
+      }
+      // ... <spef> <name> ...
+      Spef *spef = readSpef(val);
+      Name *name = readName();
+      
+      switch (curTok) {
+      default: assert(0 && "invalid token");
+      
+      // ...
+      case Lex::tCOLON:
+        if (val) 
+          error("invalid use of val specifier");
+        res = new VarDecl(spef, name);
+        break;
 
-  // ... "," {1 "," <name> } ...
-  case Lex::tCOMMA:
-    if (val) 
-      error("invalid use of val specifier");
-    res = new VarDecl(spef, readNames());
-    break;
+      // ... "," {1 "," <name> } ...
+      case Lex::tCOMMA:
+        if (val) 
+          error("invalid use of val specifier");
+        res = new VarDecl(spef, readNames());
+        break;
 
-  // ... "is" <elem> ...
-  case Lex::tIS:
-    res = new VarAbbr(spef, name, readElem());
+      // ... "is" <elem> ...
+      case Lex::tIS:
+        res = new VarAbbr(spef, name, readElem());
+        break;
+     
+      // ... "(" {0 "," <fml> } ")" "is" <elem> ...
+      case Lex::tLPAREN: {
+          std::list<Fml*> *args = readFmls();
+          checkFor(Lex::tIS);
+          res = new CallAbbr(spef, name, args, readElem());
+          break;
+        }
+      }
+    }
+  
+  // decl = "server" <name> "is" {0 "[" <expr> "]" } <server>
+  //      | "server" <name> "is" <rep> <server>
+  //      | "server" <name> "is" <server>
+  case Lex::tSERV:
+    // TODO
+    return NULL;
+
+  // ... "from" ... 
+  case Lex::tFROM:
+    return readHiding();
+  
+  // def = "process" ...
+  case Lex::tPROC: 
+    res = readProcDef();
     break;
- 
-  // ... "(" {0 "," <fml> } ")" "is" <elem> ...
-  case Lex::tLPAREN:
-    std::list<Fml*> args = readFmls();
-    checkFor(Lex::tIS);
-    res = new CallAbbr(spef, name, args, readElem());
+  
+  // def = "server" ...
+  case Lex::tSERV: 
+    res = readServDef();
+    break;
+  
+  // def = "function" ...
+  case Lex::tFUNC:
+    res = readFuncDef();
     break;
   }
+
+  // Separator
+  switch (curTok) {
+  default:
+    error("expected ':' or '&'");
+    return NULL;
 
   // ... ":"
-  checkFor(Lex::tCOLON);
-  return res;
+  case Lex::tCOLON:
+    return res;
+  
+  // ... "&" {1 "&" <spec> }
+  case Lex::tAND: {
+      std::list<Spec*> *specs = new std::list<Spec*>();
+      specs->push_back(res);
+      do {
+        getNextToken();
+        specs->push_back(readSpec());
+      } while (curTok == Lex::tAND);
+      return new SimSpec(specs);
+    }
+  }
 }
 
 // decl = <hiding>
 // hiding = "from" "[" {1 ":" <decl> } "]" "interface" <elem>
-Hiding *Syn::readHidingDecl() {
+Hiding *Syn::readHiding() {
   checkFor(Lex::tFROM);
-  std::list<Decl*> *decls = readHiddenDecls();
+  std::list<Spec*> *decls = readHiddens();
   checkFor(Lex::tINTF);
   return new Hiding(readName(), decls);
-}
-
-// decl = <spec> {1 "," <name> }
-//      | <hiding-decl>
-//      | <server-decl>
-//      | <sim-decl>
-Decl *Syn::readDecl() {
 }
 
 // spec = <type>
@@ -199,7 +207,7 @@ Spef *Syn::readSpef(bool val) {
     error("invalid specifier");
     return NULL;
  
-  // <type> [.][.]...[.]
+  // <type> {0, "[" <expr> "]" }
   case Lex::tVAR:
     return new Spef(Spef::VAR, val, readDims());
 
@@ -212,7 +220,7 @@ Spef *Syn::readSpef(bool val) {
   case Lex::tINTF:
     return new IntfSpef(Spef::INTF, readIntfs(), readDims());
 
-  // <type> <name> [.][.]...[.]
+  // <type> <name> {0 "[" <expr> "]" }
   case Lex::tPROC:
     return new NamedSpef(Spef::PROC, readName(), readDims());
   
@@ -246,7 +254,7 @@ Def *Syn::readProcDef() {
 // definition   = "server" <name> "(" {0, <fml>} ")" "inherits" <hiding-decl>
 //              | "server" <name> "(" {0, <fml>} ")" "is" <server>
 // server       = <interface> ":" <server-spec>
-// server-sepec = <declaration>
+// server-sepec = <decl>
 //              | "{" {0 ":" <decl> "}"
 // hiding-decl  = "from" "[" {1 "," <decl> } "]" "interface" <name>
 Def *Syn::readServDef() {
@@ -259,7 +267,7 @@ Def *Syn::readServDef() {
   // ... "inherits" <hiding-decl>
   if(curTok == Lex::tINHRT) {
     getNextToken();
-    return new InhrtServ(name, args, readHidingDecl());
+    return new InhrtServ(name, args, readHiding());
   }
 
   // ... "is" <cmd>
@@ -703,57 +711,49 @@ Range *Syn::readRange() {
 // "(" {0 "," <fml> } ")"
 inline std::list<Fml*> *Syn::readFmls() {
   return readList<Fml>(
-      Lex::tLPAREN, Lex::tRPAREN, Lex::tCOMMA, 
-      &Syn::readFml);
+      Lex::tLPAREN, Lex::tRPAREN, Lex::tCOMMA, &Syn::readFml);
 }
 
 // "(" {0 "," <decl> } ")"
 inline std::list<Decl*> *Syn::readIntfs() {
   return readList<Decl>(
-      Lex::tLPAREN, Lex::tRPAREN, Lex::tCOMMA, 
-      &Syn::readIntf);
+      Lex::tLPAREN, Lex::tRPAREN, Lex::tCOMMA, &Syn::readIntf);
 }
 
 // "[" {1 ":" <decl> } "]"
-inline std::list<Decl*> *Syn::readHiddenDecls() {
-  return readList<Decl>(
-      Lex::tLSQ, Lex::tRSQ, Lex::tCOLON, 
-      &Syn::readDecl);
+inline std::list<Spec*> *Syn::readHiddens() {
+  return readList<Spec>(
+      Lex::tLSQ, Lex::tRSQ, Lex::tCOLON, &Syn::readSpec);
 }
 
 // "(" {0 "," <expr> } ")"
 inline std::list<Expr*> *Syn::readActuals() {
   return readList<Expr>(
-      Lex::tLPAREN, Lex::tRPAREN, Lex::tCOMMA, 
-      &Syn::readExpr);
+      Lex::tLPAREN, Lex::tRPAREN, Lex::tCOMMA, &Syn::readExpr);
 }
 
 // "[" {1 "," <index-range> } "]"
 inline std::list<Range*> *Syn::readRep() {
   return readList<Range>(
-      Lex::tLSQ, Lex::tRSQ, Lex::tCOMMA,
-      &Syn::readRange);
+      Lex::tLSQ, Lex::tRSQ, Lex::tCOMMA, &Syn::readRange);
 }
 
 // "{" {0 "|" <choice> } "}"
 inline std::list<Choice*> *Syn::readChoices() {
   return readList<Choice>(
-      Lex::tLCURLY, Lex::tRCURLY, Lex::tOR, 
-      &Syn::readChoice);
+      Lex::tLCURLY, Lex::tRCURLY, Lex::tOR, &Syn::readChoice);
 }
 
 // "{" {0 "|" <altn> } "}"
 inline std::list<Altn*> *Syn::readAltns() {
   return readList<Altn>(
-      Lex::tLCURLY, Lex::tRCURLY, Lex::tOR, 
-      &Syn::readAltn);
+      Lex::tLCURLY, Lex::tRCURLY, Lex::tOR, &Syn::readAltn);
 }
 
 // "{" {0 "|" <select> } "}"
 inline std::list<Select*> *Syn::readSelects() {
   return readList<Select>(
-      Lex::tLCURLY, Lex::tRCURLY, Lex::tOR, 
-      &Syn::readSelect);
+      Lex::tLCURLY, Lex::tRCURLY, Lex::tOR, &Syn::readSelect);
 }
 
 // Read a list of T
@@ -789,7 +789,7 @@ Expr *Syn::readExpr() {
   return NULL;
 }
 
-// "[" <expr> "]" "[" <expr> "]" ... "[" <expr> "]"
+// {1 "[" <expr> "]" }
 std::list<Expr*> *Syn::readDims() {
   if (curTok != Lex::tLSQ) 
     return NULL;

@@ -54,6 +54,6 @@ server TestPrimes() inherits
   interface m
 :
 
-p is TestPrimes(): 
+server p is TestPrimes(): 
 p.isPrime(11, r)
 

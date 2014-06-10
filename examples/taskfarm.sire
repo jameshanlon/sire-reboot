@@ -40,6 +40,6 @@ server Farmer() is
   }
 }:
 
-f is Farmer():
+server f is Farmer():
 par [i=0 for N] Worker(f)
 
