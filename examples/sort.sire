@@ -14,7 +14,7 @@ function level(val id) is
 
 function nbr(val id, val d) is
   % return the id of a neighbour for a hypercube node in dimension d
-  valof result id xor (1<<d)
+  id xor (1<<d)
 :
   
 process distribute(val id, chan[D+1] c, var[n] a, val n) is

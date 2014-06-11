@@ -64,24 +64,70 @@ Tree *Syn::readProg() {
   return tree;
 }
 
+// spef = <type>
+//      | <type> <name>
+//      | <spef> "[" "]"
+//      | <spef> "[" <expr> "]"
+// type = "var"
+//      | "chan"
+//      | "call"
+//      | "interface" "(" {0 "," <decl> } ")"
+//      | "process"
+//      | "server"
+//      | "function"
+Spef *Syn::readSpef(bool val) {
+  Lex::Token t = curTok;
+  getNextToken();
+  switch (t) {
+  default: 
+    error("invalid specifier");
+    return NULL;
+ 
+  // <type> {0, "[" <expr> "]" }
+  case Lex::tVAR:
+    return new Spef(Spef::VAR, val, readDims());
+
+  case Lex::tCHAN:
+    return new Spef(Spef::CHAN, val, readDims());
+
+  case Lex::tCALL:
+    return new Spef(Spef::CALL, val, readDims());
+
+  case Lex::tINTF:
+    return new IntfSpef(Spef::INTF, readIntfs(), readDims());
+
+  // <type> <name> {0 "[" <expr> "]" }
+  case Lex::tPROC:
+    return new NamedSpef(Spef::PROC, readName(), readDims());
+  
+  case Lex::tSERV:
+    return new NamedSpef(Spef::SERV, readName(), readDims());
+  
+  case Lex::tFUNC:
+    return new NamedSpef(Spef::FUNC, readName(), readDims());
+  }
+}
+
 // spec        = <decl>
 //             | <abbr>
 //             | <def>
-//             | <sim-spec> // TODO: sanity check this
-// decl        = <spec> {1 "," <name> }
+//             | <sim-spec>
+// decl        = <spef> {1 "," <name> }
 //             | <server-decl>
 //             | <hiding-decl>
 // abbr        = <spef> <name> "is" <elem>
 //             | "val" <spef> <name> "is" <elem>
-//             | "call" <name> "(" {0 "," <fml> } ")" "is" <elem>
 // server-decl = "server" <name> "is" {0 "[" <expr> "]" } <server>
 //             | "server" <name> "is" <rep> <server>
 //             | "server" <name> "is" <server>
-// sim-decl    = {0 "&" <decl> }
+// def         = <server-def>
+//             | <process-def>
+//             | <function-def>
+// sim-spec    = {2 "&" <spec> }
 Spec *Syn::readSpec() {
   Spec *res;
   switch(curTok) {
-  default:            assert(0 && "invalid token");
+  default:         assert(0 && "invalid token");
   case Lex::tEOF:  return NULL;
   
   // <decl> | <abbr>
@@ -118,14 +164,6 @@ Spec *Syn::readSpec() {
       case Lex::tIS:
         res = new VarAbbr(spef, name, readElem());
         break;
-     
-      // ... "(" {0 "," <fml> } ")" "is" <elem> ...
-      case Lex::tLPAREN: {
-          std::list<Fml*> *args = readFmls();
-          checkFor(Lex::tIS);
-          res = new CallAbbr(spef, name, args, readElem());
-          break;
-        }
       }
     }
   
@@ -188,57 +226,12 @@ Hiding *Syn::readHiding() {
   return new Hiding(readName(), decls);
 }
 
-// spec = <type>
-//      | <type> <name>
-//      | <spef> "[" "]"
-//      | <spef> "[" <expr> "]"
-// type = "var"
-//      | "chan"
-//      | "call"
-//      | "interface" "(" {0 "," <decl> } ")"
-//      | "process"
-//      | "server"
-//      | "function"
-Spef *Syn::readSpef(bool val) {
-  Lex::Token t = curTok;
-  getNextToken();
-  switch (t) {
-  default: 
-    error("invalid specifier");
-    return NULL;
- 
-  // <type> {0, "[" <expr> "]" }
-  case Lex::tVAR:
-    return new Spef(Spef::VAR, val, readDims());
-
-  case Lex::tCHAN:
-    return new Spef(Spef::CHAN, val, readDims());
-
-  case Lex::tCALL:
-    return new Spef(Spef::CALL, val, readDims());
-
-  case Lex::tINTF:
-    return new IntfSpef(Spef::INTF, readIntfs(), readDims());
-
-  // <type> <name> {0 "[" <expr> "]" }
-  case Lex::tPROC:
-    return new NamedSpef(Spef::PROC, readName(), readDims());
-  
-  case Lex::tSERV:
-    return new NamedSpef(Spef::SERV, readName(), readDims());
-  
-  case Lex::tFUNC:
-    return new NamedSpef(Spef::FUNC, readName(), readDims());
-  }
-}
-
 // def     = "process" <name> "(" {0 "," <fml>} ")" "is" <process>
 // process = <interface> "to" <cmd>
 //         | <cmd>
 Def *Syn::readProcDef() {
   // "process" <name> "(" {0 "," <fml>} ")" "is" ...
-  assert(curTok == Lex::tPROC);
-  getNextToken();
+  checkFor(Lex::tPROC);
   Name *name = readName();
   std::list<Fml*> *args = readFmls();
   checkFor(Lex::tIS);
@@ -259,8 +252,7 @@ Def *Syn::readProcDef() {
 // hiding-decl  = "from" "[" {1 "," <decl> } "]" "interface" <name>
 Def *Syn::readServDef() {
   // "server" <name> "(" {0, <fml>} ")" ...
-  assert(curTok == Lex::tSERV);
-  getNextToken();
+  checkFor(Lex::tSERV);
   Name *name = readName();
   std::list<Fml*> *args = readFmls();
 
@@ -282,8 +274,7 @@ Def *Syn::readServDef() {
 
 // def = "function" <name> "(" {0 "," <fml>} ")" "is" <expr>
 Def *Syn::readFuncDef() {
-  assert(curTok == Lex::tFUNC);
-  getNextToken();
+  checkFor(Lex::tFUNC);
   Name *name = readName();
   std::list<Fml*> *args = readFmls();
   checkFor(Lex::tIS);
@@ -394,7 +385,7 @@ Fml *Syn::readFml() {
 Cmd *Syn::readCmd() {
   switch(curTok) {
   default: 
-    error("bad command");
+    error("invalid command");
     return NULL;
   
   // "skip"
@@ -774,6 +765,7 @@ std::list<T*> *Syn::readList(
 
 // elem = ...
 Elem *Syn::readElem() {
+  // TODO
   return NULL;
 }
 
@@ -786,6 +778,7 @@ Name *Syn::readName() {
 
 // expr = ...
 Expr *Syn::readExpr() {
+  // TODO
   return NULL;
 }
 

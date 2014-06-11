@@ -2,7 +2,7 @@ val SQRTN is 4:
 val N is 16:
 val NONE is false:
 
-server Control(chan pin, pout) is
+let Control(chan pin, pout) be
   interface(chan out, in, 
     call isPrime(val p, var r)) to
   var i, v:
@@ -22,7 +22,7 @@ server Control(chan pin, pout) is
     }
 }:
 
-server Node(val i, server Control m, Node[SQRTN] p) is
+let Node(val i, server Control m, Node[SQRTN] p) be
   interface(chan in, out) to
 { var p, mp:
   initial
@@ -47,7 +47,7 @@ server Node(val i, server Control m, Node[SQRTN] p) is
   } 
 }:
 
-server TestPrimes() inherits
+let TestPrimes() inherits
   from
   { m is Control(p) &
     p is [i=0 for SQRTN] Node(i, m, p) }
