@@ -3,7 +3,7 @@ val N is 10:
 server Store() is
   interface(
     call read(val i, var v), 
-    call write(val i, val v)):
+    call write(val i, val v)) to
 { var[N] a:
   alt 
   { accept read(val i, var v):  v := a[i]

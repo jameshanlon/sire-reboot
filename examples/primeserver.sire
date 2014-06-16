@@ -47,7 +47,7 @@ let Node(val i, server Control m, Node[SQRTN] p) be
   } 
 }:
 
-let TestPrimes() inherits
+server TestPrimes() inherits
   from
   { m is Control(p) &
     p is [i=0 for SQRTN] Node(i, m, p) }

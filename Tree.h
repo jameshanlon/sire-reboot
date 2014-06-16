@@ -20,13 +20,16 @@ struct Node {
 // Forward declarations
 struct Spec;
 struct Decl;
-struct Hiding;
+struct HidingDecl;
+struct Proc;
 struct Cmd;
 struct Alt;
 struct Altn;
 struct Choice;
 struct Select;
 struct Range;
+struct Server;
+struct Proc;
 struct Fml;
 struct Expr;
 struct Elem;
@@ -41,8 +44,8 @@ struct Spef : public Node {
     CHAN,
     CALL,
     INTF,
+    SERVER,
     PROC,
-    SERV,
     FUNC
   } Type;
   Type type;
@@ -131,8 +134,8 @@ protected:
 struct Def : public Spec {
   typedef enum {
     PROC,
-    SERV,
-    ISERV,
+    SERVER,
+    ISERVER,
     FUNC
   } DefType;
   DefType defType;
@@ -143,33 +146,31 @@ protected:
 };
 
 // Process definition
-struct Proc : public Def {
-  std::list<Decl*> *intf;
-  Cmd *cmd;
-  Proc(Name *n, std::list<Fml*> *a, std::list<Decl*> *i, Cmd *c) :
-    Def(PROC, n, a), intf(i), cmd(c) {}
+struct ProcDef : public Def {
+  Proc *proc;
+  ProcDef(Name *n, std::list<Fml*> *a, Proc *p) :
+    Def(PROC, n, a), process(p) {}
 };
 
 // Server definition
-struct Serv : public Def {
-  std::list<Decl*> *intf;
-  std::list<Decl*> *decls;
-  Serv(Name *n, std::list<Fml*> *a, std::list<Decl*> *i, std::list<Decl*> *d) :
-    Def(SERV, n, a), intf(i), decls(d) {}
+struct ServerDef : public Def {
+  Server *server;
+  Server(Name *n, std::list<Fml*> *a, Server s) :
+    Def(SERVER, n, a), server(s) {}
 };
 
 // Inheriting server definition
-struct InhrtServ : public Def {
+struct InhrtServerDef : public Def {
   std::list<Decl*> *intf;
-  Hiding *decl; 
-  InhrtServ(Name *n, std::list<Fml*> *a, Hiding *d) :
-    Def(ISERV, n, a), decl(d) {}
+  HidingDecl *decl; 
+  InhrtServDef(Name *n, std::list<Fml*> *a, HidingDecl *d) :
+    Def(ISERVER, n, a), decl(d) {}
 };
 
 // Function definition
-struct Func : public Def {
+struct FuncDef : public Def {
   Expr *expr;
-  Func(Name *n, std::list<Fml*> *a, Expr *e) :
+  FuncDef(Name *n, std::list<Fml*> *a, Expr *e) :
     Def(FUNC, n, a), expr(e) {}
 };
 
@@ -185,7 +186,9 @@ struct Decl : public Spec {
   typedef enum {
     VAR,
     ARRAY,
-    HIDING
+    HIDING,
+    SERVER,
+    RSERVER
   } DeclType;
   DeclType tDecl;
 protected:
@@ -218,17 +221,35 @@ struct CallDecl : public Decl {
 };
 
 // Hiding declaration
-struct Hiding : public Decl {
+struct HidingDecl : public Decl {
   std::list<Spec*> *decls;
   Hiding(Name *n, std::list<Spec*> *d) :
     Decl(HIDING, n), decls(d) {}
 };
 
+// Server declaration
+struct ServerDecl : public Decl {
+  Server *server;
+  ServerDecl(Name *n, Server *s) :
+    Decl(SERVER, n), serv(s) {} 
+}
+
+// Replicated server declaration
+struct RServerDecl : public Decl {
+  Server *server;
+  std::list<IndexRange*> exprs
+  ServerDecl(Name *n, std::list<IndexRange*> e, Server *s) :
+    Decl(RSERVER, n), exprs(e), server(s) {}
+}
+
 // Abbreviation
 struct Abbr : public Spec {
   typedef enum {
     VAR,
-    CALL
+    CALL,
+    SERV,
+    PROC,
+    FUNC
   } Type;
   Type type;
 protected:
@@ -252,6 +273,16 @@ struct CallAbbr : public Abbr {
   CallAbbr(Spef *s, Name *n, std::list<Fml*> *a, Elem* e) :
     Abbr(CALL, n), spef(s), args(a), elem(e) {}
 };
+
+// Process abbreviation
+struct ProcAbbr : public Abbr {
+  Name *name;
+  Name *server;
+};
+
+// Server abbreviation
+
+// Function abbreviation
 
 // Commands ===================================================================
 
@@ -575,6 +606,23 @@ struct Range {
   Range(Name *n, Expr *b, Expr *c, Expr *s) :
     name(n), base(b), count(c), step(s) {}
 };
+
+// Server entity
+struct Server {
+  std::list<Decl*> *intf;
+  std::list<Decl*> *decls;
+  Server(std::list<Decl*> *i, std::list<Decl*> *d) :
+    intf(i), decls(d) {}
+};
+
+// Process entity
+struct Proc {
+  std::list<Decl*> *intf;
+  Cmd *cmd;
+  Server(std::list<Decl*> *i, Cmd *c) :
+    intf(i), cmd(c) {}
+};
+
 
 // Expressions ================================================================
 

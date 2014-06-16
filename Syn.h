@@ -25,6 +25,9 @@ private:
   
   Tree   *readProg();
   Spec   *readSpec();
+  Spec   *readServerSpec();
+  Spec   *readProcSpec();
+  Spec   *readFuncSpec();
   Hiding *readHiding();
   Spef   *readSpef(bool);
   Def    *readDef();
@@ -33,6 +36,7 @@ private:
   Def    *readFuncDef();
   Fml    *readFml();
   Decl   *readIntf();
+  Server *readServer();
   Cmd    *readCmd();
   Choice *readChoice();
   Altn   *readAltn();

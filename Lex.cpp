@@ -229,7 +229,7 @@ void Lex::declareKeywords() {
   declare("process",   Lex::tPROC);
   declare("result",    Lex::tRES);  
   declare("seq",       Lex::tSEQ);  
-  declare("server",    Lex::tSERV);  
+  declare("server",    Lex::tSERVER);  
   declare("skip",      Lex::tSKIP);
   declare("step",      Lex::tSTEP);   
   declare("stop",      Lex::tSTOP);    
@@ -295,7 +295,7 @@ const char *Lex::tokStr(Lex::Token t) {
     case tIS:      return "is";      case tON:    return "on"; 
     case tPAR:     return "par";     case tPROC:  return "process";
     case tRES:     return "result";  case tSEQ:   return "seq";
-    case tSERV:    return "server";  case tSKIP:  return "skip";
+    case tSERVER:  return "server";  case tSKIP:  return "skip";
     case tSTEP:    return "step";    case tSTOP:  return "stop";
     case tTEST:    return "test";    case tTHEN:  return "then";    
     case tTO:      return "to";      case tTRUE:  return "true";    

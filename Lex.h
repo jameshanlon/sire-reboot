@@ -18,25 +18,25 @@ public:
     // Literals
     tNUM,     tNAME,
     // Symbols
-    tLCURLY,  tRCURLY, tLSQ,   tRSQ,
-    tLPAREN,  tRPAREN, tCOMMA, tDOT,
-    tSEMI,    tIN,     tOUT,   tEQ,  
-    tADD,     tSUB,    tMUL,   tDIV,
-    tXOR,     tREM,    tAT,    tNEQ,
-    tNOT,     tLEQ,    tLSH,   tLT,
-    tGEQ,     tRSH,    tGT,    tASS,
-    tCOLON,   tLAND,   tAND,   tLOR,
-    tOR,      tSTR,    tCHAR,  
-    // Keywords
-    tACCEPT,  tALT,    tCALL,  tCHAN,
-    tCONNECT, tDO,     tELSE,  tFALSE,
-    tFINAL,   tFOR,    tFROM,  tFUNC,
-    tIF,      tINHRT,  tINIT,  tINTF,
-    tIS,      tON,     tPAR,   tPROC,
-    tRES,     tSEQ,    tSERV,  tSKIP,
-    tSTEP,    tSTOP,   tTHEN,  tTO,
-    tTRUE,    tVAL,    tVALOF, tVAR,
-    tWHILE,   tUNTIL,  tCASE,  tTEST                      
+    tLCURLY,  tRCURLY, tLSQ,    tRSQ,
+    tLPAREN,  tRPAREN, tCOMMA,  tDOT,
+    tSEMI,    tIN,     tOUT,    tEQ,  
+    tADD,     tSUB,    tMUL,    tDIV,
+    tXOR,     tREM,    tAT,     tNEQ,
+    tNOT,     tLEQ,    tLSH,    tLT,
+    tGEQ,     tRSH,    tGT,     tASS,
+    tCOLON,   tLAND,   tAND,    tLOR,
+    tOR,      tSTR,    tCHAR,   
+    // Keywords                
+    tACCEPT,  tALT,    tCALL,   tCHAN,
+    tCONNECT, tDO,     tELSE,   tFALSE,
+    tFINAL,   tFOR,    tFROM,   tFUNC,
+    tIF,      tINHRT,  tINIT,   tINTF,
+    tIS,      tON,     tPAR,    tPROC,
+    tRES,     tSEQ,    tSERVER, tSKIP,
+    tSTEP,    tSTOP,   tTHEN,   tTO,
+    tTRUE,    tVAL,    tVALOF,  tVAR,
+    tWHILE,   tUNTIL,  tCASE,   tTEST                      
   } Token;
 
   static Lex instance;
