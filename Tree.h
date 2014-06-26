@@ -77,14 +77,9 @@ struct Fml : public Node {
     LIST
   } Type;
   Spef *spef;
-  union {
-    Name *name;
-    std::list<Name*> *names;
-  };
+  Name *name;
   Fml(Spef *s, Name *n) :
     spef(s), name(n) {}
-  Fml(Spef *s, std::list<Name*> *n) :
-    spef(s), names(n) {}
 };
 
 // Elements ===================================================================

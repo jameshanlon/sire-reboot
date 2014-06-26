@@ -40,7 +40,7 @@ server ParallelRAM() inherits
   interface a
 
 m is ParallelRAM():
-par[i=0 for CLIENTS] {
+par [i=0 for CLIENTS] {
   m[i].write(addr, 42); 
   m[i].read(addr, v)
 }

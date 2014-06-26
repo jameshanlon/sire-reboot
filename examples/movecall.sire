@@ -21,7 +21,7 @@ function foo(var[n] a, val n) is
   seq [i=0 for n] a[i] := 0
 :
 
-s is Store():
+server s is Store():
 var v:
 seq [i=0 for N] s.write(i, 1);
 s.apply(foo)

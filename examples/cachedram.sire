@@ -2,9 +2,9 @@ val S is 1024:
 val N is 10:
 
 server Store() is
-  interface(call 
-    read(val i, var v), 
-    write(val i, val v)
+  interface( 
+    call read(val i, var v), 
+    call write(val i, val v)
   ):
 { var[S] a:
   alt 
@@ -16,12 +16,12 @@ server Store() is
 }
 
 & server Access(server Store[N] s) is
-  interface(call 
-    read(val i, var v),
-    write(val i, val v)):
+  interface( 
+    call read(val i, var v),
+    call write(val i, val v)):
 { var[M] cache, indices:
   var k, hit:
-  initial seq [i=0 for M] indices[0] := 0
+  initial [seq i=0 for M] indices[0] := 0
   alt { 
     accept read(val i, var v): 
     { hit := false;

@@ -65,16 +65,16 @@ Tree *Syn::readProg() {
 }
 
 // spef = <type>
-//      | <type> <name>
+//      | <type> <name> 
+//      | <type> <interface> 
 //      | <spef> "[" "]"
 //      | <spef> "[" <expr> "]"
 // type = "var"
 //      | "chan"
 //      | "call"
-//      | "interface" "(" {0 "," <decl> } ")"
+//      | "function"
 //      | "process"
 //      | "server"
-//      | "function"
 Spef *Syn::readSpef(bool val) {
   Lex::Token t = curTok;
   getNextToken();
@@ -92,19 +92,39 @@ Spef *Syn::readSpef(bool val) {
 
   case Lex::tCALL:
     return new Spef(Spef::CALL, val, readDims());
-
-  case Lex::tINTF:
-    return new IntfSpef(Spef::INTF, readIntfs(), readDims());
-
-  // <type> <name> {0 "[" <expr> "]" }
-  case Lex::tPROC:
-    return new NamedSpef(Spef::PROC, readName(), readDims());
-  
-  case Lex::tSERV:
-    return new NamedSpef(Spef::SERV, readName(), readDims());
   
   case Lex::tFUNC:
-    return new NamedSpef(Spef::FUNC, readName(), readDims());
+    return new Spef(Spef::FUNC, val, readDims());
+
+  // "process" <name> {0 "[" <expr> "]" }
+  // "process" <interface> {0 "[" <expr> "]" }
+  case Lex::tPROC:
+    switch (curTok) {
+    default:
+      error("expecting name or 'interface'");
+      return NULL;
+
+    case Lex::tNAME:
+      return new NamedSpef(Spef::PROC, readName(), readDims());
+    
+    case Lex::tINTF:
+      return new IntfSpef(Spef::PROC, readIntf(), readDims());
+    }
+  
+  // "server" <name> {0 "[" <expr> "]" }
+  // "server" <interface> {0 "[" <expr> "]" }
+  case Lex::tSERV:
+    switch (curTok) {
+    default:
+      error("expecting name or 'interface'");
+      return NULL;
+
+    case Lex::tNAME:
+      return new NamedSpef(Spef::SERV, readName(), readDims());
+    
+    case Lex::tINTF:
+      return new IntfSpef(Spef::SERV, readIntf(), readDims());
+    }
   }
 }
 
@@ -217,12 +237,15 @@ Spec *Syn::readSpec() {
   }
 }
 
-// TODO: server spef with dimensions
-// decl = "server" <name> "is" {0 "[" <expr> "]" } <server>
-//      | "server" <name> "is" <rep> <server>
-//      | "server" <name> "is" <server>
-// abbr = "server" <name> "is" <elem>
-// def  = "server" <name> "(" {0 "," <fml> } ")" ...
+// def         = "server" <name> "(" {0 "," <fml> } ")" ...
+// decl        = "server" <name> "is" {0 "[" <expr> "]" } <server>
+//             | "server" <name> "is" <rep> <server>
+//             | "server" <name> "is" <server>
+// abbr        = <server-spef> <name> "is" <elem>
+// server-spef = "server" <name>
+//             | "server" <interface> 
+//             | <spef> "[" "]"
+//             | <spef> "[" <expr> "]"
 Spec *Syn::readServerSpec() {
     checkFor(Lex::tSERVER);
     Name *name = readName();
@@ -281,9 +304,12 @@ Spec *Syn::readServerSpec() {
 }
 
 // TODO
-// TODO: process spef with dimensions
-// def  = "process" <name> "(" {0 "," <fml> } ")" "is" <process>
-// abbr = "process" <name> "is" <elem>
+// def          = "process" <name> "(" {0 "," <fml> } ")" "is" <process>
+// abbr         = <process-spef> <name> "is" <elem>
+// process-spef = "process" <name>
+//              | "process" <interface> 
+//              | <spef> "[" "]"
+//              | <spef> "[" <expr> "]"
 Spec *Syn::readProcSpec() {
   checkFor(Lex::tPROC);
   Name *name = readName();
@@ -310,9 +336,8 @@ Spec *Syn::readProcSpec() {
 }
 
 // TODO
-// TODO: function spef with dimensions
 // def  = "function" <name> "(" {0 "," <fml> } ")" "is" <expr>
-// abbr = "function" <name> "is" <elem>
+// abbr = <spef> <name> "is" <elem>
 Spec *Syn::readFuncSpec() {
   checkFor(Lex::tFUNC);
   return NULL;
@@ -437,20 +462,13 @@ Fml *Syn::readFml() {
   // "server" ...
   // "function" ...
   case Lex::tVAR:
-  case Lex::tINTF:
+  case Lex::CHAN:
   case Lex::tSERVER:
   case Lex::tPROC:
   case Lex::tFUNC: {
       Spef *spef = readSpef(val);
       Name *name = readName();
-      if (curTok != Lex::tCOMMA) 
-        return new Fml(spef, name);
-      // Multiple names
-      else {
-        std::list<Name*> *names = readNames();
-        names->insert(names->begin(), name);
-        return new Fml(spef, names);
-      }
+      return new Fml(spef, name);
     }
   }
 }

@@ -10,8 +10,8 @@ process Root(chan root) is
 }
 
 & process Branch(val i, chan m, 
-    process Branch[N-1] b, Leaf[N] l) is
-  interface(chan root, left, right) to
+    process Branch[N-1] b, process Leaf[N] l) is
+  interface(chan root, chan left, chan right) to
 { if i = 0
   then connect root to m
   else if i rem 2 = 1
