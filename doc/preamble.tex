@@ -14,9 +14,12 @@
   tabularx,
   verbments,
   enumitem,
+  multicol
 }
 % to fix "Class scrreprt Warning: \float@addtolists detected!"
 \usepackage{scrhack} 
+% To fix display skips
+\usepackage{etoolbox}
 
 % Fonts
 \usepackage{libertine}
@@ -60,6 +63,19 @@
 \addtokomafont{subsection}{\normalsize\textsf\scshape}
 \setkomafont{subsubsection}{\normalfont\sffamily\em}
 \setkomafont{descriptionlabel}{\normalfont\sffamily\em}
+
+% Set display skips to 0 (flalign* environments) 
+\newcommand{\zerodisplayskips}{%
+    \setlength{\abovedisplayskip}{0pt}
+    \setlength{\belowdisplayskip}{0pt}
+    \setlength{\abovedisplayshortskip}{0pt}
+    \setlength{\belowdisplayshortskip}{0pt}}
+\appto{\normalsize}{\zerodisplayskips}
+
+% Split flalign over pages
+\allowdisplaybreaks
+
+\def\sirelistingfontsize{\normalsize}
 
 % ============================================================================
 % Content macros

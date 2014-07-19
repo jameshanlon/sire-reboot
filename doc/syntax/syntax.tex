@@ -1,27 +1,16 @@
 \documentclass[11pt,a4paper,parskip=half-]{scrartcl}
 \input{../preamble}
 
-\usepackage{multicol}
-
 \title{The \sire\ language syntax}
-\author{\large James Hanlon}
-\date{\large May 13, 2014\\{\small (last revised \today)}}
-
-\setlength{\abovedisplayskip}{0pt}
-\def\sirelistingfontsize{\normalsize}
+\author{James Hanlon}
+\date{Last revised \today}
 
 \begin{document}
 
-% Split flalign over pages
-\allowdisplaybreaks
-% Set spacing before flalign
-\setlength{\abovedisplayskip}{0pt}
-%\setlength{\jot}{2mm}
-
 \section{Collected syntax}
 
-The following sections list the \sire\ syntax, with each section collecting
-related to a particular feature.
+The following sections list the \sire\ syntax, with each section related to a
+particular feature.
 
 \input{collected.tex}
 
@@ -158,10 +147,13 @@ A comment is introduced with a `\ttt{\%}' symbol and continues until the end of
   the line.
 
 
+\begin{minipage}{\textwidth} % keep with next
 \section{Keywords}
 
 The following are keywords in \sire\ and cannot be used for names.
 
 \input{keywords}
+
+\end{minipage}
 
 \end{document}

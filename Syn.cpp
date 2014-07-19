@@ -238,9 +238,8 @@ Spec *Syn::readSpec() {
 }
 
 // def         = "server" <name> "(" {0 "," <fml> } ")" ...
-// decl        = "server" <name> "is" {0 "[" <expr> "]" } <server>
+// decl        = "server" <name> "is" <server>
 //             | "server" <name> "is" <rep> <server>
-//             | "server" <name> "is" <server>
 // abbr        = <server-spef> <name> "is" <elem>
 // server-spef = "server" <name>
 //             | "server" <interface> 
@@ -379,7 +378,7 @@ Def *Syn::readServDef() {
   }
 }
 
-// def     = "process" <name> "(" {0 "," <fml> } ")" "is" <process>
+// def = "process" <name> "(" {0 "," <fml> } ")" "is" <process>
 Def *Syn::readProcDef() {
   checkFor(Lex::tPROC);
   Name *name = readName();
@@ -819,10 +818,10 @@ Select *Syn::readSelect() {
   return new GuardedSelect(expr, readCmd());
 }
 
-// index-range = <name> "=" <expr> "for" <expr>
-//             | <name> "=" <expr> "for" <expr> "step" <expr>
+// range = <name> "=" <expr> "for" <expr>
+//       | <name> "=" <expr> "for" <expr> "step" <expr>
 Range *Syn::readRange() {
-  // TODO: index-range = <expr>
+  // TODO: range = <expr>
   Name *name = readName();
   checkFor(Lex::tEQ);
   Expr *base = readExpr();
@@ -860,7 +859,7 @@ inline std::list<Expr*> *Syn::readActuals() {
       Lex::tLPAREN, Lex::tRPAREN, Lex::tCOMMA, &Syn::readExpr);
 }
 
-// "[" {1 "," <index-range> } "]"
+// "[" {1 "," <range> } "]"
 inline std::list<Range*> *Syn::readRep() {
   return readList<Range>(
       Lex::tLSQ, Lex::tRSQ, Lex::tCOMMA, &Syn::readRange);
