@@ -22,13 +22,12 @@ specification               = <declaration>
                             | <definition>
                             | <simultaneous-specification>;
 
-simultaneous-specification  = {2 "&" <specification>};
+simultaneous-specification  = {2 "&" <specification> };
+
 
 [Declarations]
 
-declaration                 = <specifier> {1 "," <name>}
-                            | <server-declaration>
-                            | <hiding-declaration>;
+declaration                 = <specifier> {1 "," <name>};
 
 specifier                   = <type>
                             | <type> <name>
@@ -42,6 +41,7 @@ type                        = "var"
                             | "function"
                             | "process"
                             | "server";
+
 
 [Abbreviations]
 
@@ -60,6 +60,7 @@ command                     = <primitive-command>
                             | <structured-command>
                             | <specification> ":" <command>;
 
+
 [Primitive commands]                      
 
 primitive-command           = <skip>
@@ -76,6 +77,7 @@ input                       = <element> "?" <element>;
 output                      = <element> "!" <expression>;
 connect                     = "connect" <element> "to" <element>;
                          
+
 [Structured commands]
 
 structured-command          = <alternation>
@@ -117,65 +119,58 @@ loop                        = "while" <expression> "do" <command>
                             | "do" <command> "while" <expr>
                             | "do" <command> "until" <expr>;
 
-% Parallel
-parallel                    = {0 "&" <component>};
+
+% ============================================================================
+[[Parallel]] 
+% ============================================================================
+
+parallel                    = {0 "&" <component> };
+
 component                   = <label> <process>
+                            | <label> "[" {0 "," <process> } "]"
                             | <process>;
+
 label                       = <name> "is";
 
+process                     = <command>
+                            | <interface> "to" <command>;
 
-% ============================================================================
-[[Process]]
-% ============================================================================
-
-process                     = <interface> "to" <command>
-                            | <command>;
-
-interface                   = "interface" "(" {0 "," <declaration>} ")";
+interface                   = "interface" "(" {0 "," <formal>} ")";
 
 
 % ============================================================================
 [[Server]]
 % ============================================================================
 
+
 [Specification]
 
-server                      = <interface> "to" <server-specification>;
+server                      = <interface> "to" <declaration>
+                            | <interface> "to" "{" {1 ":" <declaration> } "}";
 
-% Server interface specifiers (for declaration and abbreviation)
-primitive-type              = <call-type>;
-call-type                   = "call";
-declaration                 = <type> {1 "," <name> "(" {0 "," <formal> } ")" };
-
-% Server declarations and simlutaneous declaration
-server-specification        = <declaration> 
-                            | "{" {1 ":" <declaration>} "}";
 declaration                 = "initial" <command>
                             | "final" <command>
                             | <alternation>;
 
-% Alternation (for servers, call guard)
 guard                       = "accept" <name> "(" {0 "," <formal>} ")"
                             | <expression> "&" "accept" <name> "(" {0 "," <formal>} ")";
 
 [Declarations]
 
-server-declaration          = "server" <name> "is" <server>;
-server                      = <server-array>;
-server-array                = "[" {1 "," <server> } "]";
-hiding-declaration          = "from" "{" {1 ":" <declaration>} "}" "interface" <name>;
+declaration                 = "server" <name> "is" <server>
+                            | "server" <name> "is" "[" {1 "," <server> } "]"
+                            | "from" "{" {1 ":" <declaration>} "}" "interface" <name>;
 
 [Call]
 
-command                     = <server-call>;
-server-call                 = <element> "(" {0 "," <actual>} ")";
+command                     = <element> "(" {0 "," <actual>} ")";
 
 
 % ============================================================================
 [[Replication]]
 % ============================================================================
 
-label                       = <name> "is" <replicator>;
+component                   = <label> <replicator> <process>;
 conditional                 = "if" <replicator> <choice>;
 case                        = "case" <replicator> <selection>;
 alternation                 = "alt" <replicator> <alternative>;
@@ -237,7 +232,8 @@ procedure                   = "process" <name> "(" {0 "," <formal>} ")" "is" <pr
                             | "server" <name> "(" {0 "," <formal>} ")" "is" <server>
                             | "server" <name> "(" {0 "," <formal>} ")" "inherits" <hiding-declaration>;
 
-function                    = "function" <name> "(" {0 "," <formal>} ")" "is" <valof>;
+function                    = "function" <name> "(" {0 "," <formal>} ")" "is" <valof>
+                            | "function" <name> "(" {0 "," <formal>} ")" "is" <expression>;
 
 formal                      = <specifier> <name>
                             | <specifier> <name> "(" {0 "," <formal> } ")"
@@ -258,18 +254,23 @@ actual                      = <element>
 [[Compiler transformations]]
 % ============================================================================
 
+
 [Process distribution]
 
 process                     = "on" <expression> "do" <process>;
 
+
 [Channel end references]
 
 absolute-reference          = "(" <expression> ":" <expression> ":" <expression> ")";
+
 % Interfaces
 interface                   = "interface" "(" {0 "," <declaration>} ")" "@" <absolute-reference>;
+
 % Calls
 server-call                 = <local-chanend> "!" <element> "(" {0 "," <actual>} ")";
 local-chanend               = <element> "@" <absolute-reference>;
+
 % Connects
 chanend                     = <remote-chanend>;
 remote-chanend              = "@" <absolute-reference> "." <expression>;

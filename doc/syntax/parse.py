@@ -99,6 +99,7 @@ def printRule(r):
     elif t == 'OR':
       print '\\\\\n\oo & \ww',
     
+
 def getKeywordsFromRule(r):
   results, rem = scanner.scan(r)
   if DEBUG:
@@ -114,6 +115,7 @@ def getKeywordsFromRule(r):
       if re.match('^[\w-]+$', terminal) is not None:
         keywords.append(terminal)
   return keywords
+
 
 def printCollected(sections):
   # Parse each section and print collected syntax
