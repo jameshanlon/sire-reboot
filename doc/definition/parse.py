@@ -129,7 +129,9 @@ def printCollected(sections):
     if level == 1:
       print('\n\n\\subsubsection{'+title+'}\n')
     if level == 2:
-      print('\n{\\bf '+title+'}\n')
+      pass
+      # TODO: don't include these? Makes it simpler...
+      #print('\n\\bigskip\\textsf{'+title+'}\n')
 
     if len(rules) > 0: 
       print('\\begin{flalign*}')
