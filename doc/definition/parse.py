@@ -118,20 +118,18 @@ def getKeywordsFromRule(r):
 
 
 def printCollected(sections):
+  
   # Parse each section and print collected syntax
-  for (title, level, contents) in sections:
+  for (title, contents) in sections:
 
     # Split on the rule separator
     rules = contents.split(';\n')
+
     # Remove any empty rules (sometimes produced at the end from ws)
     rules = [x for x in rules if len(x)>0]
 
-    if level == 1:
-      print('\n\n\\subsubsection{'+title+'}\n')
-    if level == 2:
-      pass
-      # TODO: don't include these? Makes it simpler...
-      #print('\n\\bigskip\\textsf{'+title+'}\n')
+    # Print section header
+    print('\n\n\\subsubsection{'+title+'}\n')
 
     if len(rules) > 0: 
       print('\\begin{flalign*}')
@@ -157,7 +155,7 @@ def printCollected(sections):
 def printOrdered(sections):
   # Combine rules
   combined = {}
-  for (i, (title, level, contents)) in enumerate(sections):
+  for (i, (title, contents)) in enumerate(sections):
     productions = contents.split(';\n')
     for x in productions:
       if x != '\n' and x != '':
@@ -197,7 +195,7 @@ def printOrdered(sections):
 def printKeywords(sections):
   # Combine rules
   keywords = set()
-  for (i, (title, level, contents)) in enumerate(sections):
+  for (i, (title, contents)) in enumerate(sections):
     productions = contents.split(';\n')
     for x in productions:
       if x != '\n' and x != '':
@@ -224,48 +222,43 @@ def printKeywords(sections):
 
 f = open('syntax.ebnf', 'r')
 section = ''
-level = 0
 contents = ''
 sections = []
 
 # Strip comments and blank lines and divide into sections
 # Rules are separated by the string ';\n'
 for l in f:
-  l = re.sub(r'%[^\n]*', '', l) # Comments
-  l = l.strip(' ') # Remove spaces
+  
+  # Comments
+  l = re.sub(r'%[^\n]*', '', l) 
+  
+  # Remove spaces
+  l = l.strip(' ') 
+  
   if len(l) == 0:
     continue
+  
   if l == '\n':
     continue
+  
   #print 'line: '+l,
-  # Extract subsection
-  r = re.match(r'\[\[([A-Za-z ]+)\]\]\s*$\n', l)
+  
+  # Extract section
+  r = re.match(r'\[([A-Za-z ]+)\]\s*$\n', l)
   if r:
-    if level != 0:
-      sections.append((section, level, contents))
-      #print(section)
-      #print(contents)
-    section = r.group(1)
-    level = 1
-    contents = ''
-    continue
-  # Extract subsubsections
-  r = re.match(r'\[([A-Za-z ]+)\]\s*\n', l)
-  if r:
-    assert level != 0
-    sections.append((section, level, contents))
+    sections.append((section, contents))
     #print(section)
     #print(contents)
     section = r.group(1)
-    level = 2
     contents = ''
     continue
+  
   # Concatenate EBNF
   contents += l
+
 f.close()
 
-if level != 0:
-  sections.append((section, level, contents))
+sections.append((section, contents))
 
 if sys.argv[1] == 'collected':
   printCollected(sections)

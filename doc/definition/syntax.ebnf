@@ -5,302 +5,273 @@
 % end is      ";"
 % Separate everything with spaces
 
-% ============================================================================
-[[Program]]
-% ============================================================================
-
-program                     = <specification> ":" <program>
-                            | <sequence>;
-
 
 % ============================================================================
-[[Specifications]]
+[Program]
 % ============================================================================
 
-specification               = <declaration>
-                            | <abbreviation>
-                            | <definition>
-                            | {0 "&" <specification> };
-
-
-[Declarations]
-
-declaration                 = <specifier> {1 "," <name> };
-
-specifier                   = <type>
-                            | <type> <name>
-                            | <type> <interface>
-                            | <specifier> "[" "]" 
-                            | <specifier> "[" <expression> "]";
-
-type                        = "var"
-                            | "chan"
-                            | "call"
-                            | "function"
-                            | "process"
-                            | "server";
-
-
-[Abbreviations]
-
-abbreviation                = <specifier> <name> "is" <element>
-                            | <specifier> <name> "(" {0 "," <formal> } ")" "is" <element>
-                            | "val" <name> "is" <expression>;
+program             = <specification> ":" <program>
+                    | <sequence>;
 
 
 % ============================================================================
-[[Sequence]] 
+[Specifications]
 % ============================================================================
 
-sequence                    = {0 ";" <command> };
+specification       = <declaration>
+                    | <abbreviation>
+                    | {0 "&" <specification> };
 
-command                     = <primitive-command> 
-                            | <structured-command>
-                            | <specification> ":" <command>;
+declaration         = <specifier> {1 "," <name> };
+
+abbreviation        = <specifier> <name> "is" <element>
+                    | <specifier> <name> "(" {0 "," <formal> } ")" "is" <element>
+                    | "val" <name> "is" <expression>;
+
+specifier           = <type>
+                    | <type> <name>
+                    | <type> <interface>
+                    | <specifier> "[" "]" 
+                    | <specifier> "[" <expression> "]";
+
+type                = "var"
+                    | "chan"
+                    | "call"
+                    | "function"
+                    | "process"
+                    | "server";
 
 
-[Primitive commands]                      
+% ============================================================================
+[Sequence] 
+% ============================================================================
 
-primitive-command           = <skip>
-                            | <stop>
-                            | <assignment>
-                            | <input>
-                            | <output>
-                            | <connect>;
+sequence            = {0 ";" <command> };
 
-skip                        = "skip";
+command             = <primitive-command> 
+                    | <structured-command>
+                    | <specification> ":" <command>;
 
-stop                        = "stop";
+primitive-command   = <skip>
+                    | <stop>
+                    | <assignment>
+                    | <input>
+                    | <output>
+                    | <connect>;
 
-assignment                  = <element> ":=" <expression>;
+skip                = "skip";
 
-input                       = <element> "?" <element>;
+stop                = "stop";
 
-output                      = <element> "!" <expression>;
+assignment          = <element> ":=" <expression>;
 
-connect                     = "connect" <element> "to" <element>;
-                         
+input               = <element> "?" <element>;
 
-[Structured commands]
+output              = <element> "!" <expression>;
 
-structured-command          = <alternation>
-                            | <conditional>
-                            | <case>
-                            | <loop> 
-                            | "{" <sequence> "}"
-                            | "{" <parallel> "}"
-                            | "seq" {1 "," <range>} "do" <command>
-                            | "par" {1 "," <range>} "do" <command>;
+connect             = "connect" <element> "to" <element>;
+                    
+structured-command  = <alternation>
+                    | <conditional>
+                    | <case>
+                    | <loop> 
+                    | "{" <sequence> "}"
+                    | "{" <parallel> "}"
+                    | "seq" {1 "," <range>} "do" <command>
+                    | "par" {1 "," <range>} "do" <command>;
 
-% Test                   
-conditional                 = "test" "{" {0 "|" <choice> "}"
-                            | "if" <expression> "do" <command>
-                            | "if" <expression> "then" <command> "else" <command>;
+% Test              
+conditional         = "test" "{" {0 "|" <choice> "}"
+                    | "if" <expression> "do" <command>
+                    | "if" <expression> "then" <command> "else" <command>;
 
-choice                      = <guarded-choice>
-                            | <conditional>
-                            | <specification> ":" <choice>;
+choice              = <guarded-choice>
+                    | <conditional>
+                    | <specification> ":" <choice>;
 
-guarded-choice              = <expression> ":" <command>;
-                         
+guarded-choice      = <expression> ":" <command>;
+                    
 % Case 
-case                        = "case" "(" <expression> ")" "{" {0 "|" <selection>} "}";
+case                = "case" "(" <expression> ")" "{" {0 "|" <selection>} "}";
 
-selection                   = <expression> ":" <command>
-                            | "else" <process>;
+selection           = <expression> ":" <command>
+                    | "else" <process>;
 
 % Alternative
-alternation                 = "alt" "{" {0 "|" <alternative>} "}";
+alternation         = "alt" "{" {0 "|" <alternative>} "}";
 
-alternative                 = <guarded-alternative>
-                            | <alternation>
-                            | <specification> ":" <alternative>;
+alternative         = <guarded-alternative>
+                    | <alternation>
+                    | <specification> ":" <alternative>;
 
-guarded-alternative         = <guard> ":" <command>;
+guarded-alternative = <guard> ":" <command>;
 
-guard                       = <input>
-                            | <expression> "&" <input>
-                            | <expression> "&" <skip>;
+guard               = <input>
+                    | <expression> "&" <input>
+                    | <expression> "&" <skip>;
 
 % Loop 
-loop                        = "while" <expression> "do" <command>
-                            | "until" <expression> "do" <command>
-                            | "do" <command> "while" <expr>
-                            | "do" <command> "until" <expr>;
+loop                = "while" <expression> "do" <command>
+                    | "until" <expression> "do" <command>
+                    | "do" <command> "while" <expr>
+                    | "do" <command> "until" <expr>;
 
 
 % ============================================================================
-[[Parallel]] 
+[Parallel] 
 % ============================================================================
 
-parallel                    = {0 "&" <component> };
+parallel            = {0 "&" <component> };
 
-component                   = <label> <process>
-                            | <label> "[" {0 "," <process> } "]"
-                            | <process>;
+component           = <label> <process>
+                    | <label> "[" {0 "," <process> } "]"
+                    | <process>;
 
-label                       = <name> "is";
+label               = <name> "is";
 
-process                     = <command>
-                            | <interface> "to" <command>;
+process             = <command>
+                    | <interface> "to" <command>;
 
-interface                   = "interface" "(" {0 "," <formal>} ")";
-
-
-% ============================================================================
-[[Server]]
-% ============================================================================
-
-
-[Specification]
-
-server                      = <interface> "to" <declaration>
-                            | <interface> "to" "{" {1 ":" <declaration> } "}";
-
-declaration                 = "initial" <command>
-                            | "final" <command>
-                            | <alternation>;
-
-guard                       = "accept" <name> "(" {0 "," <formal>} ")"
-                            | <expression> "&" "accept" <name> "(" {0 "," <formal>} ")";
-
-
-[Declarations]
-
-declaration                 = "server" <name> "is" <server>
-                            | "server" <name> "is" "[" {1 "," <server> } "]"
-                            | "from" "{" {1 ":" <declaration>} "}" "interface" <name>;
-
-[Call]
-
-command                     = <element> "(" {0 "," <actual>} ")";
+interface           = "interface" "(" {0 "," <formal>} ")";
 
 
 % ============================================================================
-[[Replication]]
+[Server]
 % ============================================================================
 
-component                   = <label> <replicator> <process>;
+server              = <interface> "to" <declaration>
+                    | <interface> "to" "{" {1 ":" <declaration> } "}";
 
-conditional                 = "if" <replicator> <choice>;
+declaration         = "initial" <command>
+                    | "final" <command>
+                    | <alternation>;
 
-case                        = "case" <replicator> <selection>;
-
-alternation                 = "alt" <replicator> <alternative>;
-
-declaration                 = "server" <name> "is" <replicator> <server>;
-
-replicator                  = "[" {1 "," <range>} "]";
-
-range                       = <name> "=" <expression> "for" <expression>
-                            | <name> "=" <expression> "for" <expression> "step" <expression>;
+guard               = "accept" <name> "(" {0 "," <formal>} ")"
+                    | <expression> "&" "accept" <name> "(" {0 "," <formal>} ")";
 
 
-% ============================================================================
-[[Expressions]]
-% ============================================================================
+declaration         = "server" <name> "is" <server>
+                    | "server" <name> "is" "[" {1 "," <server> } "]"
+                    | "from" "{" {1 ":" <declaration>} "}" "interface" <name>;
 
-expression                  = <unary-operator> <operand>
-                            | <operand> <binary-operator> <operand>
-                            | <operand>;
-operand                     = <element>
-                            | <literal>
-                            | "(" <expression> ")";
-
-
-[Valof]
-
-valof                       = "valof" <cmd> "result" <expression>
-                            | <specification> ":" <valof>;
-
-expression                  = "(" <valof> ")";
+command             = <element> "(" {0 "," <actual>} ")";
 
 
 % ============================================================================
-[[Elements]]
+[Replication]
 % ============================================================================
 
-element                     = <element> "[" <expression> "]"
-                            | <field>
-                            | <name>;
+component           = <label> <replicator> <process>;
 
-field                       = <element> "." <name>;
+conditional         = "if" <replicator> <choice>;
 
-literal                     = <decimal-integer>
-                            | "#" <hexdecimal-integer>
-                            | <byte>
-                            | "true"
-                            | "false";
+case                = "case" <replicator> <selection>;
 
-hexdecimal-integer          = <hexdecimal-digit>
-                            | <hexdecimal-digit> <hexdecimal-integer>;
+alternation         = "alt" <replicator> <alternative>;
 
-decimal-integer             = <digit>
-                            | <digit> <decimal-integer>;
+declaration         = "server" <name> "is" <replicator> <server>;
 
-byte                        = "'" <character> "'";
+replicator          = "[" {1 "," <range>} "]";
+
+range               = <name> "=" <expression> "for" <expression>
+                    | <name> "=" <expression> "for" <expression> "step" <expression>;
 
 
 % ============================================================================
-[[Abstraction]]
+[Expressions]
 % ============================================================================
 
-[Definitions]
+expression          = <unary-operator> <operand>
+                    | <operand> <binary-operator> <operand>
+                    | <operand>;
 
-definition                  = <procedure>
-                            | <function>;
+operand             = <element>
+                    | <literal>
+                    | "(" <expression> ")";
 
-procedure                   = "process" <name> "(" {0 "," <formal>} ")" "is" <process>
-                            | "server" <name> "(" {0 "," <formal>} ")" "is" <server>
-                            | "server" <name> "(" {0 "," <formal>} ")" "inherits" <hiding-declaration>;
+valof               = "valof" <cmd> "result" <expression>
+                    | <specification> ":" <valof>;
 
-function                    = "function" <name> "(" {0 "," <formal>} ")" "is" <valof>
-                            | "function" <name> "(" {0 "," <formal>} ")" "is" <expression>;
-
-formal                      = <specifier> <name>
-                            | <specifier> <name> "(" {0 "," <formal> } ")"
-                            | "val" <name>;
-
-[Instances]
-
-process                     = <instance>;
-
-server                      = <instance>;
-
-command                     = <instance>;
-
-expression                  = <instance>;
-
-instance                    = <name> "(" {0 "," <actual>} ")";
-
-actual                      = <element>
-                            | <expression>;
+expression          = "(" <valof> ")";
 
 
 % ============================================================================
-[[Compiler transformations]]
+[Elements]
 % ============================================================================
 
+element             = <element> "[" <expression> "]"
+                    | <field>
+                    | <name>;
 
-[Process distribution]
+field               = <element> "." <name>;
 
-process                     = "on" <expression> "do" <process>;
+literal             = <decimal-integer>
+                    | "#" <hexdecimal-integer>
+                    | <byte>
+                    | "true"
+                    | "false";
+
+hexdecimal-integer  = <hexdecimal-digit>
+                    | <hexdecimal-digit> <hexdecimal-integer>;
+
+decimal-integer     = <digit>
+                    | <digit> <decimal-integer>;
+
+byte                = "'" <character> "'";
 
 
-[Channel end references]
+% ============================================================================
+[Abstraction]
+% ============================================================================
 
-absolute-reference          = "(" <expression> ":" <expression> ":" <expression> ")";
+specification       = <definition>;
 
-% Interfaces
-interface                   = "interface" "(" {0 "," <declaration>} ")" "@" <absolute-reference>;
+definition          = <procedure>
+                    | <function>;
 
-% Calls
-server-call                 = <local-chanend> "!" <element> "(" {0 "," <actual>} ")";
+procedure           = "process" <name> "(" {0 "," <formal>} ")" "is" <process>
+                    | "server" <name> "(" {0 "," <formal>} ")" "is" <server>
+                    | "server" <name> "(" {0 "," <formal>} ")" "inherits" <hiding-declaration>;
 
-local-chanend               = <element> "@" <absolute-reference>;
+function            = "function" <name> "(" {0 "," <formal>} ")" "is" <valof>
+                    | "function" <name> "(" {0 "," <formal>} ")" "is" <expression>;
 
-% Connects
-chanend                     = <remote-chanend>;
+formal              = <specifier> <name>
+                    | <specifier> <name> "(" {0 "," <formal> } ")"
+                    | "val" <name>;
 
-remote-chanend              = "@" <absolute-reference> "." <expression>;
+process             = <instance>;
+
+server              = <instance>;
+
+command             = <instance>;
+
+expression          = <instance>;
+
+instance            = <name> "(" {0 "," <actual>} ")";
+
+actual              = <element>
+                    | <expression>;
+
+
+% ============================================================================
+[Compiler transformations]
+% ============================================================================
+
+% Process distribution
+process             = "on" <expression> "do" <process>;
+
+% Channel-end references
+
+absolute-reference  = "(" <expression> ":" <expression> ":" <expression> ")";
+
+interface           = "interface" "(" {0 "," <declaration>} ")" "@" <absolute-reference>;
+
+server-call         = <local-chanend> "!" <element> "(" {0 "," <actual>} ")";
+
+local-chanend       = <element> "@" <absolute-reference>;
+
+element             = <remote-chanend>;
+
+remote-chanend      = "@" <absolute-reference> "." <expression>;
 
