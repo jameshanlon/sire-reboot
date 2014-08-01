@@ -43,14 +43,8 @@ type                = "var"
 
 
 % ============================================================================
-[Sequence] 
+[Primitive commands] 
 % ============================================================================
-
-sequence            = {0 ";" <command> };
-
-command             = <primitive-command> 
-                    | <structured-command>
-                    | <specification> ":" <command>;
 
 primitive-command   = <skip>
                     | <stop>
@@ -71,6 +65,11 @@ output              = <element> "!" <expression>;
 
 connect             = "connect" <element> "to" <element>;
                     
+
+% ============================================================================
+[Structured commands] 
+% ============================================================================
+
 structured-command  = <alternation>
                     | <conditional>
                     | <case>
@@ -115,6 +114,17 @@ loop                = "while" <expression> "do" <command>
                     | "until" <expression> "do" <command>
                     | "do" <command> "while" <expr>
                     | "do" <command> "until" <expr>;
+
+
+% ============================================================================
+[Sequence] 
+% ============================================================================
+
+sequence            = {0 ";" <command> };
+
+command             = <primitive-command> 
+                    | <structured-command>
+                    | <specification> ":" <command>;
 
 
 % ============================================================================
