@@ -246,9 +246,8 @@ for l in f:
   # Extract section
   r = re.match(r'\[([A-Za-z ]+)\]\s*$\n', l)
   if r:
-    sections.append((section, contents))
-    #print(section)
-    #print(contents)
+    if section!='':
+      sections.append((section, contents))
     section = r.group(1)
     contents = ''
     continue
