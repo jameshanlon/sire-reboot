@@ -1,8 +1,14 @@
 \documentclass[11pt,a4paper,parskip=half-]{scrartcl}
 \input{../preamble}
 
+\def\copyright{
+This work is licensed under the Creative Commons
+Attribution 4.0 International License.
+%
+\url{http://creativecommons.org/licenses/by/4.0/}}
+
 \title{The \sire\ language defintion}
-\author{James Hanlon}
+\author{James Hanlon\footnote{\copyright}}
 \date{Last revised \today}
 
 \begin{document}
@@ -1396,8 +1402,15 @@ processes or servers that communicate with each other.
 \een
 
 
-%==============================================================================
+% Bibliography
+%\phantomsection
+\addcontentsline{toc}{section}{References}
+\bibliographystyle{alpha}
+\bibliography{refs}
+
 \clearpage
+\appendix
+%==============================================================================
 \section{Syntax}
 %==============================================================================
 
@@ -1541,19 +1554,13 @@ A comment is introduced with a `\ttt{\%}' symbol and continues until the end of
   the line.
 
 
-%\begin{minipage}{\textwidth} % keep with next
+\begin{minipage}{\textwidth} % keep with next
 \subsection{Keywords}
 
 The following are keywords in \sire\ and cannot be used for names.
 
 \input{keywords}
-
-
-% Bibliography
-%\phantomsection
-\addcontentsline{toc}{section}{References}
-\bibliographystyle{alpha}
-\bibliography{refs}
+\end{minipage}
 
 \end{document}
 

@@ -14,7 +14,9 @@
   tabularx,
   verbments,
   enumitem,
-  multicol
+  multicol,
+  textcomp,
+  microtype,
 }
 % to fix "Class scrreprt Warning: \float@addtolists detected!"
 \usepackage{scrhack} 
@@ -35,12 +37,12 @@
   breaklinks,
   pdfpagelabels,
 ]{hyperref}
-%\hypersetup{
-%  linkcolor=DarkBlue, 
-%  citecolor=DarkRed, 
-%  filecolor=DarkBlue, 
-%  urlcolor=DarkGreen,
-%}
+\hypersetup{
+  linkcolor=DarkBlue, 
+  citecolor=DarkRed, 
+  filecolor=DarkBlue, 
+  urlcolor=DarkGreen,
+}
 \AtBeginDocument{\hypersetup{pdfauthor={\@author},pdftitle={\@title}}}
 
 % Bookmarks
