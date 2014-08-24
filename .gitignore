@@ -2,6 +2,8 @@
 *.aux
 *.log
 *.toc
+*.bbl
+*.blg
 definition.pdf
 doc/definition/collected.tex
 doc/definition/ordered.tex
