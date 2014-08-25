@@ -20,8 +20,7 @@ struct Node {
 // Forward declarations
 struct Spec;
 struct Decl;
-struct HidingDecl;
-struct Proc;
+struct Hiding;
 struct Cmd;
 struct Alt;
 struct Altn;
@@ -29,7 +28,7 @@ struct Choice;
 struct Select;
 struct Range;
 struct Server;
-struct Proc;
+struct Process;
 struct Fml;
 struct Expr;
 struct Elem;
@@ -45,8 +44,8 @@ struct Spef : public Node {
     CALL,
     INTF,
     SERVER,
-    PROC,
-    FUNC
+    PROCESS,
+    FUNCTION
   } Type;
   Type type;
   bool val;
@@ -138,10 +137,10 @@ protected:
 // Definition
 struct Def : public Spec {
   typedef enum {
-    PROC,
+    PROCESS,
     SERVER,
     ISERVER,
-    FUNC
+    FUNCTION
   } DefType;
   DefType defType;
   std::list<Fml*> *args;
@@ -151,32 +150,32 @@ protected:
 };
 
 // Process definition
-struct ProcDef : public Def {
-  Proc *proc;
-  ProcDef(Name *n, std::list<Fml*> *a, Proc *p) :
-    Def(PROC, n, a), process(p) {}
+struct ProcessDef : public Def {
+  Process *proc;
+  ProcessDef(Name *n, std::list<Fml*> *a, Process *p) :
+    Def(PROCESS, n, a), proc(p) {}
 };
 
 // Server definition
 struct ServerDef : public Def {
   Server *server;
-  Server(Name *n, std::list<Fml*> *a, Server s) :
+  ServerDef(Name *n, std::list<Fml*> *a, Server *s) :
     Def(SERVER, n, a), server(s) {}
 };
 
 // Inheriting server definition
 struct InhrtServerDef : public Def {
   std::list<Decl*> *intf;
-  HidingDecl *decl; 
-  InhrtServDef(Name *n, std::list<Fml*> *a, HidingDecl *d) :
+  Hiding *decl; 
+  InhrtServerDef(Name *n, std::list<Fml*> *a, Hiding *d) :
     Def(ISERVER, n, a), decl(d) {}
 };
 
 // Function definition
-struct FuncDef : public Def {
+struct FunctionDef : public Def {
   Expr *expr;
-  FuncDef(Name *n, std::list<Fml*> *a, Expr *e) :
-    Def(FUNC, n, a), expr(e) {}
+  FunctionDef(Name *n, std::list<Fml*> *a, Expr *e) :
+    Def(FUNCTION, n, a), expr(e) {}
 };
 
 // Simultaneous specification
@@ -226,7 +225,7 @@ struct CallDecl : public Decl {
 };
 
 // Hiding declaration
-struct HidingDecl : public Decl {
+struct Hiding : public Decl {
   std::list<Spec*> *decls;
   Hiding(Name *n, std::list<Spec*> *d) :
     Decl(HIDING, n), decls(d) {}
@@ -236,16 +235,16 @@ struct HidingDecl : public Decl {
 struct ServerDecl : public Decl {
   Server *server;
   ServerDecl(Name *n, Server *s) :
-    Decl(SERVER, n), serv(s) {} 
-}
+    Decl(SERVER, n), server(s) {} 
+};
 
 // Replicated server declaration
 struct RServerDecl : public Decl {
   Server *server;
-  std::list<IndexRange*> exprs
-  ServerDecl(Name *n, std::list<IndexRange*> e, Server *s) :
-    Decl(RSERVER, n), exprs(e), server(s) {}
-}
+  std::list<Range*> *exprs;
+  RServerDecl(Name *n, std::list<Range*> *e, Server *s) :
+    Decl(RSERVER, n), server(s), exprs(e) {}
+};
 
 // Abbreviation
 struct Abbr : public Spec {
@@ -253,8 +252,8 @@ struct Abbr : public Spec {
     VAR,
     CALL,
     SERV,
-    PROC,
-    FUNC
+    PROCESS,
+    FUNCTION
   } Type;
   Type type;
   Spef *spef;
@@ -278,21 +277,21 @@ struct CallAbbr : public Abbr {
 };
 
 // Server abbreviation
-struct ServerAbbr() : public Abbr {
+struct ServerAbbr : public Abbr {
   ServerAbbr(Spef *s, Name *n, Elem *e) :
     Abbr(SERV, s, n, e) {}
 };
 
 // Process abbreviation
-struct ProcAbbr : public Abbr {
-  ProcAbbr(Spef *s, Name *n, Elem *e) :
-    Abbr(PROC, s, n, e) {}
+struct ProcessAbbr : public Abbr {
+  ProcessAbbr(Spef *s, Name *n, Elem *e) :
+    Abbr(PROCESS, s, n, e) {}
 };
 
 // Function abbreviation
-struct FuncAbbr() : public Abbr {
-  FuncAbbr(Spef *s, Name *n, Elem *e) :
-    Abbr(FUNC, s, n, e) {}
+struct FunctionAbbr : public Abbr {
+  FunctionAbbr(Spef *s, Name *n, Elem *e) :
+    Abbr(FUNCTION, s, n, e) {}
 };
 
 // Commands ===================================================================
@@ -629,8 +628,8 @@ struct Server {
 
 struct ServerSpec : public Server {
   std::list<Decl*> *intfs;
-  std::list<Decl*> *decls;
-  Server(std::list<Decl*> *i, std::list<Decl*> *d) :
+  std::list<Spec*> *decls;
+  ServerSpec(std::list<Decl*> *i, std::list<Spec*> *d) :
     Server(SPEC), intfs(i), decls(d) {}
 };
 
@@ -642,33 +641,33 @@ struct ServerInstance : public Server {
 };
 
 // Process entity
-struct Proc {
+struct Process {
   typedef enum {
     CMD,
     SPEC,
     INSTANCE
   } Type;
-  Proc(Type t) {}
+  Process(Type t) {}
 };
 
-struct ProcCmd : public Proc {
+struct ProcessCmd : public Process {
   Cmd *cmd;
-  ProcCmd(Cmd *c) :
-    Proc(CMD), cmd(c) {}
+  ProcessCmd(Cmd *c) :
+    Process(CMD), cmd(c) {}
 };
 
-struct ProcSpec : public Proc {
+struct ProcessSpec : public Process {
   std::list<Decl*> *intf;
   Cmd *cmd;
-  ProcSpec(std::list<Decl*> *i, Cmd *c) :
-    Proc(SPEC), intf(i), cmd(c) {}
+  ProcessSpec(std::list<Decl*> *i, Cmd *c) :
+    Process(SPEC), intf(i), cmd(c) {}
 };
 
-struct ProcInstance : public Proc {
+struct ProcessInstance : public Process {
   Name *name;
   std::list<Expr*> *actuals;
-  ProcInstance(Name *n, std::list<Expr*> *a) :
-    Proc(INSTANCE), name(n), actuals(a) {}
+  ProcessInstance(Name *n, std::list<Expr*> *a) :
+    Process(INSTANCE), name(n), actuals(a) {}
 };
 
 // Expressions ================================================================

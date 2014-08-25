@@ -30,9 +30,9 @@ public:
     // Keywords                
     tACCEPT,  tALT,    tCALL,   tCHAN,
     tCONNECT, tDO,     tELSE,   tFALSE,
-    tFINAL,   tFOR,    tFROM,   tFUNC,
+    tFINAL,   tFOR,    tFROM,   tFUNCTION,
     tIF,      tINHRT,  tINIT,   tINTF,
-    tIS,      tON,     tPAR,    tPROC,
+    tIS,      tON,     tPAR,    tPROCESS,
     tRES,     tSEQ,    tSERVER, tSKIP,
     tSTEP,    tSTOP,   tTHEN,   tTO,
     tTRUE,    tVAL,    tVALOF,  tVAR,
