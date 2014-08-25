@@ -82,7 +82,11 @@ structured-command  = <alternation>
 % Test              
 conditional         = "test" "{" {0 "|" <choice> "}"
                     | "if" <expression> "do" <command>
-                    | "if" <expression> "then" <command> "else" <command>;
+                    | "if" <expression> "then" <command> "else" <command>
+                    | "unless" <expression> "do" <command>
+                    | "unless" <expression> "then" <command> "else" <command>
+                    | <command> "if" <expression>
+                    | <command> "unless" <expression>;
 
 choice              = <guarded-choice>
                     | <conditional>

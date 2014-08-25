@@ -34,14 +34,15 @@ Tree *Syn::formTree() {
 // spec    = <decl>
 //         | <abbr>
 //         | <def>
-//         | <sim-def>
-// sim-def = {0 "&" <def> }
+//         | {0 "&" <spec> }
 Tree *Syn::readProg() {
   Tree *tree = new Tree();
   
   // Read specifications
   while(curTok == Lex::tVAL 
-     || curTok == Lex::tVAR 
+     || curTok == Lex::tVAR
+     || curTok == Lex::tCHAN
+     || curTok == Lex::tCALL
      || curTok == Lex::tPROC 
      || curTok == Lex::tSERV 
      || curTok == Lex::tFUNC) {
@@ -131,7 +132,7 @@ Spef *Syn::readSpef(bool val) {
 // spec        = <decl>
 //             | <abbr>
 //             | <def>
-//             | <sim-spec>
+//             | {0 "&" <spec> }
 // decl        = <spef> {1 "," <name> }
 //             | <server-decl>
 //             | <hiding-decl>
@@ -140,7 +141,6 @@ Spef *Syn::readSpef(bool val) {
 // def         = <server-def>
 //             | <process-def>
 //             | <function-def>
-// sim-spec    = {2 "&" <spec> }
 Spec *Syn::readSpec() {
   Spec *res;
   switch(curTok) {
@@ -237,109 +237,255 @@ Spec *Syn::readSpec() {
   }
 }
 
+// "server" ...
 // def         = "server" <name> "(" {0 "," <fml> } ")" ...
 // decl        = "server" <name> "is" <server>
 //             | "server" <name> "is" <rep> <server>
 // abbr        = <server-spef> <name> "is" <elem>
 // server-spef = "server" <name>
 //             | "server" <interface> 
-//             | <spef> "[" "]"
-//             | <spef> "[" <expr> "]"
+//             | <server-spef> "[" "]"
+//             | <server-spef> "[" <expr> "]"
 Spec *Syn::readServerSpec() {
-    checkFor(Lex::tSERVER);
-    Name *name = readName();
-    switch(curTok) {
-    default:
-      error("expected '(' or 'is'");
-      return NULL;
     
-    // ... "(" {0 "," <fml> } ")" "is" <server>
-    // ... "(" {0 "," <fml> } ")" "inherits" <hiding>
-    case Lex::tLPAREN: {
-        std::list<Fml*> args = readFmls();
-        switch(curTok) {
-        default: error("expecting 'is' or 'inherits'"); return NULL;
-        
-        // ... "is" <server>
-        case Lex::tIS:
-          return new ServerDecl(name, args, readServer());
-        
-        // ... "inherits" <hiding-decl>
-        case Lex::tINRTS:
-          getNextToken();
-          return new InhrtServerDef(n, args, readHiding());
-        }
-      }
-    
-    // ... <decl> | <abbr>
-    case Lex::tIS:
-      getNextToken();
+  checkFor(Lex::tSERVER);
+  switch(curTok) {
+  default:
+    error("expected name or 'interface'");
+    return NULL;
+
+  // "server" <name> ...
+  case Lex::tNAME: {
+      Name *name = readName();
       switch(curTok) {
       default:
-        error("expected '[', 'interface', 'inherits' or instance");
+        error("expected '(' or 'is'");
         return NULL;
-
-      // ... <server>
-      case Lex::tINTF:
-        return readServer();
-     
-      // ... <rep> <server>
-      case Lex::tLSQ:
-        return new RServerDecl(n, readRep(), readServer());
       
-      // ... <name> "(" {0 "," <expr> } ")"
-      // ... <name>
-      case Lex::tNAME: {
-          Name *server = readName();
-          if (curTok == Lex::tLPAREN) {
-            std::list<Expr*> args = readActuals();
-            return new ServerDecl(name, server, args);
+      // Definition
+      // ... "(" {0 "," <fml> } ")" "is" <server>
+      // ... "(" {0 "," <fml> } ")" "inherits" <hiding>
+      case Lex::tLPAREN: {
+          std::list<Fml*> args = readFmls();
+          switch(curTok) {
+          default: 
+            error("expecting 'is' or 'inherits'"); 
+            return NULL;
+          
+          // ... "is" <server>
+          case Lex::tIS:
+            return new ServerDecl(name, args, readServer());
+          
+          // ... "inherits" <hiding-decl>
+          case Lex::tINHRTS:
+            getNextToken();
+            return new InhrtServerDef(n, args, readHiding());
           }
-          else
-            return new ServerAbbr(name, readElem());
+        }
+   
+      // Abbreviation
+      // ... {1 "[" <expr>? "]" } <name> "is" <elem>
+      case Lex::tLSQ: {
+          Spef *spef = new NamedSpef(Spef::SERVER, name, readDims());
+          Name *name = readName();
+          checkFor(Lex::tIS);
+          return ServerAbbr(spef, name, readElem());
+        }
+
+      // Declaration or abbreviation
+      // ... "is" ...
+      case Lex::tIS:
+        getNextToken();
+        switch(curTok) {
+        default:
+          error("expected '[', 'interface', 'inherits' or instance");
+          return NULL;
+
+        // Declaration
+        // ... <server>
+        case Lex::tINTF:
+          return readServer();
+
+        // Replicated declaration
+        // ... <rep> <server>
+        case Lex::tLSQ:
+          return new RServerDecl(n, readRep(), readServer());
+        
+        // Declaration or abbreviation
+        // ... <name> "(" {0 "," <expr>? } ")"
+        // ... <name>
+        case Lex::tNAME: {
+            Name *server = readName();
+            if (curTok == Lex::tLPAREN) {
+              std::list<Expr*> args = readActuals();
+              return new ServerDecl(name, server, args);
+            }
+            else {
+              Spef *spef = new NamedSpef(Spef::SERVER, name);
+              return new ServerAbbr(spef, readElem());
+            }
+          }
         }
       }
     }
+
+  // Abbreviation
+  // "server" "interface" "(" {0 "," <decl> } ")" ...
+  case Lex::tINTF: {
+      getNextToken();
+      std::list<Decl*> *intfs = readIntfs();
+      switch (curTok) {
+      default:
+        error("expected name or '['");
+        return NULL;
+
+      // ... <name> "is" <elem>
+      case Lex::tNAME: {
+          Spef *spef = new IntfSpef(Spef::SERVER, intfs);
+          Name *name = readName();
+          checkFor(Lex::tIS);
+          return ServerAbbr(spef, name, readElem());
+        }
+
+      // ... {1 "[" <expr>? "]" } <name> "is" <elem>
+      case Lex::tLSQ: {
+          Spef *spef = new IntfSpef(Spef::SERVER, intfs, readDims());
+          Name *name = readName();
+          checkFor(Lex::tIS);
+          return ServerAbbr(spef, name, readElem());
+        }
+      }
+    }
+  }
 }
 
-// TODO
+// "process" ...
 // def          = "process" <name> "(" {0 "," <fml> } ")" "is" <process>
 // abbr         = <process-spef> <name> "is" <elem>
 // process-spef = "process" <name>
 //              | "process" <interface> 
-//              | <spef> "[" "]"
-//              | <spef> "[" <expr> "]"
+//              | <proc-spef> "[" "]"
+//              | <proc-spef> "[" <expr> "]"
 Spec *Syn::readProcSpec() {
   checkFor(Lex::tPROC);
-  Name *name = readName();
-  switch(curTok) {
+  switch (curTok) {
   default:
-    error("expected '(' or 'is'");
+    error("expecting name or 'interface'");
     return NULL;
-    
-    // ... "(" {0 "," <fml> } ")" "is" <process>
-    case Lex::tLPAREN: {
-        std::list<Fml*> args = readFmls();
-        checkFor(Lex::tIS);
-        return new ProcDef(name, args, readProc());
-      }
 
-    // ... "is" <elem>
-    case Lex::tIS: {
-        getNextToken();
-        Elem *elem = readElem();
-        return ProcAbbr(name, elem);
+  // Declaration or abbreviation
+  // "process" <name> ...
+  case Lex::tNAME: {
+      Name *name = readName();
+      switch(curTok) {
+      default:
+        error("expected '(', 'is' or '['");
+        return NULL;
+       
+        // Definition
+        // ... "(" {0 "," <fml> } ")" "is" <process>
+        case Lex::tLPAREN: {
+            std::list<Fml*> args = readFmls();
+            checkFor(Lex::tIS);
+            return new ProcDef(name, args, readProc());
+          }
+
+        // Abbreviation
+        // ... "is" <elem>
+        case Lex::tIS: {
+            getNextToken();
+            Spef *spef = NamedSpef(Spef::PROC, name);
+            return ProcAbbr(spef, name, readElem());
+          }
+
+        // Abbreviation
+        // ... {1 "[" <expr>? "]" } <name> "is" <elem>
+        case Lex::tLSQ: {
+            Spef *spef = NamedSpef(Spef::PROC, name, readDims());
+            Name *name = readName();
+            checkFor(Lex::tIS);
+            return ProcAbbr(spef, name, readElem());
+          }
       }
+    }
+
+  // Abbreviation
+  // "process" "interface" "(" {0 "," <decl> } ")" ...
+  case Lex::tINTF: {
+      getNextToken();
+      std::list<Decl*> *intfs = readIntfs();
+      switch (curTok) {
+      default:
+        error("expected name or '['");
+        return NULL;
+
+      // ... <name> "is" <elem>
+      case Lex::tNAME: {
+          Spef *spef = new IntfSpef(Spef::PROC, intfs);
+          Name *name = readName();
+          checkFor(Lex::tIS);
+          return ServerAbbr(spef, name, readElem());
+        }
+
+      // ... {1 "[" <expr>? "]" } <name> "is" <elem>
+      case Lex::tLSQ: {
+          Spef *spef = new IntfSpef(Spef::PROC, intfs, readDims());
+          Name *name = readName();
+          checkFor(Lex::tIS);
+          return ServerAbbr(spef, name, readElem());
+        }
+      }
+    }
   }
-  return NULL
 }
 
-// TODO
+// "function" ...
 // def  = "function" <name> "(" {0 "," <fml> } ")" "is" <expr>
-// abbr = <spef> <name> "is" <elem>
+// abbr = <function-spef> <name> "is" <elem>
+// function-spef = "function"
+//               | <function-spef> "[" "]"
+//               | <function-spef> "[" <expr> "]"
 Spec *Syn::readFuncSpec() {
   checkFor(Lex::tFUNC);
-  return NULL;
+  switch (curTok) {
+  default:
+    error("expecting name or '['");
+    return NULL;
+
+  // "function" <name> ...
+  case Lex::tNAME: {
+      Name *name = readName();
+      switch(curTok) {
+      default:
+        error("expecting '(' or 'is'");
+        return NULL;
+
+      // Definition
+      // ... "(" {0 "," <fml> } ")" "is" <expr>
+      case Lex::tLPAREN: {
+          std::list<Fml*> args = readFmls();
+          checkFor(Lex::tIS);
+          return new FuncDef(name, args, readExpr());
+        }
+
+      // Abbreviation
+      // ... "is" <elem>
+      case Lex::tIS: {
+          getNextToken();
+          Spef *spef = Spef(Spef::FUNC);
+          return FuncAbbr(spef, name, readElem());
+        }
+      }
+    }
+
+  // "function" {1 "[" <expr> "]" } <name> "is" <expr>
+  case Lex::tLSQ: {
+      Spef *spef = Spef(Spef::FUNC, readDims());
+      Name *name = readName();
+      checkFor(Lex::tIS);
+      return FuncAbbr(spef, name, readElem());
+    }
+  }
 }
 
 // decl = <hiding>
@@ -358,13 +504,16 @@ HidingDecl *Syn::readHiding() {
 //             | "{" {0 ":" <decl> "}"
 // hiding      = "from" "[" {1 "," <decl> } "]" "interface" <name>
 Def *Syn::readServDef() {
+  
   // "server" <name> "(" {0, <fml>} ")" ...
   checkFor(Lex::tSERVER);
   Name *name = readName();
   std::list<Fml*> *args = readFmls();
 
   switch(curTok) {
-  default: error("expecting 'is or 'inherits'"); return NULL;
+  default: 
+    error("expecting 'is or 'inherits'"); 
+    return NULL;
 
   // ... "is" ...
   case Lex::tIS:
@@ -472,31 +621,50 @@ Fml *Syn::readFml() {
   }
 }
 
-// server = <server-spec>
-//        | <interface> "to" <server-spec>
+// server = <interface> "to" <decl>
+//        | <interface> "to" "{" {0 ":" <decl> } "}"
+//        | <instance>
 Server *Syn::readServer() {
-  // TODO finish
-  std::list<Decl*> *intfs = NULL;
-  // ... "interface" "(" {0 "," <decl> } ")" "to" ...
-  if(curTok == Lex::tINTF) {
-    intfs = readIntfs();
-    checkFor(Lex::tTO);
-  }
-  // TODO read server body
-  return new Server(intfs, NULL);
+  
+  // Instance
+  // <name> "(" {0 "," <actual> } ")"
+  if (curTok == Lex::tNAME)
+    return ServerInstance(readName(), readActuals()); 
+
+  // Specification
+  // "interface" "(" {0 "," <decl> } ")" "to" ...
+  checkFor(Lex::tINTF);
+  std::list<Decl*> *intfs = readIntfs();
+  checkFor(Lex::tTO);
+
+  // ... "{" {0 ":" <decl> } "}"
+  if (curTok == Lex::tLCURLY)
+    return new ServerSpec(intfs, readDecls());
+  else
+    return new ServerSpec(intfs, new std::list<Decl*>(readDecl()));
 }
 
 // process = <cmd>
 //         | <interface> "to" <cmd>
+//         | <instance>
 Process *Syn::readProc() {
-  // TODO finish
-  std::list<Decl*> *intfs = NULL;
-  // <interface> "(" {0 "," <decl> } ")" "to" ...
-  if(curTok == Lex::tINTF) {
-    intfs = readIntfs();
+  
+  // Instance
+  // <name> "(" {0 "," <actual> } ")"
+  if (curTok == Lex::tNAME)
+    return ProcInstance(readName(), readActuals()); 
+
+  // Speficiation
+  // "interface" "(" {0 "," <decl> } ")" "to" <cmd>
+  if (curTok == Lex::tINTF) {
+    getNextToken();
+    std::list<Decl*> *intfs = readIntfs();
     checkFor(Lex::tTO);
+    return ProcSpec(infts, readCmd());
   }
-  return new Proc(intfs, readCmd());
+
+  // <cmd>
+  return ProcCmd(readCmd());
 }
 
 // cmd        = <prim-cmd> 
@@ -690,8 +858,7 @@ Cmd *Syn::readCmd() {
   case Lex::tVAL: 
   case Lex::tVAR:
   case Lex::tCHAN: 
-  case Lex::tCALL: 
-  case Lex::tINTF: {
+  case Lex::tCALL: {
     Spec *spec = readSpec();
     checkFor(Lex::tCOLON);
     return new CmdSpec(spec, readCmd());
@@ -845,6 +1012,12 @@ inline std::list<Fml*> *Syn::readFmls() {
 inline std::list<Decl*> *Syn::readIntfs() {
   return readList<Decl>(
       Lex::tLPAREN, Lex::tRPAREN, Lex::tCOMMA, &Syn::readIntf);
+}
+
+// "(" {0 "," <decl> } ")"
+inline std::list<Decl*> *Syn::readDecls() {
+  return readList<Decl>(
+      Lex::tLPAREN, Lex::tRPAREN, Lex::tCOMMA, &Syn::readDecl);
 }
 
 // "[" {1 ":" <decl> } "]"

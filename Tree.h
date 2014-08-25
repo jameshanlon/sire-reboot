@@ -51,13 +51,21 @@ struct Spef : public Node {
   Type type;
   bool val;
   std::list<Expr*> *lengths;
-  Spef(Type t, bool v, std::list<Expr*> *l) : 
+  Spef(Type t) : 
+    type(t), val(false), lengths(NULL) {}
+  Spef(Type t, std::list<Expr*> *l) : 
+    type(t), val(false), lengths(l) {}
+  Spef(Type t, bool v) : 
     type(t), val(v), lengths(NULL) {}
+  Spef(Type t, bool v, std::list<Expr*> *l) : 
+    type(t), val(v), lengths(l) {}
 };
 
 // Interface specifier
 struct IntfSpef : public Spef {
   std::list<Decl*> *intf;
+  IntfSpef(Type t, std::list<Decl*> *i) :
+    Spef(t, false), intf(i) {}
   IntfSpef(Type t, std::list<Decl*> *i, std::list<Expr*> *l) :
     Spef(t, false, l), intf(i) {}
 };
@@ -65,6 +73,8 @@ struct IntfSpef : public Spef {
 // Named specifier
 struct NamedSpef : public Spef {
   Name *name;
+  NamedSpef(Type t, Name *n) :
+    Spef(t, false), name(n) {}
   NamedSpef(Type t, Name *n, std::list<Expr*> *l) :
     Spef(t, false, l), name(n) {}
 };
@@ -247,37 +257,43 @@ struct Abbr : public Spec {
     FUNC
   } Type;
   Type type;
+  Spef *spef;
+  Elem *elem;
 protected:
-  Abbr(Type t, Name *n) :
-    Spec(Spec::ABBR, n), type(t) {}
+  Abbr(Type t, Spef *s, Name *n, Elem *e) :
+    Spec(Spec::ABBR, n), type(t), spef(s), elem(e) {}
 };
 
 // Variable abbreviation
 struct VarAbbr : public Abbr {
-  Spef *spef;
-  Elem *elem;
   VarAbbr(Spef *s, Name *n, Elem* e) :
-    Abbr(VAR, n), spef(s), elem(e) {}
+    Abbr(VAR, s, n, e) {}
 };
 
 // Call abbreviation
 struct CallAbbr : public Abbr {
-  Spef *spef;
   std::list<Fml*> *args;
-  Elem *elem;
   CallAbbr(Spef *s, Name *n, std::list<Fml*> *a, Elem* e) :
-    Abbr(CALL, n), spef(s), args(a), elem(e) {}
+    Abbr(CALL, s, n, e), args(a) {}
+};
+
+// Server abbreviation
+struct ServerAbbr() : public Abbr {
+  ServerAbbr(Spef *s, Name *n, Elem *e) :
+    Abbr(SERV, s, n, e) {}
 };
 
 // Process abbreviation
 struct ProcAbbr : public Abbr {
-  Name *name;
-  Name *server;
+  ProcAbbr(Spef *s, Name *n, Elem *e) :
+    Abbr(PROC, s, n, e) {}
 };
 
-// Server abbreviation
-
 // Function abbreviation
+struct FuncAbbr() : public Abbr {
+  FuncAbbr(Spef *s, Name *n, Elem *e) :
+    Abbr(FUNC, s, n, e) {}
+};
 
 // Commands ===================================================================
 
@@ -604,20 +620,56 @@ struct Range {
 
 // Server entity
 struct Server {
-  std::list<Decl*> *intf;
+  typedef enum {
+    SPEC,
+    INSTANCE
+  } Type;
+  Server(Type t) {}
+};
+
+struct ServerSpec : public Server {
+  std::list<Decl*> *intfs;
   std::list<Decl*> *decls;
   Server(std::list<Decl*> *i, std::list<Decl*> *d) :
-    intf(i), decls(d) {}
+    Server(SPEC), intfs(i), decls(d) {}
+};
+
+struct ServerInstance : public Server {
+  Name *name;
+  std::list<Expr*> *actuals;
+  ServerInstance(Name *n, std::list<Expr*> *a) :
+    Server(INSTANCE), name(n), actuals(a) {}
 };
 
 // Process entity
 struct Proc {
-  std::list<Decl*> *intf;
-  Cmd *cmd;
-  Server(std::list<Decl*> *i, Cmd *c) :
-    intf(i), cmd(c) {}
+  typedef enum {
+    CMD,
+    SPEC,
+    INSTANCE
+  } Type;
+  Proc(Type t) {}
 };
 
+struct ProcCmd : public Proc {
+  Cmd *cmd;
+  ProcCmd(Cmd *c) :
+    Proc(CMD), cmd(c) {}
+};
+
+struct ProcSpec : public Proc {
+  std::list<Decl*> *intf;
+  Cmd *cmd;
+  ProcSpec(std::list<Decl*> *i, Cmd *c) :
+    Proc(SPEC), intf(i), cmd(c) {}
+};
+
+struct ProcInstance : public Proc {
+  Name *name;
+  std::list<Expr*> *actuals;
+  ProcInstance(Name *n, std::list<Expr*> *a) :
+    Proc(INSTANCE), name(n), actuals(a) {}
+};
 
 // Expressions ================================================================
 
