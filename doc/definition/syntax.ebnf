@@ -192,24 +192,6 @@ range               = <name> "=" <expression> "for" <expression>
 
 
 % ============================================================================
-[Expressions]
-% ============================================================================
-
-expression          = <unary-operator> <operand>
-                    | <operand> <binary-operator> <operand>
-                    | <operand>;
-
-operand             = <element>
-                    | <literal>
-                    | "(" <expression> ")";
-
-valof               = "valof" <cmd> "result" <expression>
-                    | <specification> ":" <valof>;
-
-expression          = "(" <valof> ")";
-
-
-% ============================================================================
 [Elements]
 % ============================================================================
 
@@ -219,19 +201,36 @@ element             = <element> "[" <expression> "]"
 
 field               = <element> "." <name>;
 
+
+% ============================================================================
+[Expressions]
+% ============================================================================
+
+expression          = <unary-operator> <operand>
+                    | <operand> <binary-operator> <operand>
+                    | <operand>;
+
+operand             = <element>
+                    | <literal>
+                    | "(" <expression> ")"
+                    | "(" <valof> ")";
+
 literal             = <decimal-integer>
                     | "#" <hexdecimal-integer>
                     | <byte>
                     | "true"
                     | "false";
 
-hexdecimal-integer  = <hexdecimal-digit>
-                    | <hexdecimal-digit> <hexdecimal-integer>;
-
 decimal-integer     = <digit>
                     | <digit> <decimal-integer>;
 
+hexdecimal-integer  = <hexdecimal-digit>
+                    | <hexdecimal-digit> <hexdecimal-integer>;
+
 byte                = "'" <character> "'";
+
+valof               = "valof" <cmd> "result" <expression>
+                    | <specification> ":" <valof>;
 
 
 % ============================================================================

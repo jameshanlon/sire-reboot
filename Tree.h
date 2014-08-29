@@ -95,15 +95,18 @@ struct Fml : public Node {
 
 struct Elem : public Node {
   typedef enum {
-    SUBSCRIPT,
-    FIELD,
     NAME,
-    LITERAL
+    FIELD,
+    LITERAL,
+    SUBSCRIPT
   } Type;
   Type type;
+  std::list<Expr*> *subscripts;
 protected:
   Elem(Type t) :
-    type(t) {}
+    type(t), subscripts(NULL) {}
+  Elem(Type t, std::list<Expr*> s) :
+    type(t), subscripts(s) {}
 };
 
 // Name
@@ -111,6 +114,18 @@ struct Name : public Elem {
   std::string str;
   Name(std::string &s) :
     Elem(NAME), str(s) {}
+  Name(std::string &s, std::list<Expr*> s) :
+    Elem(NAME, s), str(s) {}
+};
+
+// Field
+struct Field : public Elem {
+  std::string base;
+  std::string field;
+  Field(std::string *b, std::string *f) :
+    Elem(FIELD), base(b), field(f) {}
+  Field(std::string *b, std::string *f, std::list<Expr> s) :
+    Elem(FIELD, s), base(b), field(f) {}
 };
 
 // Specifications =============================================================

@@ -65,6 +65,8 @@ Tree *Syn::readProg() {
   return tree;
 }
 
+// Specifier ==================================================================
+
 // spef = <type>
 //      | <type> <name> 
 //      | <type> <interface> 
@@ -128,6 +130,8 @@ Spef *Syn::readSpef(bool val) {
     }
   }
 }
+
+// Specification ==============================================================
 
 // spec        = <decl>
 //             | <abbr>
@@ -545,6 +549,38 @@ Def *Syn::readFunctionDef() {
   return new FunctionDef(name, args, readExpr());
 }
 
+// fml = <spef> {1 "," <name> }
+//     | "val" <spef> {1 "," <name> }
+Fml *Syn::readFml() {
+  bool val = false;
+  if (curTok == Lex::tVAL) {
+    val = true;
+    getNextToken();
+  }
+  switch(curTok) {
+  default: 
+      error("invalid argument");
+      return NULL;
+  
+  // "val" ...
+  // "interface" ...
+  // "process" ...
+  // "server" ...
+  // "function" ...
+  case Lex::tVAR:
+  case Lex::tCHAN:
+  case Lex::tSERVER:
+  case Lex::tPROCESS:
+  case Lex::tFUNCTION: {
+      Spef *spef = readSpef(val);
+      Name *name = readName();
+      return new Fml(spef, name);
+    }
+  }
+}
+
+// Servers and processes ======================================================
+
 // <decl>
 // decl = "call" {1 "," <name> "(" <fml> ")" }
 Decl *Syn::readIntf() {
@@ -587,36 +623,6 @@ Decl *Syn::readIntf() {
         }
         return new CallDecl(spef, names, argss);
       }
-    }
-  }
-}
-
-// fml = <spef> {1 "," <name> }
-//     | "val" <spef> {1 "," <name> }
-Fml *Syn::readFml() {
-  bool val = false;
-  if (curTok == Lex::tVAL) {
-    val = true;
-    getNextToken();
-  }
-  switch(curTok) {
-  default: 
-      error("invalid argument");
-      return NULL;
-  
-  // "val" ...
-  // "interface" ...
-  // "process" ...
-  // "server" ...
-  // "function" ...
-  case Lex::tVAR:
-  case Lex::tCHAN:
-  case Lex::tSERVER:
-  case Lex::tPROCESS:
-  case Lex::tFUNCTION: {
-      Spef *spef = readSpef(val);
-      Name *name = readName();
-      return new Fml(spef, name);
     }
   }
 }
@@ -669,6 +675,8 @@ Process *Syn::readProcess() {
   // <cmd>
   return new ProcessCmd(readCmd());
 }
+
+// Commands ===================================================================
 
 // cmd        = <prim-cmd> 
 //            | <struct-cmd>
@@ -1005,6 +1013,36 @@ Range *Syn::readRange() {
   return new Range(name, base, count, step);
 }
 
+// Lists ======================================================================
+
+// {1 "[" <expr> "]" }
+std::list<Expr*> *Syn::readDims() {
+  if (curTok != Lex::tLSQ) 
+    return NULL;
+  else {
+    std::list<Expr*> *lengths = new std::list<Expr*>();
+    while (curTok == Lex::tLSQ) {
+      lengths->push_back(readExpr());
+      checkFor(Lex::tRSQ);
+      getNextToken();
+    }
+    return lengths;
+  }
+}
+
+// {0 "," <name> }
+std::list<Name*> *Syn::readNames() {
+  std::list<Name*> *names = new std::list<Name*>();
+  do {
+    getNextToken();
+    // In formal lists, don't read next specifier
+    if (curTok != Lex::tNAME)
+      break;
+    names->push_back(readName());
+  } while (curTok != Lex::tCOMMA);
+  return names;
+}
+
 // "(" {0 "," <fml> } ")"
 inline std::list<Fml*> *Syn::readFmls() {
   return readList<Fml>(
@@ -1075,10 +1113,28 @@ std::list<T*> *Syn::readList(
   return l;
 }
 
-// elem = ...
+// Elements ===================================================================
+
+// elem  = <elem> "[" <expr> "]"
+//       | <field>
+//       | <name>
+// field = <elem> "." <name>
 Elem *Syn::readElem() {
-  // TODO
-  return NULL;
+  Name *name = readName();
+
+  // Field
+  if (curTok == Lex::tDOT) {
+    getNextToken();
+    Name *field = readName();
+    if (curTok == Lex::tLSQ)
+      return new Field(name, field, readDims()); 
+    return new Field(name, field); 
+  }
+
+  // Name
+  if (curTok == Lex::tLSQ)
+    return new Name(name, field, readDims()); 
+  return new Name(name, field);
 }
 
 // <name>
@@ -1088,37 +1144,24 @@ Name *Syn::readName() {
   return new Name(*s);
 }
 
-// expr = ...
+// Expressions ================================================================
+
+// expr    = <unaryop> <operand>
+//         | <operand> <binop> <operand>
+//         | <operand>
+// operand = <element>
+//         | <literal>
+//         | "(" <expr> ")"
+//         | "(" <valof> ")"
+// literal = <decint>
+//         | "#" <hexint>
+//         | <byte>
+//         | "true"
+//         | "false"
+// byte    = "'" <char> "'"
+// valof   = "valof" <cmd> "result" <expr>
 Expr *Syn::readExpr() {
   // TODO
   return NULL;
-}
-
-// {1 "[" <expr> "]" }
-std::list<Expr*> *Syn::readDims() {
-  if (curTok != Lex::tLSQ) 
-    return NULL;
-  else {
-    std::list<Expr*> *lengths = new std::list<Expr*>();
-    while (curTok == Lex::tLSQ) {
-      lengths->push_back(readExpr());
-      checkFor(Lex::tRSQ);
-      getNextToken();
-    }
-    return lengths;
-  }
-}
-
-// {0 "," <name> }
-std::list<Name*> *Syn::readNames() {
-  std::list<Name*> *names = new std::list<Name*>();
-  do {
-    getNextToken();
-    // In formal lists, don't read next specifier
-    if (curTok != Lex::tNAME)
-      break;
-    names->push_back(readName());
-  } while (curTok != Lex::tCOMMA);
-  return names;
 }
 
