@@ -35,11 +35,30 @@ Lex::Token Lex::readToken() {
     readChar();
     return readToken();
 
-  // Number: [0-9]+
-  case '0': case '1': case '2': case '3': case '4':
-  case '5': case '6': case '7': case '8': case '9':
-    readNumber();
-    return tNUM;
+  // Number literal: [0-9]+
+  case '1': case '2': case '3': case '4': case '5': 
+  case '6': case '7': case '8': case '9':
+    readDecInt();
+    return tDECINT;
+ 
+  // Number literals: hex, octal and binary
+  case '0':
+    readChar();
+    if (ch=='x') {
+      readHexInt();
+      tok = tHEXINT;
+      break;
+    }
+    if (ch=='o') {
+      readOctInt();
+      tok = tOCTINT;
+      break;
+    }
+    if (ch=='b') {
+      readBinInt();
+      tok = tBININT;
+      break;
+    }
   
   // Name: [a-zA-Z][a-zA-Z0-9]*
   case 'a': case 'b': case 'c': case 'd': case 'e':
@@ -160,13 +179,42 @@ void Lex::skipLine() {
     lineNum++;
 }
 
-void Lex::readNumber() {
+void Lex::readDecInt() {
   s.clear();
   do {
     s += ch; 
     readChar(); 
   } while('0'<=ch && ch<='9');
   value = (int) strtol(s.c_str(), NULL, 0);
+}
+
+void Lex::readHexInt() {
+  s.clear();
+  do {
+    s += ch; 
+    readChar(); 
+  } while(('0'<=ch && ch<='9')
+      || ('a'<=ch && ch<='z')
+      || ('A'<=ch && ch<='Z'));
+  value = (int) strtol(s.c_str(), NULL, 16);
+}
+
+void Lex::readOctInt() {
+  s.clear();
+  do {
+    s += ch; 
+    readChar(); 
+  } while('0'<=ch && ch<='7');
+  value = (int) strtol(s.c_str(), NULL, 8);
+}
+
+void Lex::readBinInt() {
+  s.clear();
+  do {
+    s += ch; 
+    readChar(); 
+  } while('0'<=ch && ch<='1');
+  value = (int) strtol(s.c_str(), NULL, 2);
 }
 
 void Lex::readName() {
@@ -227,7 +275,7 @@ void Lex::declareKeywords() {
   declare("on",        Lex::tON);     
   declare("par",       Lex::tPAR);
   declare("process",   Lex::tPROCESS);
-  declare("result",    Lex::tRES);  
+  declare("result",    Lex::tRESULT);  
   declare("seq",       Lex::tSEQ);  
   declare("server",    Lex::tSERVER);  
   declare("skip",      Lex::tSKIP);
@@ -260,10 +308,12 @@ void Lex::error(const char *msg) {
 
 const char *Lex::tokStr(Lex::Token t) {
   switch(t) { 
-    default:        return "unknown";
+    default:       return "unknown";
     case tERROR:   return "error";
     // Literals
-    case tNUM:     return "number"; case tNAME:   return "name";
+    case tDECINT:  return "decimal"; case tHEXINT:  return "hexdecimal"; 
+    case tOCTINT:  return "octal";   case tBININT:  return "binary"; 
+    case tNAME:    return "name";
     // Symbols
     case tLCURLY:  return "{";       case tRCURLY:   return "}"; 
     case tLSQ:     return "[";       case tRSQ:      return "]";
@@ -294,7 +344,7 @@ const char *Lex::tokStr(Lex::Token t) {
     case tINIT:    return "initial"; case tINTF:     return "interface";
     case tIS:      return "is";      case tON:       return "on"; 
     case tPAR:     return "par";     case tPROCESS:  return "process";
-    case tRES:     return "result";  case tSEQ:      return "seq";
+    case tRESULT:  return "result";  case tSEQ:      return "seq";
     case tSERVER:  return "server";  case tSKIP:     return "skip";
     case tSTEP:    return "step";    case tSTOP:     return "stop";
     case tTEST:    return "test";    case tTHEN:     return "then";    

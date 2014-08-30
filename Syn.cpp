@@ -1133,35 +1133,132 @@ Elem *Syn::readElem() {
 
   // Name
   if (curTok == Lex::tLSQ)
-    return new Name(name, field, readDims()); 
-  return new Name(name, field);
+    name->subscripts = readDims();
+  return name;
 }
 
 // <name>
 Name *Syn::readName() {
   std::string *s = &LEX.s;
   checkFor(Lex::tNAME);
-  return new Name(*s);
+  return new Name(s);
 }
 
 // Expressions ================================================================
 
-// expr    = <unaryop> <operand>
-//         | <operand> <binop> <operand>
+// expr    = <op> <operand>
+//         | <operand> <op> <operand>
 //         | <operand>
-// operand = <element>
+Expr *Syn::readExpr() {
+  switch (curTok) {
+  
+  // Unary not
+  case Lex::tNOT:
+    getNextToken();
+    return new UnaryOp(Lex::tNOT, readOperand());
+  
+  // Unary minus
+  case Lex::tSUB:
+    getNextToken();
+    return new UnaryOp(Lex::tSUB, readOperand());
+
+  // <operand> | <operand> <op> <operand>
+  default:
+    Operand *operand = readOperand();
+    if (isOp(curTok)) {
+      Lex::Token op = curTok;
+      getNextToken();
+      return new BinaryOp(op, operand, readOperand());
+    }
+    else
+      return operand;
+  }
+}
+
+bool Syn::isOp(Lex::Token) {
+  switch (curTok) {
+  default: 
+    return false;
+  case Lex::tADD: case Lex::tOR:   case Lex::tEQ:  
+  case Lex::tSUB: case Lex::tAND:  case Lex::tLT:
+  case Lex::tMUL: case Lex::tLAND: case Lex::tGT:
+  case Lex::tDIV: case Lex::tLOR:  case Lex::tNEQ:
+  case Lex::tREM: case Lex::tXOR:  case Lex::tLEQ:
+                  case Lex::tLSH:  case Lex::tGEQ:
+                  case Lex::tRSH:  
+    return true;
+  }
+}
+
+// operand = <elem>
 //         | <literal>
+//         | <valof>
 //         | "(" <expr> ")"
-//         | "(" <valof> ")"
 // literal = <decint>
-//         | "#" <hexint>
+//         | "0x" <hexint>
+//         | "0o" <octint>
+//         | "0b" <binint>
 //         | <byte>
 //         | "true"
 //         | "false"
 // byte    = "'" <char> "'"
-// valof   = "valof" <cmd> "result" <expr>
-Expr *Syn::readExpr() {
-  // TODO
-  return NULL;
+Operand *Syn::readOperand() {
+  switch (curTok) {
+  default:
+    error("expecing name, 'valof' or literal");
+    return NULL;
+
+  // <elem>
+  case Lex::tNAME:
+    return new OperElem(readElem());
+
+  // <valof>
+  case Lex::tVALOF:
+    return new OperValof(readValof());
+
+  // "(" <expr> ")"
+  case Lex::tLPAREN: {
+      getNextToken();
+      Expr *expr = readExpr();
+      checkFor(Lex::tRPAREN);
+      return new OperExpr(expr);
+    }
+
+  // Literal <decint>
+  case Lex::tDECINT:
+    return new OperLiteral(new DecIntLiteral(LEX.value));
+
+  // Literal <hexint>
+  case Lex::tHEXINT:
+    return new OperLiteral(new HexIntLiteral(LEX.value));
+
+  // Literal <octint>
+  case Lex::tOCTINT:
+    return new OperLiteral(new OctIntLiteral(LEX.value));
+
+  // Literal <binint>
+  case Lex::tBININT:
+    return new OperLiteral(new BinIntLiteral(LEX.value));
+
+  // Literal <char>
+  case Lex::tCHAR:
+    return new OperLiteral(new CharLiteral(LEX.value));
+
+  // Literal "true"
+  case Lex::tTRUE:
+    return new OperLiteral(new BoolLiteral(true));
+
+  // Literal "false"
+  case Lex::tFALSE:
+    return new OperLiteral(new BoolLiteral(false));
+  }
+}
+
+// valof = "valof" <cmd> "result" <expr>
+Valof *Syn::readValof() {
+  checkFor(Lex::tVALOF);
+  Cmd *cmd = readCmd();
+  checkFor(Lex::tRESULT);
+  return new Valof(cmd, readExpr());
 }
 

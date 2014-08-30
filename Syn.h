@@ -44,8 +44,11 @@ private:
   Select  *readSelect();
   Range   *readRange();
   Elem    *readElem();
-  Expr    *readExpr();
   Name    *readName();
+  Expr    *readExpr();
+  Valof   *readValof();
+  Operand *readOperand();
+  bool     isOp(Lex::Token);
   
   std::list<Expr*>   *readDims();
   std::list<Name*>   *readNames();

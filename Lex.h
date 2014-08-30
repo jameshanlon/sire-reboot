@@ -16,7 +16,8 @@ public:
     tEOF=1,
     tERROR,
     // Literals
-    tNUM,     tNAME,
+    tDECINT,  tHEXINT, tOCTINT, tBININT,
+    tNAME,
     // Symbols
     tLCURLY,  tRCURLY, tLSQ,    tRSQ,
     tLPAREN,  tRPAREN, tCOMMA,  tDOT,
@@ -33,10 +34,10 @@ public:
     tFINAL,   tFOR,    tFROM,   tFUNCTION,
     tIF,      tINHRT,  tINIT,   tINTF,
     tIS,      tON,     tPAR,    tPROCESS,
-    tRES,     tSEQ,    tSERVER, tSKIP,
+    tRESULT,  tSEQ,    tSERVER, tSKIP,
     tSTEP,    tSTOP,   tTHEN,   tTO,
     tTRUE,    tVAL,    tVALOF,  tVAR,
-    tWHILE,   tUNTIL,  tCASE,   tTEST                      
+    tWHILE,   tUNTIL,  tCASE,   tTEST 
   } Token;
 
   static Lex instance;
@@ -65,7 +66,10 @@ public:
   const char *tokStr(Lex::Token t);
   
 private:
-  void readNumber();
+  void readDecInt();
+  void readHexInt();
+  void readOctInt();
+  void readBinInt();
   void readName();
   char readStrCh();
   void printChBuf();

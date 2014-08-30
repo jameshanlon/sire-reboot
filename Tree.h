@@ -1,6 +1,8 @@
 #ifndef TREE_H
 #define TREE_H
 
+#include "Lex.h"
+
 #include <list>
 #include <string>
 
@@ -30,9 +32,11 @@ struct Range;
 struct Server;
 struct Process;
 struct Fml;
-struct Expr;
 struct Elem;
 struct Name;
+struct Expr;
+struct Literal;
+struct Valof;
   
 // Specifiers =================================================================
 
@@ -102,29 +106,30 @@ struct Elem : public Node {
   } Type;
   Type type;
   std::list<Expr*> *subscripts;
+
 protected:
   Elem(Type t) :
     type(t), subscripts(NULL) {}
-  Elem(Type t, std::list<Expr*> s) :
+  Elem(Type t, std::list<Expr*> *s) :
     type(t), subscripts(s) {}
 };
 
 // Name
 struct Name : public Elem {
-  std::string str;
-  Name(std::string &s) :
-    Elem(NAME), str(s) {}
-  Name(std::string &s, std::list<Expr*> s) :
-    Elem(NAME, s), str(s) {}
+  std::string *str;
+  Name(std::string *n) :
+    Elem(NAME), str(n) {}
+  Name(std::string *n, std::list<Expr*> *s) :
+    Elem(NAME, s), str(n) {}
 };
 
 // Field
 struct Field : public Elem {
-  std::string base;
-  std::string field;
-  Field(std::string *b, std::string *f) :
+  Name *base;
+  Name *field;
+  Field(Name *b, Name *f) :
     Elem(FIELD), base(b), field(f) {}
-  Field(std::string *b, std::string *f, std::list<Expr> s) :
+  Field(Name *b, Name *f, std::list<Expr*> *s) :
     Elem(FIELD, s), base(b), field(f) {}
 };
 
@@ -142,6 +147,7 @@ struct Spec : public Node {
     Name *name;
     std::list<Name*> *names;
   };
+
 protected:
   Spec(Type t, Name *n) : 
     type(t), name(n) {}
@@ -159,6 +165,7 @@ struct Def : public Spec {
   } DefType;
   DefType defType;
   std::list<Fml*> *args;
+
 protected:
   Def(DefType t, Name *n, std::list<Fml*> *a) :
     Spec(DEF, n), defType(t), args(a) {}
@@ -210,6 +217,7 @@ struct Decl : public Spec {
     RSERVER
   } DeclType;
   DeclType tDecl;
+
 protected:
   Decl(DeclType t, Name *n) :
     Spec(DECL, n), tDecl(VAR) {}
@@ -273,6 +281,7 @@ struct Abbr : public Spec {
   Type type;
   Spef *spef;
   Elem *elem;
+
 protected:
   Abbr(Type t, Spef *s, Name *n, Elem *e) :
     Spec(Spec::ABBR, n), type(t), spef(s), elem(e) {}
@@ -342,6 +351,7 @@ struct Cmd : public Node {
     RSEQ
   } Type;
   Type type;
+
 protected:
   Cmd(Type t) :
     type(t) {}
@@ -446,6 +456,7 @@ struct Altn {
     SPEC
   } Type;
   Type type;
+
 protected:
   Altn(Type t) : type(t) {};
 };
@@ -524,6 +535,7 @@ struct Choice {
     SPEC
   } Type;
   Type type;
+
 protected:
   Choice(Type t) : type(t)  {};
 };
@@ -572,6 +584,7 @@ struct Select {
   } Type;
   Type type;
   Cmd *cmd;
+
 protected:
   Select(Type t, Cmd *c) : type(t), cmd(c) {}
 };
@@ -691,10 +704,115 @@ struct Expr : public Node {
   typedef enum {
     UNARY,
     BINARY,
-    VALOF
+    ELEM,
+    LITERAL,
+    VALOF,
+    EXPR
   } Type;
+  Type type;
+
 protected:
-  Expr() {}
+  Expr(Type t) : type(t) {}
+};
+
+struct Operand : public Expr {
+  Operand(Type t) : Expr(t) {}
+};
+
+struct OperElem : public Operand {
+  Elem *elem;
+  OperElem(Elem *e) : 
+    Operand(ELEM), elem(e) {};
+};
+
+struct OperLiteral : public Operand {
+  Literal *literal;
+  OperLiteral(Literal *l) : 
+    Operand(LITERAL), literal(l) {}
+};
+
+struct OperValof : public Operand {
+  Valof *valof;
+  OperValof(Valof *v) : 
+    Operand(VALOF), valof(v) {}
+};
+
+struct OperExpr : public Operand {
+  Expr *expr;
+  OperExpr(Expr *e) : 
+    Operand(EXPR), expr(e) {}
+};
+
+struct UnaryOp : public Expr {
+  Lex::Token op;
+  Operand *operand;
+  UnaryOp(Lex::Token t, Operand *o) :
+    Expr(UNARY), op(t), operand(o) {}
+};
+
+struct BinaryOp : public Expr {
+  Lex::Token op;
+  Operand *left;
+  Operand *right;
+  BinaryOp(Lex::Token t, Operand *l, Operand *r) :
+    Expr(BINARY), op(t), left(l), right(r) {}
+};
+    
+struct Literal {
+  typedef enum {
+    DECINT,
+    HEXINT,
+    OCTINT,
+    BININT,
+    CHAR,
+    BOOL
+  } Type;
+  Type type;
+  Literal(Type t) : type(t) {}
+};
+
+struct DecIntLiteral : public Literal {
+  int value;
+  DecIntLiteral(int v) :
+    Literal(DECINT), value(v) {}
+};
+
+struct HexIntLiteral : public Literal {
+  int value;
+  HexIntLiteral(int v) :
+    Literal(HEXINT), value(v) {}
+};
+
+struct OctIntLiteral : public Literal {
+  int value;
+  OctIntLiteral(int v) :
+    Literal(OCTINT), value(v) {}
+};
+
+struct BinIntLiteral : public Literal {
+  int value;
+  BinIntLiteral(int v) :
+    Literal(BININT), value(v) {}
+};
+
+struct CharLiteral : public Literal {
+  char value;
+  CharLiteral(char v) :
+    Literal(CHAR), value(v) {}
+};
+
+struct BoolLiteral : public Literal {
+  bool value;
+  BoolLiteral(bool v) :
+    Literal(BOOL), value(v) {}
+};
+
+struct Valof : public Expr {
+  Cmd *cmd;
+  Expr *expr;
+  Valof(Cmd *c, Expr *e) :
+    Expr(VALOF), cmd(c), expr(e) {}
 };
 
 #endif
+
