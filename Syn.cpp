@@ -37,20 +37,20 @@ Tree *Syn::formTree() {
 //         | {0 "&" <spec> }
 Tree *Syn::readProg() {
   Tree *tree = new Tree();
-  
+
   // Read specifications
-  while(curTok == Lex::tVAL 
+  while(curTok == Lex::tVAL
      || curTok == Lex::tVAR
      || curTok == Lex::tCHAN
      || curTok == Lex::tCALL
-     || curTok == Lex::tPROCESS 
-     || curTok == Lex::tSERVER 
+     || curTok == Lex::tPROCESS
+     || curTok == Lex::tSERVER
      || curTok == Lex::tFUNCTION) {
-    
+
     // <spec>
     Spec *spec = readSpec();
     tree->spec.push_back(spec);
-    
+
     // ... ":"
     if (curTok == Lex::tCOLON)
       getNextToken();
@@ -61,15 +61,15 @@ Tree *Syn::readProg() {
   // ... {1 ";" <cmd> }
   while (curTok != Lex::tEOF)
     tree->prog.push_back(readCmd());
-  
+
   return tree;
 }
 
 // Specifier ==================================================================
 
 // spef = <type>
-//      | <type> <name> 
-//      | <type> <interface> 
+//      | <type> <name>
+//      | <type> <interface>
 //      | <spef> "[" "]"
 //      | <spef> "[" <expr> "]"
 // type = "var"
@@ -82,10 +82,10 @@ Spef *Syn::readSpef(bool val) {
   Lex::Token t = curTok;
   getNextToken();
   switch (t) {
-  default: 
+  default:
     error("invalid specifier");
     return NULL;
- 
+
   // <type> {0, "[" <expr> "]" }
   case Lex::tVAR:
     return new Spef(Spef::VAR, val, readDims());
@@ -95,7 +95,7 @@ Spef *Syn::readSpef(bool val) {
 
   case Lex::tCALL:
     return new Spef(Spef::CALL, val, readDims());
-  
+
   case Lex::tFUNCTION:
     return new Spef(Spef::FUNCTION, val, readDims());
 
@@ -109,11 +109,11 @@ Spef *Syn::readSpef(bool val) {
 
     case Lex::tNAME:
       return new NamedSpef(Spef::PROCESS, readName(), readDims());
-    
+
     case Lex::tINTF:
       return new IntfSpef(Spef::PROCESS, readIntfs(), readDims());
     }
-  
+
   // "server" <name> {0 "[" <expr> "]" }
   // "server" <interface> {0 "[" <expr> "]" }
   case Lex::tSERVER:
@@ -124,7 +124,7 @@ Spef *Syn::readSpef(bool val) {
 
     case Lex::tNAME:
       return new NamedSpef(Spef::SERVER, readName(), readDims());
-    
+
     case Lex::tINTF:
       return new IntfSpef(Spef::SERVER, readIntfs(), readDims());
     }
@@ -150,13 +150,13 @@ Spec *Syn::readSpec() {
   switch(curTok) {
   default:        assert(0 && "invalid token");
   case Lex::tEOF: return NULL;
-  
+
   // <decl> | <abbr>
-  case Lex::tVAL:  
-  case Lex::tVAR: 
-  case Lex::tCHAN: 
-  case Lex::tCALL: 
-  case Lex::tINTF: { 
+  case Lex::tVAL:
+  case Lex::tVAR:
+  case Lex::tCHAN:
+  case Lex::tCALL:
+  case Lex::tINTF: {
       // "val" ...
       bool val = false;
       if (curTok == Lex::tVAL) {
@@ -168,20 +168,20 @@ Spec *Syn::readSpec() {
       Name *name = readName();
       if (val && spef->type != Spef::VAR)
         error("invalid use of 'val' specifier");
-      
+
       switch (curTok) {
       default: assert(0 && "invalid token");
-      
+
       // ...
       case Lex::tCOLON:
-        if (val) 
+        if (val)
           error("invalid use of 'val' specifier");
         res = new VarDecl(spef, name);
         break;
 
       // ... "," {1 "," <name> } ...
       case Lex::tCOMMA:
-        if (val) 
+        if (val)
           error("invalid use of 'val' specifier");
         res = new VarDecl(spef, readNames());
         break;
@@ -193,12 +193,12 @@ Spec *Syn::readSpec() {
       }
     }
 
-  // ... "from" ... 
+  // ... "from" ...
   case Lex::tFROM:
     res = readHiding();
     break;
-  
-  // def  = "server" ... 
+
+  // def  = "server" ...
   // decl = "server" ...
   // abbr = "server" ...
   case Lex::tSERVER:
@@ -207,10 +207,10 @@ Spec *Syn::readSpec() {
 
   // def  = "process" ...
   // abbr = "process" ...
-  case Lex::tPROCESS: 
+  case Lex::tPROCESS:
     res = readProcessSpec();
     break;
-  
+
   // def  = "function" ...
   // abbr = "function" ...
   case Lex::tFUNCTION:
@@ -227,7 +227,7 @@ Spec *Syn::readSpec() {
   // ... ":"
   case Lex::tCOLON:
     return res;
-  
+
   // ... "&" {1 "&" <spec> }
   case Lex::tAND: {
       std::list<Spec*> *specs = new std::list<Spec*>();
@@ -247,11 +247,11 @@ Spec *Syn::readSpec() {
 //             | "server" <name> "is" <rep> <server>
 // abbr        = <server-spef> <name> "is" <elem>
 // server-spef = "server" <name>
-//             | "server" <interface> 
+//             | "server" <interface>
 //             | <server-spef> "[" "]"
 //             | <server-spef> "[" <expr> "]"
 Spec *Syn::readServerSpec() {
-    
+
   checkFor(Lex::tSERVER);
   switch(curTok) {
   default:
@@ -265,28 +265,28 @@ Spec *Syn::readServerSpec() {
       default:
         error("expected '(' or 'is'");
         return NULL;
-      
+
       // Definition
       // ... "(" {0 "," <fml> } ")" "is" <server>
       // ... "(" {0 "," <fml> } ")" "inherits" <hiding>
       case Lex::tLPAREN: {
           std::list<Fml*> *args = readFmls();
           switch(curTok) {
-          default: 
-            error("expecting 'is' or 'inherits'"); 
+          default:
+            error("expecting 'is' or 'inherits'");
             return NULL;
-          
+
           // ... "is" <server>
           case Lex::tIS:
             return new ServerDef(name, args, readServer());
-          
+
           // ... "inherits" <hiding-decl>
           case Lex::tINHRT:
             getNextToken();
             return new InhrtServerDef(name, args, readHiding());
           }
         }
-   
+
       // Abbreviation
       // ... {1 "[" <expr>? "]" } <name> "is" <elem>
       case Lex::tLSQ: {
@@ -314,7 +314,7 @@ Spec *Syn::readServerSpec() {
         // ... <rep> <server>
         case Lex::tLSQ:
           return new RServerDecl(name, readRep(), readServer());
-        
+
         // Declaration or abbreviation
         // ... <name> "(" {0 "," <expr>? } ")"
         // ... <name>
@@ -367,7 +367,7 @@ Spec *Syn::readServerSpec() {
 // def          = "process" <name> "(" {0 "," <fml> } ")" "is" <process>
 // abbr         = <process-spef> <name> "is" <elem>
 // process-spef = "process" <name>
-//              | "process" <interface> 
+//              | "process" <interface>
 //              | <proc-spef> "[" "]"
 //              | <proc-spef> "[" <expr> "]"
 Spec *Syn::readProcessSpec() {
@@ -385,7 +385,7 @@ Spec *Syn::readProcessSpec() {
       default:
         error("expected '(', 'is' or '['");
         return NULL;
-       
+
         // Definition
         // ... "(" {0 "," <fml> } ")" "is" <process>
         case Lex::tLPAREN: {
@@ -508,22 +508,22 @@ Hiding *Syn::readHiding() {
 //             | "{" {0 ":" <decl> "}"
 // hiding      = "from" "[" {1 "," <decl> } "]" "interface" <name>
 Def *Syn::readServerDef() {
-  
+
   // "server" <name> "(" {0, <fml>} ")" ...
   checkFor(Lex::tSERVER);
   Name *name = readName();
   std::list<Fml*> *args = readFmls();
 
   switch(curTok) {
-  default: 
-    error("expecting 'is or 'inherits'"); 
+  default:
+    error("expecting 'is or 'inherits'");
     return NULL;
 
   // ... "is" ...
   case Lex::tIS:
     getNextToken();
     return new ServerDef(name, args, readServer());
-  
+
   // ... "inherits" <hiding-decl>
   case Lex::tINHRT:
     getNextToken();
@@ -558,10 +558,10 @@ Fml *Syn::readFml() {
     getNextToken();
   }
   switch(curTok) {
-  default: 
+  default:
       error("invalid argument");
       return NULL;
-  
+
   // "val" ...
   // "interface" ...
   // "process" ...
@@ -585,7 +585,7 @@ Fml *Syn::readFml() {
 // decl = "call" {1 "," <name> "(" <fml> ")" }
 Decl *Syn::readIntf() {
   switch(curTok) {
-    default: 
+    default:
       error("invalid interface");
       return NULL;
 
@@ -603,7 +603,7 @@ Decl *Syn::readIntf() {
         return new VarDecl(spef, names);
       }
     }
-    
+
     // Call interface
     case Lex::tCALL: {
       Spef *spef = readSpef(false);
@@ -614,7 +614,7 @@ Decl *Syn::readIntf() {
       // Multiple calls
       else {
         std::list<Name*> *names = new std::list<Name*>();
-        std::list<std::list<Fml*>*> *argss = new std::list<std::list<Fml*>*>(); 
+        std::list<std::list<Fml*>*> *argss = new std::list<std::list<Fml*>*>();
         names->insert(names->begin(), name);
         while (curTok == Lex::tCOMMA) {
           getNextToken();
@@ -631,11 +631,11 @@ Decl *Syn::readIntf() {
 //        | <interface> "to" "{" {0 ":" <decl> } "}"
 //        | <instance>
 Server *Syn::readServer() {
-  
+
   // Instance
   // <name> "(" {0 "," <actual> } ")"
   if (curTok == Lex::tNAME)
-    return new ServerInstance(readName(), readActuals()); 
+    return new ServerInstance(readName(), readActuals());
 
   // Specification
   // "interface" "(" {0 "," <decl> } ")" "to" ...
@@ -657,11 +657,11 @@ Server *Syn::readServer() {
 //         | <interface> "to" <cmd>
 //         | <instance>
 Process *Syn::readProcess() {
-  
+
   // Instance
   // <name> "(" {0 "," <actual> } ")"
   if (curTok == Lex::tNAME)
-    return new ProcessInstance(readName(), readActuals()); 
+    return new ProcessInstance(readName(), readActuals());
 
   // Speficiation
   // "interface" "(" {0 "," <decl> } ")" "to" <cmd>
@@ -678,14 +678,14 @@ Process *Syn::readProcess() {
 
 // Commands ===================================================================
 
-// cmd        = <prim-cmd> 
+// cmd        = <prim-cmd>
 //            | <struct-cmd>
 //            | <instance>
 //            | <call>
 //            | "seq" <rep> ":" <cmd>
 //            | <spec> ":" <cmd>
 // prim-cmd   = <ass>
-//            | <connect> 
+//            | <connect>
 //            | <in>
 //            | <out>
 //            | <skip>
@@ -698,15 +698,15 @@ Process *Syn::readProcess() {
 //            | <loop>
 Cmd *Syn::readCmd() {
   switch(curTok) {
-  default: 
+  default:
     error("invalid command");
     return NULL;
-  
+
   // "skip"
   case Lex::tSKIP:
     getNextToken();
     return new Skip();
-  
+
   // "stop"
   case Lex::tSTOP:
     getNextToken();
@@ -733,17 +733,17 @@ Cmd *Syn::readCmd() {
     default:
       error("expecting assignment, input, output, instance or call");
       return NULL;
-    
+
     // ":=" <expr>
     case Lex::tASS:
       getNextToken();
       return new Ass(name, readExpr());
-    
+
     // "?" <elem>
     case Lex::tIN:
       getNextToken();
       return new In(name, readElem());
-    
+
     // "!" <expr>
     case Lex::tOUT:
       getNextToken();
@@ -756,7 +756,7 @@ Cmd *Syn::readCmd() {
       checkFor(Lex::tRPAREN);
       return new Instance(name, actuals);
     }
-    
+
     // ... "." <name> "(" {0 "," <expr> } ")"
     case Lex::tDOT: {
         getNextToken();
@@ -767,7 +767,7 @@ Cmd *Syn::readCmd() {
         return new Call(name, field, actuals);
       }
     }
-  } 
+  }
 
   // cond = "if" <expr> "do" <cmd>
   //      | "if" <expr> "then" <cmd> "else" <cmd>
@@ -781,7 +781,7 @@ Cmd *Syn::readCmd() {
 
         case Lex::tDO:
           return new IfD(expr, readCmd());
-        
+
         case Lex::tTHEN: {
           Cmd *thenCmd = readCmd();
           checkFor(Lex::tELSE);
@@ -799,10 +799,10 @@ Cmd *Syn::readCmd() {
     default:
       error("expecting '{' or '['");
       return NULL;
-  
+
     case Lex::tLPAREN:
       return new Test(readChoices());
-    
+
     case Lex::tLSQ:
       return new RepTest(readRep(), readChoice());
     }
@@ -818,7 +818,7 @@ Cmd *Syn::readCmd() {
 
     case Lex::tLPAREN:
       return new Alt(readAltns());
-    
+
     case Lex::tLSQ:
       return new RepAlt(readRep(), readAltn());
     }
@@ -832,10 +832,10 @@ Cmd *Syn::readCmd() {
     default:
       error("expecting '{' or '['");
       return NULL;
-    
+
     case Lex::tLCURLY:
       return new Case(expr, readSelects());
-    
+
     case Lex::tLSQ:
       return new RepCase(expr, readRep(), readSelect());
     }
@@ -866,9 +866,9 @@ Cmd *Syn::readCmd() {
   }
 
   // <spec> ":" <cmd>
-  case Lex::tVAL: 
+  case Lex::tVAL:
   case Lex::tVAR:
-  case Lex::tCHAN: 
+  case Lex::tCHAN:
   case Lex::tCALL: {
     Spec *spec = readSpec();
     checkFor(Lex::tCOLON);
@@ -891,22 +891,22 @@ Cmd *Syn::readCmd() {
 Choice *Syn::readChoice() {
   switch(curTok) {
   default: break;
-  
+
   // <cond>
   case Lex::tTEST:
     return new NestedChoice((Test*) readCmd());
 
   // <spec> ":" <choice>
   case Lex::tVAL:
-  case Lex::tVAR: 
-  case Lex::tCHAN: 
-  case Lex::tCALL: 
+  case Lex::tVAR:
+  case Lex::tCHAN:
+  case Lex::tCALL:
   case Lex::tINTF: {
     Spec *spec = readSpec();
     checkFor(Lex::tCOLON);
     return new SpecChoice(spec, readChoice());
   }
-  
+
   // Disallowed specifications
   case Lex::tSERVER:
   case Lex::tPROCESS:
@@ -931,22 +931,22 @@ Choice *Syn::readChoice() {
 Altn *Syn::readAltn() {
   switch(curTok) {
   default: break;
-  
+
   // <alt>
   case Lex::tALT:
     return new NestedAltn((Alt*) readCmd());
 
   // <spec> ":" <altn>
   case Lex::tVAL:
-  case Lex::tVAR: 
-  case Lex::tCHAN: 
-  case Lex::tCALL: 
+  case Lex::tVAR:
+  case Lex::tCHAN:
+  case Lex::tCALL:
   case Lex::tINTF: {
     Spec *spec = readSpec();
     checkFor(Lex::tCOLON);
     return new SpecAltn(spec, readAltn());
   }
-  
+
   // Disallowed specifications
   case Lex::tPROCESS:
   case Lex::tSERVER:
@@ -979,7 +979,7 @@ Altn *Syn::readAltn() {
   checkFor(Lex::tIN);
   Elem *src = readElem();
   checkFor(Lex::tCOLON);
-  return new GuardedAltn(expr, dst, src, readCmd());  
+  return new GuardedAltn(expr, dst, src, readCmd());
 }
 
 // select = <expr> ":" <cmd>
@@ -1017,7 +1017,7 @@ Range *Syn::readRange() {
 
 // {1 "[" <expr> "]" }
 std::list<Expr*> *Syn::readDims() {
-  if (curTok != Lex::tLSQ) 
+  if (curTok != Lex::tLSQ)
     return NULL;
   else {
     std::list<Expr*> *lengths = new std::list<Expr*>();
@@ -1101,7 +1101,7 @@ inline std::list<Select*> *Syn::readSelects() {
 // <left> {0 <sep> <item> } <right>
 template<typename T>
 std::list<T*> *Syn::readList(
-    Lex::Token left, Lex::Token right, Lex::Token sep, 
+    Lex::Token left, Lex::Token right, Lex::Token sep,
     T *(Syn::*readItem)()) {
   checkFor(left);
   std::list<T*> *l = new std::list<T*>();
@@ -1127,8 +1127,8 @@ Elem *Syn::readElem() {
     getNextToken();
     Name *field = readName();
     if (curTok == Lex::tLSQ)
-      return new Field(name, field, readDims()); 
-    return new Field(name, field); 
+      return new Field(name, field, readDims());
+    return new Field(name, field);
   }
 
   // Name
@@ -1151,12 +1151,12 @@ Name *Syn::readName() {
 //         | <operand>
 Expr *Syn::readExpr() {
   switch (curTok) {
-  
+
   // Unary not
   case Lex::tNOT:
     getNextToken();
     return new UnaryOp(Lex::tNOT, readOperand());
-  
+
   // Unary minus
   case Lex::tSUB:
     getNextToken();
@@ -1177,15 +1177,15 @@ Expr *Syn::readExpr() {
 
 bool Syn::isOp(Lex::Token) {
   switch (curTok) {
-  default: 
+  default:
     return false;
-  case Lex::tADD: case Lex::tOR:   case Lex::tEQ:  
+  case Lex::tADD: case Lex::tOR:   case Lex::tEQ:
   case Lex::tSUB: case Lex::tAND:  case Lex::tLT:
   case Lex::tMUL: case Lex::tLAND: case Lex::tGT:
   case Lex::tDIV: case Lex::tLOR:  case Lex::tNEQ:
   case Lex::tREM: case Lex::tXOR:  case Lex::tLEQ:
                   case Lex::tLSH:  case Lex::tGEQ:
-                  case Lex::tRSH:  
+                  case Lex::tRSH:
     return true;
   }
 }

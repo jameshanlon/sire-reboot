@@ -3,10 +3,14 @@
 #include "Lex.h"
 #include "Syn.h"
 
+#include <stdio.h>
+#include <stdlib.h>
+
 #include <string>
 #include <string.h>
 #include <unistd.h>
-#include <stdio.h>
+
+#define WORD_SIZE 32
 
 void interpreterLoop() {
 //  fprintf(stderr, "> ");
@@ -25,6 +29,13 @@ void interpreterLoop() {
 //  }
 }
 
+void printHelp() {
+  printf("Usage: sire [options] <input>\n\n");
+  printf("Options:\n");
+  printf("  -h display usage and options\n");
+  printf("  -p print the parse tree\n");
+}
+
 int main(int argc, char *argv[]) {
   bool optPrintHelp = false;
   bool optPrintTree = false;
@@ -33,17 +44,22 @@ int main(int argc, char *argv[]) {
 
   // Parse arguments
   for(int i=1; i<argc; i++) {
-    if     (!strcmp(argv[i], "-h")) optPrintHelp = true;
-    else if(!strcmp(argv[i], "-p")) optPrintTree = true;
-    else                           filename = argv[i];
+    if (argv[i][0] == '-') {
+      if     (!strcmp(argv[i], "-h")) optPrintHelp = true;
+      else if(!strcmp(argv[i], "-p")) optPrintTree = true;
+      else {
+        fprintf(stderr, "Invalid argument.\n");
+        return 0;
+      }
+    }
+    else {
+      filename = argv[i];
+    }
   }
 
   // Print help
   if(optPrintHelp) {
-    printf("Usage: %s [options] <input>\n\n", argv[0]);
-    printf("Options:\n");
-    printf("  -h display usage and options\n");
-    printf("  -p print the parse tree\n");
+    printHelp();
     return 0;
   }
 
@@ -52,7 +68,7 @@ int main(int argc, char *argv[]) {
     fp = filename.empty() ? stdin : fopen(filename.c_str(), "r");
     if(fp == NULL)
       throw FatalError("Could not open the input file");
-    
+
     TAB.init();
     LEX.init(fp);
     SYN.init();
@@ -64,25 +80,34 @@ int main(int argc, char *argv[]) {
     }
 
     // Lex debug
-    //Lex::Token t = LEX.readToken();
-    //while (t != Lex::t_EOF) {
-    //  printf("%3d %s ", (int) t, LEX.tokStr(t));
-    //  if(t == Lex::t_NUMBER) printf("%d", LEX.value);
-    //  if(t == Lex::t_NAME)   printf("%s", LEX.s.c_str());
-    //  if(t == Lex::t_STRING) printf("%s", LEX.s.c_str());
-    //  printf("\n");
-    //  t = LEX.readToken();
-    //}
+    Lex::Token t = LEX.readToken();
+    while (t != Lex::tEOF) {
+      printf("%3d %s ", (int) t, LEX.tokStr(t));
+      if(t == Lex::tNAME)   printf("%s", LEX.s.c_str());
+      if(t == Lex::tSTR)    printf("%s", LEX.s.c_str());
+      if(t == Lex::tDECINT) printf("%d", LEX.value);
+      if(t == Lex::tHEXINT) printf("%x", LEX.value);
+      if(t == Lex::tOCTINT) printf("%o", LEX.value);
+      if(t == Lex::tBININT) {
+        int val = LEX.value;
+        char s[WORD_SIZE+1];
+        char *p = s + WORD_SIZE;
+        do { *--p = '0' + (val & 1); } while (val >>= 1);
+        printf("%s", s);
+      }
+      printf("\n");
+      t = LEX.readToken();
+    }
 
-    Tree *tree = SYN.formTree();
+    //Tree *tree = SYN.formTree();
     //TRN.translateTree();
   }
   catch(FatalError &e) {
     fprintf(stderr, "Error: %s\n", e.msg());
     fclose(fp);
-    return 1; 
+    return 1;
   }
-  
+
   fclose(fp);
   return 0;
 }
