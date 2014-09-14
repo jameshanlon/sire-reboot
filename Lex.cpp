@@ -298,7 +298,7 @@ void Lex::error(const char *msg) {
   ERR.record();
   // Skip up to a safer point
   Lex::Token tok = readToken();
-  while(tok != tEOF
+  while (tok != tEOF
       || tok != tSEMI
       || tok != tAND
       || tok != tRCURLY

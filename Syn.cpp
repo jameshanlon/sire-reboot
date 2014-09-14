@@ -21,7 +21,6 @@ void Syn::checkFor(Lex::Token t) {
 
 void Syn::error(const char *msg) {
   LEX.error(msg);
-  getNextToken();
 }
 
 Tree *Syn::formTree() {
@@ -37,19 +36,19 @@ Tree *Syn::formTree() {
 //         | {0 "&" <spec> }
 Tree *Syn::readProg() {
   Tree *tree = new Tree();
+  getNextToken();
 
   // Read specifications
-  while(curTok == Lex::tVAL
-     || curTok == Lex::tVAR
-     || curTok == Lex::tCHAN
-     || curTok == Lex::tCALL
-     || curTok == Lex::tPROCESS
-     || curTok == Lex::tSERVER
-     || curTok == Lex::tFUNCTION) {
+  while (curTok == Lex::tVAL
+      || curTok == Lex::tVAR
+      || curTok == Lex::tCHAN
+      || curTok == Lex::tCALL
+      || curTok == Lex::tPROCESS
+      || curTok == Lex::tSERVER
+      || curTok == Lex::tFUNCTION) {
 
     // <spec>
-    Spec *spec = readSpec();
-    tree->spec.push_back(spec);
+    tree->spec.push_back(readSpec());
 
     // ... ":"
     if (curTok == Lex::tCOLON)
@@ -148,8 +147,11 @@ Spef *Syn::readSpef(bool val) {
 Spec *Syn::readSpec() {
   Spec *res;
   switch(curTok) {
-  default:        assert(0 && "invalid token");
-  case Lex::tEOF: return NULL;
+  default:
+    assert(0 && "invalid token");
+  
+  case Lex::tEOF:
+    return NULL;
 
   // <decl> | <abbr>
   case Lex::tVAL:
