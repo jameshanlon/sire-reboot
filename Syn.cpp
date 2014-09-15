@@ -8,6 +8,7 @@ Syn Syn::instance;
 
 void Syn::getNextToken() {
   curTok = LEX.readToken();
+  printf(". %s\n", LEX.tokStr(curTok));
 }
 
 void Syn::checkFor(Lex::Token t) {
@@ -16,7 +17,7 @@ void Syn::checkFor(Lex::Token t) {
     sprintf(msg, "'%s' expected", LEX.tokStr(t));
     LEX.error(msg);
   }
-  LEX.readToken();
+  getNextToken();
 }
 
 void Syn::error(const char *msg) {
@@ -149,7 +150,7 @@ Spec *Syn::readSpec() {
   switch(curTok) {
   default:
     assert(0 && "invalid token");
-  
+
   case Lex::tEOF:
     return NULL;
 
@@ -388,30 +389,30 @@ Spec *Syn::readProcessSpec() {
         error("expected '(', 'is' or '['");
         return NULL;
 
-        // Definition
-        // ... "(" {0 "," <fml> } ")" "is" <process>
-        case Lex::tLPAREN: {
-            std::list<Fml*> *args = readFmls();
-            checkFor(Lex::tIS);
-            return new ProcessDef(name, args, readProcess());
-          }
+      // Definition
+      // ... "(" {0 "," <fml> } ")" "is" <process>
+      case Lex::tLPAREN: {
+          std::list<Fml*> *args = readFmls();
+          checkFor(Lex::tIS);
+          return new ProcessDef(name, args, readProcess());
+        }
 
-        // Abbreviation
-        // ... "is" <elem>
-        case Lex::tIS: {
-            getNextToken();
-            Spef *spef = new NamedSpef(Spef::PROCESS, name);
-            return new ProcessAbbr(spef, name, readElem());
-          }
+      // Abbreviation
+      // ... "is" <elem>
+      case Lex::tIS: {
+          getNextToken();
+          Spef *spef = new NamedSpef(Spef::PROCESS, name);
+          return new ProcessAbbr(spef, name, readElem());
+        }
 
-        // Abbreviation
-        // ... {1 "[" <expr>? "]" } <name> "is" <elem>
-        case Lex::tLSQ: {
-            Spef *spef = new NamedSpef(Spef::PROCESS, name, readDims());
-            Name *name = readName();
-            checkFor(Lex::tIS);
-            return new ProcessAbbr(spef, name, readElem());
-          }
+      // Abbreviation
+      // ... {1 "[" <expr>? "]" } <name> "is" <elem>
+      case Lex::tLSQ: {
+          Spef *spef = new NamedSpef(Spef::PROCESS, name, readDims());
+          Name *name = readName();
+          checkFor(Lex::tIS);
+          return new ProcessAbbr(spef, name, readElem());
+        }
       }
     }
 
@@ -1106,6 +1107,10 @@ std::list<T*> *Syn::readList(
     Lex::Token left, Lex::Token right, Lex::Token sep,
     T *(Syn::*readItem)()) {
   checkFor(left);
+  if (curTok == right) {
+    getNextToken();
+    return NULL;
+  }
   std::list<T*> *l = new std::list<T*>();
   do {
     l->push_back((this->*readItem)());
