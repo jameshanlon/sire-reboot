@@ -6,20 +6,8 @@
 #include <list>
 #include <string>
 
-struct Node;
-
-// The syntax tree base struct
-struct Tree {
-  std::list<Node*> spec;
-  std::list<Node*> prog;
-  //void print();
-};
-
-// The tree node base struct
-struct Node {
-};
-
 // Forward declarations
+struct Node;
 struct Spec;
 struct Decl;
 struct Hiding;
@@ -37,7 +25,23 @@ struct Name;
 struct Expr;
 struct Literal;
 struct Valof;
-  
+
+// The base struct for the syntax tree
+struct Tree {
+public:
+  std::list<Spec*> spec;
+  std::list<Cmd*> prog;
+  void print();
+
+private:
+  void printSpec(Spec*);
+  void printCmd(Cmd*);
+};
+
+// The tree node base struct
+struct Node {
+};
+
 // Specifiers =================================================================
 
 struct Spef : public Node {

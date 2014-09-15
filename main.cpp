@@ -105,6 +105,7 @@ int main(int argc, char *argv[]) {
     }
     else {
       Tree *tree = SYN.formTree();
+      tree->print();
       //TRN.translateTree();
     }
   }

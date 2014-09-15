@@ -1,5 +1,5 @@
 CXX=clang++
-CXX_FLAGS=-g -Wall -pedantic -O2
+CXX_FLAGS=-g -O0 -Wall -pedantic -std=c++11
 LD_FLAGS=
 TARGET=sire
 SOURCES=\

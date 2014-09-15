@@ -1,24 +1,26 @@
 #include "Tree.h"
+#include <stdio.h>
 
-//void Tree::print() {
-//  // Specification
-//  for(std::vector<Node*>::iterator it=spec.begin(); it!=spec.end(); ++it) {
-//    printSpec(*it);
-//  }
-//  // Program
-//  for(std::vector<Node*>::iterator it=prog.begin(); it!=prog.end(); ++it) {
-//    printCmd(*it);
-//  }
-//}
-//
-//void Tree::printSpec(Specification s) {
-//  switch(s.type) {
-//  case Spec::DEF:  printDef(s);  break;
-//  case Spec::DEC:  printDecl(s); break;
-//  case Spec::ABBR: printAbbr(s); break;
-//  }
-//}
-//
+void Tree::print() {
+  // Specification
+  for (auto i : spec) {
+    printSpec(i);
+  }
+  // Program
+  for (auto i : prog) {
+    printCmd(i);
+  }
+}
+
+void Tree::printSpec(Spec *s) {
+  printf("spec\n");
+  //switch(s.type) {
+  //case Spec::DEF:  printDef(s);  break;
+  //case Spec::DEC:  printDecl(s); break;
+  //case Spec::ABBR: printAbbr(s); break;
+  //}
+}
+
 //void Tree::printDef(Def d) {
 //  switch(d.type) {
 //  case Def.SERVER:   break;
@@ -40,8 +42,9 @@
 //  case Abbr::VAR: break;
 //  }
 //}
-//
-//void Tree::printCmd(Cmd c) {
+
+void Tree::printCmd(Cmd *c) {
+  printf("cmd\n");
 //  switch(c.type) {
 //  case Cmd::SKIP:    break;
 //  case Cmd::STOP:    break;
@@ -55,5 +58,5 @@
 //  case Cmd::SEQ:     break;
 //  case Cmd::PAR:     break;
 //  }
-//}
+}
 
