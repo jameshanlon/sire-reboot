@@ -8,8 +8,10 @@
 
 // Forward declarations
 struct Node;
+struct Def;
 struct Spec;
 struct Decl;
+struct Abbr;
 struct Hiding;
 struct Cmd;
 struct Alt;
@@ -19,6 +21,7 @@ struct Select;
 struct Range;
 struct Server;
 struct Process;
+struct Fmls;
 struct Fml;
 struct Elem;
 struct Name;
@@ -34,8 +37,13 @@ public:
   void print();
 
 private:
-  void printSpec(Spec*);
-  void printCmd(Cmd*);
+  void printSpec(int x, Spec*);
+  void printDef(int x, Def*);
+  void printDecl(int x, Decl*);
+  void printAbbr(int x, Abbr*);
+  void printFmls(int x, std::list<Fml*> *);
+  void printProcess(int x, Process*);
+  void printCmd(int x, Cmd*);
 };
 
 // The tree node base struct
@@ -177,9 +185,9 @@ protected:
 
 // Process definition
 struct ProcessDef : public Def {
-  Process *proc;
+  Process *process;
   ProcessDef(Name *n, std::list<Fml*> *a, Process *p) :
-    Def(PROCESS, n, a), proc(p) {}
+    Def(PROCESS, n, a), process(p) {}
 };
 
 // Server definition
@@ -278,7 +286,7 @@ struct Abbr : public Spec {
   typedef enum {
     VAR,
     CALL,
-    SERV,
+    SERVER,
     PROCESS,
     FUNCTION
   } Type;
@@ -307,7 +315,7 @@ struct CallAbbr : public Abbr {
 // Server abbreviation
 struct ServerAbbr : public Abbr {
   ServerAbbr(Spef *s, Name *n, Elem *e) :
-    Abbr(SERV, s, n, e) {}
+    Abbr(SERVER, s, n, e) {}
 };
 
 // Process abbreviation
@@ -336,7 +344,7 @@ struct Cmd : public Node {
     ASS,
     IN,
     OUT,
-    CONN,
+    CONNECT,
     // Structured
     ALT,
     TEST,
@@ -433,7 +441,7 @@ struct Connect : public Cmd {
   Elem *local;
   Elem *remote;
   Connect(Elem *l, Elem *r) : 
-    Cmd(CONN), local(l), remote(r) {}
+    Cmd(CONNECT), local(l), remote(r) {}
 };
 
 // Alternative

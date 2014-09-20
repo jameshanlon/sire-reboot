@@ -194,8 +194,8 @@ void Lex::readHexInt() {
     s += ch;
     readChar();
   } while(('0'<=ch && ch<='9')
-      || ('a'<=ch && ch<='z')
-      || ('A'<=ch && ch<='Z'));
+       || ('a'<=ch && ch<='z')
+       || ('A'<=ch && ch<='Z'));
   value = (int) strtol(s.c_str(), NULL, 16);
 }
 

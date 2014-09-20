@@ -48,19 +48,19 @@ Tree *Syn::readProg() {
       || curTok == Lex::tSERVER
       || curTok == Lex::tFUNCTION) {
 
-    // <spec>
+    // ... <spec> ":"
     tree->spec.push_back(readSpec());
+    checkFor(Lex::tCOLON);
+  }
 
-    // ... ":"
-    if (curTok == Lex::tCOLON)
+  // ... {1 ";" <cmd> }
+  while (curTok != Lex::tEOF) {
+    tree->prog.push_back(readCmd());
+    if (curTok == Lex::tSEMI)
       getNextToken();
     else
       break;
   }
-
-  // ... {1 ";" <cmd> }
-  while (curTok != Lex::tEOF)
-    tree->prog.push_back(readCmd());
 
   return tree;
 }
