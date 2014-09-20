@@ -29,7 +29,7 @@ struct Expr;
 struct Literal;
 struct Valof;
 
-// The base struct for the syntax tree
+// The syntax tree
 struct Tree {
 public:
   std::list<Spec*> spec;
@@ -41,14 +41,17 @@ private:
   void printDef(int x, Def*);
   void printDecl(int x, Decl*);
   void printAbbr(int x, Abbr*);
-  void printFmls(int x, std::list<Fml*> *);
+  void printFmls(int x, std::list<Fml*>*);
+  void printFml(int x, Fml*);
   void printProcess(int x, Process*);
+  void printServer(int x, Server*);
+  void printHiding(int x, Hiding*);
   void printCmd(int x, Cmd*);
+  void printExpr(int x, Expr*);
 };
 
 // The tree node base struct
-struct Node {
-};
+struct Node {};
 
 // Specifiers =================================================================
 
@@ -67,11 +70,11 @@ struct Spef : public Node {
   bool val;
   std::list<Expr*> *lengths;
   Spef(Type t) : 
-    type(t), val(false), lengths(NULL) {}
+    type(t), val(false), lengths(nullptr) {}
   Spef(Type t, std::list<Expr*> *l) : 
     type(t), val(false), lengths(l) {}
   Spef(Type t, bool v) : 
-    type(t), val(v), lengths(NULL) {}
+    type(t), val(v), lengths(nullptr) {}
   Spef(Type t, bool v, std::list<Expr*> *l) : 
     type(t), val(v), lengths(l) {}
 };
@@ -97,10 +100,6 @@ struct NamedSpef : public Spef {
 // Formals ====================================================================
 
 struct Fml : public Node {
-  typedef enum {
-    SINGLE,
-    LIST
-  } Type;
   Spef *spef;
   Name *name;
   Fml(Spef *s, Name *n) :
@@ -121,7 +120,7 @@ struct Elem : public Node {
 
 protected:
   Elem(Type t) :
-    type(t), subscripts(NULL) {}
+    type(t), subscripts(nullptr) {}
   Elem(Type t, std::list<Expr*> *s) :
     type(t), subscripts(s) {}
 };
@@ -133,6 +132,7 @@ struct Name : public Elem {
     Elem(NAME), str(n) {}
   Name(std::string *n, std::list<Expr*> *s) :
     Elem(NAME, s), str(n) {}
+  const char *cstr() { return str->c_str(); }
 };
 
 // Field
@@ -159,12 +159,13 @@ struct Spec : public Node {
     Name *name;
     std::list<Name*> *names;
   };
+  bool nameList;
 
 protected:
   Spec(Type t, Name *n) : 
-    type(t), name(n) {}
+    type(t), name(n), nameList(false) {}
   Spec(Type t, std::list<Name*> *n) : 
-    type(t), names(n) {}
+    type(t), names(n), nameList(true) {}
 };
 
 // Definition
@@ -200,9 +201,9 @@ struct ServerDef : public Def {
 // Inheriting server definition
 struct InhrtServerDef : public Def {
   std::list<Decl*> *intf;
-  Hiding *decl; 
-  InhrtServerDef(Name *n, std::list<Fml*> *a, Hiding *d) :
-    Def(ISERVER, n, a), decl(d) {}
+  Hiding *hiding; 
+  InhrtServerDef(Name *n, std::list<Fml*> *a, Hiding *h) :
+    Def(ISERVER, n, a), hiding(h) {}
 };
 
 // Function definition
@@ -216,7 +217,7 @@ struct FunctionDef : public Def {
 struct SimSpec : public Spec {
   std::list<Spec*> *specs;
   SimSpec(std::list<Spec*> *s) :
-    Spec(SSPEC, (Name *) NULL), specs(s) {}
+    Spec(SSPEC, (Name *) nullptr), specs(s) {}
 };
 
 // Declaration

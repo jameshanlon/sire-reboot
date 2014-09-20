@@ -158,6 +158,23 @@ Lex::Token Lex::readToken() {
   return tok;
 }
 
+void Lex::printToken(Token t) {
+  printf("token %3d %s ", (int) t, tokStr(t));
+  if(t == Lex::tNAME)   printf("%s", s.c_str());
+  if(t == Lex::tSTR)    printf("%s", s.c_str());
+  if(t == Lex::tDECINT) printf("%d", value);
+  if(t == Lex::tHEXINT) printf("%x", value);
+  if(t == Lex::tOCTINT) printf("%o", value);
+  if(t == Lex::tBININT) {
+    int val = value;
+    char s[BUF_SIZE+1];
+    char *p = s + BUF_SIZE;
+    do { *--p = '0' + (val & 1); } while (val >>= 1);
+    printf("%s", s);
+  }
+  printf("\n");
+}
+
 void Lex::readChar() {
   ch = fgetc(fp);
   chBuf[++chCount & (BUF_SIZE-1)] = ch;
@@ -185,7 +202,7 @@ void Lex::readDecInt() {
     s += ch;
     readChar();
   } while('0'<=ch && ch<='9');
-  value = (int) strtol(s.c_str(), NULL, 0);
+  value = (int) strtol(s.c_str(), nullptr, 0);
 }
 
 void Lex::readHexInt() {
@@ -196,7 +213,7 @@ void Lex::readHexInt() {
   } while(('0'<=ch && ch<='9')
        || ('a'<=ch && ch<='z')
        || ('A'<=ch && ch<='Z'));
-  value = (int) strtol(s.c_str(), NULL, 16);
+  value = (int) strtol(s.c_str(), nullptr, 16);
 }
 
 void Lex::readOctInt() {
@@ -205,7 +222,7 @@ void Lex::readOctInt() {
     s += ch;
     readChar();
   } while('0'<=ch && ch<='7');
-  value = (int) strtol(s.c_str(), NULL, 8);
+  value = (int) strtol(s.c_str(), nullptr, 8);
 }
 
 void Lex::readBinInt() {
@@ -214,7 +231,7 @@ void Lex::readBinInt() {
     s += ch;
     readChar();
   } while('0'<=ch && ch<='1');
-  value = (int) strtol(s.c_str(), NULL, 2);
+  value = (int) strtol(s.c_str(), nullptr, 2);
 }
 
 void Lex::readName() {

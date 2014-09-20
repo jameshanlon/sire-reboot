@@ -5,6 +5,7 @@
 #include <string>
 
 #define BUF_SIZE 64
+
 #define LEX Lex::get()
 
 class Lex {
@@ -62,6 +63,7 @@ public:
   void error(const char *msg);
   void readChar();
   Token readToken();
+  void printToken(Token);
   void declareKeywords();
   const char *tokStr(Lex::Token t);
   

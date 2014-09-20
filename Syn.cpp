@@ -8,7 +8,7 @@ Syn Syn::instance;
 
 void Syn::getNextToken() {
   curTok = LEX.readToken();
-  printf(". %s\n", LEX.tokStr(curTok));
+  LEX.printToken(curTok);
 }
 
 void Syn::checkFor(Lex::Token t) {
@@ -84,7 +84,7 @@ Spef *Syn::readSpef(bool val) {
   switch (t) {
   default:
     error("invalid specifier");
-    return NULL;
+    return nullptr;
 
   // <type> {0, "[" <expr> "]" }
   case Lex::tVAR:
@@ -105,7 +105,7 @@ Spef *Syn::readSpef(bool val) {
     switch (curTok) {
     default:
       error("expecting name or 'interface'");
-      return NULL;
+      return nullptr;
 
     case Lex::tNAME:
       return new NamedSpef(Spef::PROCESS, readName(), readDims());
@@ -120,7 +120,7 @@ Spef *Syn::readSpef(bool val) {
     switch (curTok) {
     default:
       error("expecting name or 'interface'");
-      return NULL;
+      return nullptr;
 
     case Lex::tNAME:
       return new NamedSpef(Spef::SERVER, readName(), readDims());
@@ -152,7 +152,7 @@ Spec *Syn::readSpec() {
     assert(0 && "invalid token");
 
   case Lex::tEOF:
-    return NULL;
+    return nullptr;
 
   // <decl> | <abbr>
   case Lex::tVAL:
@@ -225,7 +225,7 @@ Spec *Syn::readSpec() {
   switch (curTok) {
   default:
     error("expected ':' or '&'");
-    return NULL;
+    return nullptr;
 
   // ... ":"
   case Lex::tCOLON:
@@ -259,7 +259,7 @@ Spec *Syn::readServerSpec() {
   switch(curTok) {
   default:
     error("expected name or 'interface'");
-    return NULL;
+    return nullptr;
 
   // "server" <name> ...
   case Lex::tNAME: {
@@ -267,7 +267,7 @@ Spec *Syn::readServerSpec() {
       switch(curTok) {
       default:
         error("expected '(' or 'is'");
-        return NULL;
+        return nullptr;
 
       // Definition
       // ... "(" {0 "," <fml> } ")" "is" <server>
@@ -277,7 +277,7 @@ Spec *Syn::readServerSpec() {
           switch(curTok) {
           default:
             error("expecting 'is' or 'inherits'");
-            return NULL;
+            return nullptr;
 
           // ... "is" <server>
           case Lex::tIS:
@@ -306,7 +306,7 @@ Spec *Syn::readServerSpec() {
         switch(curTok) {
         default:
           error("expected '[', 'interface', 'inherits' or instance");
-          return NULL;
+          return nullptr;
 
         // Declaration
         // ... <server>
@@ -344,7 +344,7 @@ Spec *Syn::readServerSpec() {
       switch (curTok) {
       default:
         error("expected name or '['");
-        return NULL;
+        return nullptr;
 
       // ... <name> "is" <elem>
       case Lex::tNAME: {
@@ -378,7 +378,7 @@ Spec *Syn::readProcessSpec() {
   switch (curTok) {
   default:
     error("expecting name or 'interface'");
-    return NULL;
+    return nullptr;
 
   // Declaration or abbreviation
   // "process" <name> ...
@@ -387,7 +387,7 @@ Spec *Syn::readProcessSpec() {
       switch(curTok) {
       default:
         error("expected '(', 'is' or '['");
-        return NULL;
+        return nullptr;
 
       // Definition
       // ... "(" {0 "," <fml> } ")" "is" <process>
@@ -424,7 +424,7 @@ Spec *Syn::readProcessSpec() {
       switch (curTok) {
       default:
         error("expected name or '['");
-        return NULL;
+        return nullptr;
 
       // ... <name> "is" <elem>
       case Lex::tNAME: {
@@ -457,7 +457,7 @@ Spec *Syn::readFunctionSpec() {
   switch (curTok) {
   default:
     error("expecting name or '['");
-    return NULL;
+    return nullptr;
 
   // "function" <name> ...
   case Lex::tNAME: {
@@ -465,7 +465,7 @@ Spec *Syn::readFunctionSpec() {
       switch(curTok) {
       default:
         error("expecting '(' or 'is'");
-        return NULL;
+        return nullptr;
 
       // Definition
       // ... "(" {0 "," <fml> } ")" "is" <expr>
@@ -520,7 +520,7 @@ Def *Syn::readServerDef() {
   switch(curTok) {
   default:
     error("expecting 'is or 'inherits'");
-    return NULL;
+    return nullptr;
 
   // ... "is" ...
   case Lex::tIS:
@@ -563,7 +563,7 @@ Fml *Syn::readFml() {
   switch(curTok) {
   default:
       error("invalid argument");
-      return NULL;
+      return nullptr;
 
   // "val" ...
   // "interface" ...
@@ -590,7 +590,7 @@ Decl *Syn::readIntf() {
   switch(curTok) {
     default:
       error("invalid interface");
-      return NULL;
+      return nullptr;
 
     // Chanend interface
     case Lex::tCHAN: {
@@ -703,7 +703,7 @@ Cmd *Syn::readCmd() {
   switch(curTok) {
   default:
     error("invalid command");
-    return NULL;
+    return nullptr;
 
   // "skip"
   case Lex::tSKIP:
@@ -735,7 +735,7 @@ Cmd *Syn::readCmd() {
     switch (curTok) {
     default:
       error("expecting assignment, input, output, instance or call");
-      return NULL;
+      return nullptr;
 
     // ":=" <expr>
     case Lex::tASS:
@@ -780,7 +780,7 @@ Cmd *Syn::readCmd() {
       switch(curTok) {
         default:
           error("expecting 'do' or 'then'");
-          return NULL;
+          return nullptr;
 
         case Lex::tDO:
           return new IfD(expr, readCmd());
@@ -790,7 +790,7 @@ Cmd *Syn::readCmd() {
           checkFor(Lex::tELSE);
           return new IfTE(expr, thenCmd, readCmd());
       }
-      return NULL;
+      return nullptr;
     }
   }
 
@@ -801,7 +801,7 @@ Cmd *Syn::readCmd() {
     switch (curTok) {
     default:
       error("expecting '{' or '['");
-      return NULL;
+      return nullptr;
 
     case Lex::tLPAREN:
       return new Test(readChoices());
@@ -817,7 +817,7 @@ Cmd *Syn::readCmd() {
     switch (curTok) {
     default:
       error("expecting '{' or '['");
-      return NULL;
+      return nullptr;
 
     case Lex::tLPAREN:
       return new Alt(readAltns());
@@ -834,7 +834,7 @@ Cmd *Syn::readCmd() {
     switch (curTok) {
     default:
       error("expecting '{' or '['");
-      return NULL;
+      return nullptr;
 
     case Lex::tLCURLY:
       return new Case(expr, readSelects());
@@ -884,7 +884,7 @@ Cmd *Syn::readCmd() {
   case Lex::tFUNCTION:
     error("definition in specification of command");
     readSpec();
-    return new CmdSpec(NULL, readCmd());
+    return new CmdSpec(nullptr, readCmd());
   }
 }
 
@@ -916,7 +916,7 @@ Choice *Syn::readChoice() {
   case Lex::tFUNCTION:
     error("definition in specification of choice");
     readSpec();
-    return new SpecChoice(NULL, readChoice());
+    return new SpecChoice(nullptr, readChoice());
   }
 
   // <expr> ":" <cmd>
@@ -956,7 +956,7 @@ Altn *Syn::readAltn() {
   case Lex::tFUNCTION:
     error("definition in specification of alternative");
     readSpec();
-    return new SpecAltn(NULL, readAltn());
+    return new SpecAltn(nullptr, readAltn());
   }
 
   // <elem> "?" <elem> ":" <cmd>
@@ -1008,7 +1008,7 @@ Range *Syn::readRange() {
   Expr *base = readExpr();
   checkFor(Lex::tFOR);
   Expr *count = readExpr();
-  Expr *step = NULL;
+  Expr *step = nullptr;
   if (curTok == Lex::tSTEP) {
     getNextToken();
     step = readExpr();
@@ -1021,7 +1021,7 @@ Range *Syn::readRange() {
 // {1 "[" <expr> "]" }
 std::list<Expr*> *Syn::readDims() {
   if (curTok != Lex::tLSQ)
-    return NULL;
+    return nullptr;
   else {
     std::list<Expr*> *lengths = new std::list<Expr*>();
     while (curTok == Lex::tLSQ) {
@@ -1109,13 +1109,16 @@ std::list<T*> *Syn::readList(
   checkFor(left);
   if (curTok == right) {
     getNextToken();
-    return NULL;
+    return nullptr;
   }
   std::list<T*> *l = new std::list<T*>();
-  do {
+  while (true) {
     l->push_back((this->*readItem)());
-    getNextToken();
-  } while (curTok != sep);
+    if (curTok == sep)
+      getNextToken();
+    else
+      break;
+  }
   checkFor(right);
   return l;
 }
@@ -1213,7 +1216,7 @@ Operand *Syn::readOperand() {
   switch (curTok) {
   default:
     error("expecing name, 'valof' or literal");
-    return NULL;
+    return nullptr;
 
   // <elem>
   case Lex::tNAME:

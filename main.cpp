@@ -10,8 +10,6 @@
 #include <string.h>
 #include <unistd.h>
 
-#define WORD_SIZE 32
-
 void interpreterLoop() {
 //  fprintf(stderr, "> ");
 //  syn.getNextToken();
@@ -82,26 +80,11 @@ int main(int argc, char *argv[]) {
       return 0;
     }
 
-    // Lex debug
+    // Print tokens from lexer
     if (optPrintTokens) {
-      Lex::Token t = LEX.readToken();
-      while (t != Lex::tEOF) {
-        printf("%3d %s ", (int) t, LEX.tokStr(t));
-        if(t == Lex::tNAME)   printf("%s", LEX.s.c_str());
-        if(t == Lex::tSTR)    printf("%s", LEX.s.c_str());
-        if(t == Lex::tDECINT) printf("%d", LEX.value);
-        if(t == Lex::tHEXINT) printf("%x", LEX.value);
-        if(t == Lex::tOCTINT) printf("%o", LEX.value);
-        if(t == Lex::tBININT) {
-          int val = LEX.value;
-          char s[WORD_SIZE+1];
-          char *p = s + WORD_SIZE;
-          do { *--p = '0' + (val & 1); } while (val >>= 1);
-          printf("%s", s);
-        }
-        printf("\n");
-        t = LEX.readToken();
-      }
+      Lex::Token t;
+      while ((t = LEX.readToken()) != Lex::tEOF)
+        LEX.printToken(t);
     }
     else {
       Tree *tree = SYN.formTree();
@@ -111,7 +94,8 @@ int main(int argc, char *argv[]) {
   }
   catch(FatalError &e) {
     fprintf(stderr, "Error: %s\n", e.msg());
-    fclose(fp);
+    if (fp != nullptr) 
+      fclose(fp);
     return 1;
   }
 
