@@ -45,9 +45,11 @@ private:
   void printFml(int x, Fml*);
   void printProcess(int x, Process*);
   void printServer(int x, Server*);
+  void printIntf(int x, std::list<Decl*>*);
   void printHiding(int x, Hiding*);
   void printCmd(int x, Cmd*);
   void printExpr(int x, Expr*);
+  void printName(int x, Name*);
 };
 
 // The tree node base struct
@@ -127,12 +129,11 @@ protected:
 
 // Name
 struct Name : public Elem {
-  std::string *str;
-  Name(std::string *n) :
+  std::string str;
+  Name(std::string n) :
     Elem(NAME), str(n) {}
-  Name(std::string *n, std::list<Expr*> *s) :
+  Name(std::string n, std::list<Expr*> *s) :
     Elem(NAME, s), str(n) {}
-  const char *cstr() { return str->c_str(); }
 };
 
 // Field
@@ -395,13 +396,6 @@ struct Call : public Cmd {
     Cmd(CALL), name(n), field(f), actuals(a) {}
 };
 
-// Replicated sequence
-struct RSeq : public Cmd {
-  std::list<Range*> *ranges;
-  RSeq(std::list<Range*> *r) :
-    Cmd(RSEQ), ranges(r) {}
-};
-
 // Skip
 struct Skip : public Cmd {
   Skip() : 
@@ -642,6 +636,13 @@ struct Seq : public Cmd {
     Cmd(SEQ), cmds(c) {}
 };
 
+// Replicated sequence
+struct RSeq : public Cmd {
+  std::list<Range*> *ranges;
+  RSeq(std::list<Range*> *r) :
+    Cmd(RSEQ), ranges(r) {}
+};
+
 // Parallel
 struct Par : public Cmd {
   Par() : 
@@ -664,7 +665,9 @@ struct Server {
     SPEC,
     INSTANCE
   } Type;
-  Server(Type t) {}
+  Type type;
+  Server(Type t) :
+    type(t) {}
 };
 
 struct ServerSpec : public Server {
@@ -688,7 +691,9 @@ struct Process {
     SPEC,
     INSTANCE
   } Type;
-  Process(Type t) {}
+  Type type;
+  Process(Type t) : 
+    type(t) {}
 };
 
 struct ProcessCmd : public Process {

@@ -50,7 +50,6 @@ Tree *Syn::readProg() {
 
     // ... <spec> ":"
     tree->spec.push_back(readSpec());
-    checkFor(Lex::tCOLON);
   }
 
   // ... {1 ";" <cmd> }
@@ -151,9 +150,6 @@ Spec *Syn::readSpec() {
   default:
     assert(0 && "invalid token");
 
-  case Lex::tEOF:
-    return nullptr;
-
   // <decl> | <abbr>
   case Lex::tVAL:
   case Lex::tVAR:
@@ -194,6 +190,8 @@ Spec *Syn::readSpec() {
         res = new VarAbbr(spef, name, readElem());
         break;
       }
+          
+      return readSpecEnd(res);
     }
 
   // ... "from" ...
@@ -221,6 +219,13 @@ Spec *Syn::readSpec() {
     break;
   }
 
+  return readSpecEnd(res);
+}
+
+// ... ":"
+// ... "&" {1 "&" <spec>} ":"
+Spec *Syn::readSpecEnd(Spec *spec) {
+
   // Separator
   switch (curTok) {
   default:
@@ -229,16 +234,19 @@ Spec *Syn::readSpec() {
 
   // ... ":"
   case Lex::tCOLON:
-    return res;
+    getNextToken();
+    return spec;
 
   // ... "&" {1 "&" <spec> }
   case Lex::tAND: {
       std::list<Spec*> *specs = new std::list<Spec*>();
-      specs->push_back(res);
+      specs->push_back(spec);
       do {
         getNextToken();
         specs->push_back(readSpec());
       } while (curTok == Lex::tAND);
+      checkFor(Lex::tCOLON);
+      getNextToken();
       return new SimSpec(specs);
     }
   }
@@ -431,7 +439,7 @@ Spec *Syn::readProcessSpec() {
           Spef *spef = new IntfSpef(Spef::PROCESS, intfs);
           Name *name = readName();
           checkFor(Lex::tIS);
-          return new ServerAbbr(spef, name, readElem());
+          return new ProcessAbbr(spef, name, readElem());
         }
 
       // ... {1 "[" <expr>? "]" } <name> "is" <elem>
@@ -439,7 +447,7 @@ Spec *Syn::readProcessSpec() {
           Spef *spef = new IntfSpef(Spef::PROCESS, intfs, readDims());
           Name *name = readName();
           checkFor(Lex::tIS);
-          return new ServerAbbr(spef, name, readElem());
+          return new ProcessAbbr(spef, name, readElem());
         }
       }
     }
@@ -705,6 +713,10 @@ Cmd *Syn::readCmd() {
     error("invalid command");
     return nullptr;
 
+  // "{" {0 , <cmd> "}"
+  case Lex::tLCURLY:
+    return new Seq(readSeq());
+
   // "skip"
   case Lex::tSKIP:
     getNextToken();
@@ -874,7 +886,6 @@ Cmd *Syn::readCmd() {
   case Lex::tCHAN:
   case Lex::tCALL: {
     Spec *spec = readSpec();
-    checkFor(Lex::tCOLON);
     return new CmdSpec(spec, readCmd());
   }
 
@@ -1100,6 +1111,12 @@ inline std::list<Select*> *Syn::readSelects() {
       Lex::tLCURLY, Lex::tRCURLY, Lex::tOR, &Syn::readSelect);
 }
 
+// "{" {1 ";" <cmd> } "}"
+inline std::list<Cmd*> *Syn::readSeq() {
+  return readList<Cmd>(
+      Lex::tLCURLY, Lex::tRCURLY, Lex::tSEMI, &Syn::readCmd);
+}
+
 // Read a list of T
 // <left> {0 <sep> <item> } <right>
 template<typename T>
@@ -1149,7 +1166,7 @@ Elem *Syn::readElem() {
 
 // <name>
 Name *Syn::readName() {
-  std::string *s = &LEX.s;
+  std::string s = LEX.s;
   checkFor(Lex::tNAME);
   return new Name(s);
 }

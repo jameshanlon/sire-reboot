@@ -25,6 +25,7 @@ private:
   
   Tree    *readProg();
   Spec    *readSpec();
+  Spec    *readSpecEnd(Spec *);
   Spec    *readServerSpec();
   Spec    *readProcessSpec();
   Spec    *readFunctionSpec();
@@ -61,6 +62,7 @@ private:
   std::list<Choice*> *readChoices();
   std::list<Altn*>   *readAltns();
   std::list<Select*> *readSelects();
+  std::list<Cmd*>    *readSeq();
   template<typename T> std::list<T*> *readList(
         Lex::Token, Lex::Token, Lex::Token, T *(Syn::*)());
 };

@@ -2,7 +2,7 @@
 #include "Table.h"
 #include "Error.h"
 
-#include <cstdlib>
+#include <stdlib.h>
 
 Lex Lex::instance;
 
@@ -314,19 +314,25 @@ void Lex::error(const char *msg) {
   printChBuf();
   ERR.record();
   // Skip up to a safer point
-  Lex::Token tok = readToken();
-  while (tok != tEOF
-      || tok != tSEMI
-      || tok != tAND
-      || tok != tRCURLY
-      || tok != tLCURLY)
-    tok = readToken();
+  Lex::Token t = readToken();
+  printf("recover: ");
+  LEX.printToken(t);
+  //while (t != tEOF
+  //    || t != tSEMI
+  //    || t != tAND
+  //    || t != tRCURLY
+  //    || t != tLCURLY) {
+  //  t = readToken();
+  //  printf("recover: ");
+  //  LEX.printToken(t);
+  //}
 }
 
 const char *Lex::tokStr(Lex::Token t) {
   switch(t) {
     default:       return "unknown";
     case tERROR:   return "error";
+    case tEOF:     return "EOF";
     // Literals
     case tDECINT:  return "decimal"; case tHEXINT:   return "hexdecimal";
     case tOCTINT:  return "octal";   case tBININT:   return "binary";
@@ -353,7 +359,7 @@ const char *Lex::tokStr(Lex::Token t) {
     // Keywords
     case tACCEPT:  return "accept";  case tALT:      return "alt";
     case tCALL:    return "call";    case tCHAN:     return "chan";
-    case tCONNECT: return "connet";  case tDO:       return "do";
+    case tCONNECT: return "connect"; case tDO:       return "do";
     case tELSE:    return "else";    case tFALSE:    return "false";
     case tFINAL:   return "final";   case tFOR:      return "for";
     case tFROM:    return "from";    case tFUNCTION: return "function";
