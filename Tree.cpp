@@ -4,7 +4,7 @@
 #include <assert.h>
 
 // Indenting with tree markers
-static int markers[100] = {1}; 
+static int markers[100] = {1};
 static void indent(int x, int numChildren) {
   markers[x] = numChildren;
   if(x > 1) --markers[x-1];
@@ -25,7 +25,7 @@ void Tree::printSpec(int x, Spec *s) {
   case Spec::ABBR:  printAbbr(x, (Abbr*) s); break;
   case Spec::SSPEC: {
       SimSpec *sim = (SimSpec*) s;
-      indent(x, sim->specs->size()); 
+      indent(x, sim->specs->size());
       printf("SimultaenousSpecification");
       for (auto y : *(sim->specs))
         printSpec(x+1, y);
@@ -36,7 +36,7 @@ void Tree::printSpec(int x, Spec *s) {
 
 void Tree::printDef(int x, Def *d) {
   switch(d->type) {
-  
+
   case Def::PROCESS:
     indent(x, 3);
     printf("ProcessDef\n");
@@ -44,24 +44,24 @@ void Tree::printDef(int x, Def *d) {
     printFmls(x+1, d->args);
     printProcess(x+1, ((ProcessDef*) d)->process);
     break;
-  
-  case Def::SERVER:   
+
+  case Def::SERVER:
     indent(x, 3);
     printf("ServerDef\n");
     printName(x+1, d->name);
     printFmls(x+1, d->args);
     printServer(x+1, ((ServerDef*) d)->server);
     break;
-  
-  case Def::ISERVER:  
+
+  case Def::ISERVER:
     indent(x, 3);
     printf("InheritingServerDef\n");
     printName(x+1, d->name);
     printFmls(x+1, d->args);
     printHiding(x+1, ((InhrtServerDef*) d)->hiding);
     break;
-  
-  case Def::FUNCTION: 
+
+  case Def::FUNCTION:
     indent(x, 3);
     printf("FunctionDef\n");
     printName(x+1, d->name);
@@ -73,15 +73,15 @@ void Tree::printDef(int x, Def *d) {
 
 void Tree::printDecl(int x, Decl *d) {
   switch(d->tDecl) {
-  
+
   case Decl::VAR:
     indent(x, 0);
     printf("Decl var\n");
     break;
-  
-  case Decl::ARRAY:  
-  case Decl::HIDING: 
-  case Decl::SERVER: 
+
+  case Decl::ARRAY:
+  case Decl::HIDING:
+  case Decl::SERVER:
   case Decl::RSERVER:
     indent(x, 0);
     printf("Decl todo\n");
@@ -90,11 +90,11 @@ void Tree::printDecl(int x, Decl *d) {
 
 void Tree::printAbbr(int x, Abbr *a) {
   switch(a->type) {
-  case Abbr::VAR:      
-  case Abbr::CALL:     
-  case Abbr::SERVER:   
-  case Abbr::PROCESS:  
-  case Abbr::FUNCTION: 
+  case Abbr::VAR:
+  case Abbr::CALL:
+  case Abbr::SERVER:
+  case Abbr::PROCESS:
+  case Abbr::FUNCTION:
     indent(x, 0);
     printf("Abbr todo\n");
     break;
@@ -102,7 +102,7 @@ void Tree::printAbbr(int x, Abbr *a) {
 }
 
 void Tree::printFmls(int x, std::list<Fml*> *f) {
-  indent(x, f->size()); 
+  indent(x, f->size());
   printf("Formals\n");
   if (f != nullptr) {
     for (auto y : *f)
@@ -111,7 +111,7 @@ void Tree::printFmls(int x, std::list<Fml*> *f) {
 }
 
 void Tree::printFml(int x, Fml *f) {
-  indent(x, 1); 
+  indent(x, 1);
   printf("Formal\n");
   printName(x+1, f->name);
 }
@@ -119,15 +119,15 @@ void Tree::printFml(int x, Fml *f) {
 void Tree::printProcess(int x, Process *p) {
   switch (p->type) {
   default: assert(0 && "invalid process type");
-  
+
   case Process::CMD:
-    indent(x, 1); 
+    indent(x, 1);
     printf("Process\n");
     printCmd(x+1, ((ProcessCmd*) p)->cmd);
     break;
-  
+
   case Process::SPEC:
-    indent(x, 2); 
+    indent(x, 2);
     printf("Process\n");
     printIntf(x+1, ((ProcessSpec*) p)->intf);
     printCmd(x+1, ((ProcessSpec*) p)->cmd);
@@ -136,7 +136,7 @@ void Tree::printProcess(int x, Process *p) {
 }
 
 void Tree::printServer(int x, Server *s) {
-  indent(x, 0); 
+  indent(x, 0);
   printf("Server\n");
 }
 
@@ -146,7 +146,7 @@ void Tree::printIntf(int x, std::list<Decl*> *i) {
 }
 
 void Tree::printHiding(int x, Hiding *h) {
-  indent(x, 0); 
+  indent(x, 0);
   printf("Hiding\n");
 }
 
@@ -157,42 +157,42 @@ void Tree::printCmd(int x, Cmd *c) {
     printSpec(x, ((CmdSpec*)c)->spec);
     printCmd(x+1, ((CmdSpec*)c)->cmd);
     break;
-  
+
   case Cmd::SKIP:
     indent(x, 0);
     printf("Skip\n");
     break;
-  
+
   case Cmd::STOP:
     indent(x, 0);
     printf("Stop\n");
     break;
-  
+
   case Cmd::SEQ:
     indent(x, ((Seq*) c)->cmds->size());
     printf("Seq\n");
     for (auto y : *(((Seq*) c)->cmds))
       printCmd(x+1, y);
     break;
-  
-  case Cmd::ASS:     
-  case Cmd::IN:      
-  case Cmd::OUT:     
-  case Cmd::CONNECT: 
-  case Cmd::ALT:     
-  case Cmd::TEST:    
-  case Cmd::IFD:     
-  case Cmd::IFTE:    
-  case Cmd::CASE:    
-  case Cmd::WHILE:   
-  case Cmd::UNTIL:   
-  case Cmd::DO:      
-  case Cmd::PAR:     
+
+  case Cmd::ASS:
+  case Cmd::IN:
+  case Cmd::OUT:
+  case Cmd::CONNECT:
+  case Cmd::ALT:
+  case Cmd::TEST:
+  case Cmd::IFD:
+  case Cmd::IFTE:
+  case Cmd::CASE:
+  case Cmd::WHILE:
+  case Cmd::UNTIL:
+  case Cmd::DO:
+  case Cmd::PAR:
   case Cmd::INSTANCE:
-  case Cmd::CALL:    
-  case Cmd::RALT:    
-  case Cmd::RTEST:   
-  case Cmd::RCASE:   
+  case Cmd::CALL:
+  case Cmd::RALT:
+  case Cmd::RTEST:
+  case Cmd::RCASE:
   case Cmd::RSEQ:
     indent(x, 0);
     printf("Cmd todo %d\n", c->type);
@@ -201,7 +201,7 @@ void Tree::printCmd(int x, Cmd *c) {
 }
 
 void Tree::printExpr(int x, Expr *e) {
-  indent(x, 0); 
+  indent(x, 0);
   printf("Expr\n");
 }
 

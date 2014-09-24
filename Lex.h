@@ -22,14 +22,14 @@ public:
     // Symbols
     tLCURLY,  tRCURLY, tLSQ,    tRSQ,
     tLPAREN,  tRPAREN, tCOMMA,  tDOT,
-    tSEMI,    tIN,     tOUT,    tEQ,  
+    tSEMI,    tIN,     tOUT,    tEQ,
     tADD,     tSUB,    tMUL,    tDIV,
     tXOR,     tREM,    tAT,     tNEQ,
     tNOT,     tLEQ,    tLSH,    tLT,
     tGEQ,     tRSH,    tGT,     tASS,
     tCOLON,   tLAND,   tAND,    tLOR,
-    tOR,      tSTR,    tCHAR,   
-    // Keywords                
+    tOR,      tSTR,    tCHAR,
+    // Keywords
     tACCEPT,  tALT,    tCALL,   tCHAN,
     tCONNECT, tDO,     tELSE,   tFALSE,
     tFINAL,   tFOR,    tFROM,   tFUNCTION,
@@ -38,7 +38,7 @@ public:
     tRESULT,  tSEQ,    tSERVER, tSKIP,
     tSTEP,    tSTOP,   tTHEN,   tTO,
     tTRUE,    tVAL,    tVALOF,  tVAR,
-    tWHILE,   tUNTIL,  tCASE,   tTEST 
+    tWHILE,   tUNTIL,  tCASE,   tTEST
   } Token;
 
   static Lex instance;
@@ -55,7 +55,7 @@ public:
   bool nlPending;
 
   Lex() : lineNum(1), chCount(0) {
-    for(int i=0; i<BUF_SIZE; i++) 
+    for(int i=0; i<BUF_SIZE; i++)
       chBuf[i] = 0;
   }
   ~Lex() {}
@@ -66,7 +66,7 @@ public:
   void printToken(Token);
   void declareKeywords();
   const char *tokStr(Lex::Token t);
-  
+
 private:
   void readDecInt();
   void readHexInt();

@@ -17,4 +17,3 @@ int Table::lookup(const std::string &name) {
   return Lex::tNAME;
 }
 
- 

@@ -190,7 +190,7 @@ Spec *Syn::readSpec() {
         res = new VarAbbr(spef, name, readElem());
         break;
       }
-          
+
       return readSpecEnd(res);
     }
 

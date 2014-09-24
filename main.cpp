@@ -10,7 +10,8 @@
 #include <string.h>
 #include <unistd.h>
 
-void interpreterLoop() {
+void interpreter() {
+// Read-eval-pint loop
 //  fprintf(stderr, "> ");
 //  syn.getNextToken();
 //  while (true) {
@@ -76,7 +77,7 @@ int main(int argc, char *argv[]) {
 
     // Start interactive mode if not file or pipe
     if(filename.empty() && isatty(fileno(stdin))) {
-      //interpreterLoop();
+      interpreter();
       return 0;
     }
 
@@ -94,7 +95,7 @@ int main(int argc, char *argv[]) {
   }
   catch(FatalError &e) {
     fprintf(stderr, "Error: %s\n", e.msg());
-    if (fp != nullptr) 
+    if (fp != nullptr)
       fclose(fp);
     return 1;
   }

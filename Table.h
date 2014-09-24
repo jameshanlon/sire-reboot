@@ -17,7 +17,7 @@ public:
   void init();
   void insert(const std::string &name, const Lex::Token t);
   int lookup(const std::string &name);
-  
+
 private:
   std::map<std::string, Lex::Token> table;
 };
