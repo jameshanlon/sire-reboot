@@ -1,7 +1,7 @@
 \usepackage{
-  amsmath, 
-  amssymb, 
-  amsthm, 
+  amsmath,
+  amssymb,
+  amsthm,
   amsfonts,
   graphicx,
   color,
@@ -19,7 +19,7 @@
   microtype,
 }
 % to fix "Class scrreprt Warning: \float@addtolists detected!"
-\usepackage{scrhack} 
+\usepackage{scrhack}
 % To fix display skips
 \usepackage{etoolbox}
 
@@ -38,9 +38,9 @@
   pdfpagelabels,
 ]{hyperref}
 %\hypersetup{
-%  linkcolor=DarkBlue, 
-%  citecolor=DarkRed, 
-%  filecolor=DarkBlue, 
+%  linkcolor=DarkBlue,
+%  citecolor=DarkRed,
+%  filecolor=DarkBlue,
 %  urlcolor=DarkGreen,
 %}
 \AtBeginDocument{\hypersetup{pdfauthor={\@author},pdftitle={\@title}}}
@@ -66,7 +66,7 @@
 \setkomafont{subsubsection}{\normalfont\sffamily\em}
 \setkomafont{descriptionlabel}{\normalfont\sffamily\em}
 
-% Set display skips to 0 (flalign* environments) 
+% Set display skips to 0 (flalign* environments)
 \newcommand{\zerodisplayskips}{%
     \setlength{\abovedisplayskip}{0pt}
     \setlength{\belowdisplayskip}{0pt}
@@ -93,8 +93,8 @@
 \newcommand{\ttt}[1]{\texttt{#1}}
 
 % References
-\newcommand{\fig}[1]{Figure~\ref{fig:#1}} 
-\newcommand{\subfig}[1]{\protect\subref{fig:#1}} 
+\newcommand{\fig}[1]{Figure~\ref{fig:#1}}
+\newcommand{\subfig}[1]{\protect\subref{fig:#1}}
 \newcommand{\tab}[1]{Table~\ref{tab:#1}}
 \newcommand{\Sect}[1]{Section~\ref{sec:#1}}
 \newcommand{\sect}[1]{\S\ref{sec:#1}, p.~\pageref{sec:#1}}
