@@ -12,7 +12,7 @@ struct Def;
 struct Spec;
 struct Decl;
 struct Abbr;
-struct Hiding;
+struct HidingDecl;
 struct Cmd;
 struct Alt;
 struct Altn;
@@ -46,7 +46,7 @@ private:
   void printProcess(int x, Process*);
   void printServer(int x, Server*);
   void printIntf(int x, std::list<Decl*>*);
-  void printHiding(int x, Hiding*);
+  void printHidingDecl(int x, HidingDecl*);
   void printCmd(int x, Cmd*);
   void printExpr(int x, Expr*);
   void printName(int x, Name*);
@@ -210,9 +210,9 @@ struct ServerDef : public Def {
 // Inheriting server definition
 struct InhrtServerDef : public Def {
   std::list<Decl*> *intf;
-  Hiding *hiding; 
-  InhrtServerDef(Name *n, std::list<Fml*> *a, Hiding *h) :
-    Def(ISERVER, n, a), hiding(h) {}
+  HidingDecl *hidingDecl; 
+  InhrtServerDef(Name *n, std::list<Fml*> *a, HidingDecl *h) :
+    Def(ISERVER, n, a), hidingDecl(h) {}
 };
 
 // Function definition
@@ -233,7 +233,6 @@ struct SimSpec : public Spec {
 struct Decl : public Spec {
   typedef enum {
     VAR,
-    ARRAY,
     HIDING,
     SERVER,
     RSERVER
@@ -270,9 +269,9 @@ struct CallDecl : public Decl {
 };
 
 // Hiding declaration
-struct Hiding : public Decl {
+struct HidingDecl : public Decl {
   std::list<Spec*> *decls;
-  Hiding(Name *n, std::list<Spec*> *d) :
+  HidingDecl(Name *n, std::list<Spec*> *d) :
     Decl(HIDING, n), decls(d) {}
 };
 

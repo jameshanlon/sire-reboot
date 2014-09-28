@@ -200,7 +200,7 @@ Spec *Syn::readSpec() {
 
   // ... "from" ...
   case Lex::tFROM:
-    res = readHiding();
+    res = readHidingDecl();
     break;
 
   // def  = "server" ...
@@ -298,7 +298,7 @@ Spec *Syn::readServerSpec() {
           // ... "inherits" <hiding-decl>
           case Lex::tINHRT:
             getNextToken();
-            return new InhrtServerDef(name, args, readHiding());
+            return new InhrtServerDef(name, args, readHidingDecl());
           }
         }
 
@@ -509,11 +509,11 @@ Spec *Syn::readFunctionSpec() {
 
 // decl = <hiding>
 // hiding = "from" "[" {1 ":" <decl> } "]" "interface" <elem>
-Hiding *Syn::readHiding() {
+HidingDecl *Syn::readHidingDecl() {
   checkFor(Lex::tFROM);
   std::list<Spec*> *decls = readHiddens();
   checkFor(Lex::tINTF);
-  return new Hiding(readName(), decls);
+  return new HidingDecl(readName(), decls);
 }
 
 // def         = "server" <name> "(" {0, <fml> } ")" "is" <server>
@@ -542,7 +542,7 @@ Def *Syn::readServerDef() {
   // ... "inherits" <hiding-decl>
   case Lex::tINHRT:
     getNextToken();
-    return new InhrtServerDef(name, args, readHiding());
+    return new InhrtServerDef(name, args, readHidingDecl());
   }
 }
 
