@@ -55,7 +55,9 @@ private:
 // The tree node base struct
 struct Node {};
 
-// Specifiers =================================================================
+// ============================================================================
+// Specifiers 
+// ============================================================================
 
 struct Spef : public Node {
   typedef enum {
@@ -99,7 +101,9 @@ struct NamedSpef : public Spef {
     Spef(t, false, l), name(n) {}
 };
 
-// Formals ====================================================================
+// ============================================================================
+// Formals
+// ============================================================================
 
 struct Fml : public Node {
   Spef *spef;
@@ -108,7 +112,9 @@ struct Fml : public Node {
     spef(s), name(n) {}
 };
 
-// Elements ===================================================================
+// ============================================================================
+// Elements
+// ============================================================================
 
 struct Elem : public Node {
   typedef enum {
@@ -146,7 +152,9 @@ struct Field : public Elem {
     Elem(FIELD, s), base(b), field(f) {}
 };
 
-// Specifications =============================================================
+// ============================================================================
+// Specifications
+// ============================================================================
 
 struct Spec : public Node {
   typedef enum {
@@ -276,10 +284,10 @@ struct ServerDecl : public Decl {
 };
 
 // Replicated server declaration
-struct RServerDecl : public Decl {
+struct RepServerDecl : public Decl {
   Server *server;
   std::list<Range*> *exprs;
-  RServerDecl(Name *n, std::list<Range*> *e, Server *s) :
+  RepServerDecl(Name *n, std::list<Range*> *e, Server *s) :
     Decl(RSERVER, n), server(s), exprs(e) {}
 };
 
@@ -332,7 +340,9 @@ struct FunctionAbbr : public Abbr {
     Abbr(FUNCTION, s, n, e) {}
 };
 
-// Commands ===================================================================
+// ============================================================================
+// Commands
+// ============================================================================
 
 struct Cmd : public Node {
   typedef enum {
@@ -637,9 +647,9 @@ struct Seq : public Cmd {
 };
 
 // Replicated sequence
-struct RSeq : public Cmd {
+struct RepSeq : public Cmd {
   std::list<Range*> *ranges;
-  RSeq(std::list<Range*> *r) :
+  RepSeq(std::list<Range*> *r) :
     Cmd(RSEQ), ranges(r) {}
 };
 
@@ -716,7 +726,9 @@ struct ProcessInstance : public Process {
     Process(INSTANCE), name(n), actuals(a) {}
 };
 
-// Expressions ================================================================
+// ============================================================================
+// Expressions
+// ============================================================================
 
 struct Expr : public Node {
   typedef enum {

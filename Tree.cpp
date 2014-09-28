@@ -5,11 +5,11 @@
 
 // Indenting with tree markers
 static int markers[100] = {1};
-static void indent(int x, int numChildren) {
-  markers[x] = numChildren;
-  if(x > 1) --markers[x-1];
-  for (int i=0; i<x-1; ++i)
-    printf("%s", markers[i] > 0 ? "| " : "  ");
+static void indent(int i, int numChildren) {
+  markers[i] = numChildren;
+  if(i > 1) --markers[i-1];
+  for (int j=0; j<i-1; ++j)
+    printf("%s", markers[j] > 0 ? "| " : "  ");
   printf("*-");
 }
 
@@ -18,64 +18,72 @@ void Tree::print() {
   for (auto x : prog) printCmd(1, x);
 }
 
-void Tree::printSpec(int x, Spec *s) {
+void Tree::printSpec(int i, Spec *s) {
   switch(s->type) {
-  case Spec::DEF:   printDef(x, (Def*) s);   break;
-  case Spec::DECL:  printDecl(x, (Decl*) s); break;
-  case Spec::ABBR:  printAbbr(x, (Abbr*) s); break;
+  case Spec::DEF:   printDef(i, (Def*) s);   break;
+  case Spec::DECL:  printDecl(i, (Decl*) s); break;
+  case Spec::ABBR:  printAbbr(i, (Abbr*) s); break;
   case Spec::SSPEC: {
       SimSpec *sim = (SimSpec*) s;
-      indent(x, sim->specs->size());
+      indent(i, sim->specs->size());
       printf("SimultaenousSpecification");
       for (auto y : *(sim->specs))
-        printSpec(x+1, y);
+        printSpec(i+1, y);
       break;
     }
   }
 }
 
-void Tree::printDef(int x, Def *d) {
+void Tree::printDef(int i, Def *d) {
   switch(d->type) {
 
-  case Def::PROCESS:
-    indent(x, 3);
-    printf("ProcessDef\n");
-    printName(x+1, d->name);
-    printFmls(x+1, d->args);
-    printProcess(x+1, ((ProcessDef*) d)->process);
-    break;
+  case Def::PROCESS: {
+      indent(i, 3);
+      ProcessDef *x = static_cast<ProcessDef*>(d);
+      printf("ProcessDef\n");
+      printName(i+1, x->name);
+      printFmls(i+1, x->args);
+      printProcess(i+1, x->process);
+      break;
+    }
 
-  case Def::SERVER:
-    indent(x, 3);
-    printf("ServerDef\n");
-    printName(x+1, d->name);
-    printFmls(x+1, d->args);
-    printServer(x+1, ((ServerDef*) d)->server);
-    break;
+  case Def::SERVER: {
+      indent(i, 3);
+      ServerDef *x = static_cast<ServerDef*>(d);
+      printf("ServerDef\n");
+      printName(i+1, x->name);
+      printFmls(i+1, x->args);
+      printServer(i+1, x->server);
+      break;
+    }
 
-  case Def::ISERVER:
-    indent(x, 3);
-    printf("InheritingServerDef\n");
-    printName(x+1, d->name);
-    printFmls(x+1, d->args);
-    printHiding(x+1, ((InhrtServerDef*) d)->hiding);
-    break;
+  case Def::ISERVER: {
+      indent(i, 3);
+      InhrtServerDef *x = static_cast<InhrtServerDef*>(d);
+      printf("InheritingServerDef\n");
+      printName(i+1, x->name);
+      printFmls(i+1, x->args);
+      printHiding(i+1, x->hiding);
+      break;
+    }
 
-  case Def::FUNCTION:
-    indent(x, 3);
-    printf("FunctionDef\n");
-    printName(x+1, d->name);
-    printFmls(x+1, d->args);
-    printExpr(x+1, ((FunctionDef*) d)->expr);
-    break;
+  case Def::FUNCTION: {
+      indent(i, 3);
+      FunctionDef *x = static_cast<FunctionDef*>(d);
+      printf("FunctionDef\n");
+      printName(i+1, x->name);
+      printFmls(i+1, x->args);
+      printExpr(i+1, x->expr);
+      break;
+    }
   }
 }
 
-void Tree::printDecl(int x, Decl *d) {
+void Tree::printDecl(int i, Decl *d) {
   switch(d->tDecl) {
 
   case Decl::VAR:
-    indent(x, 0);
+    indent(i, 0);
     printf("Decl var\n");
     break;
 
@@ -83,130 +91,229 @@ void Tree::printDecl(int x, Decl *d) {
   case Decl::HIDING:
   case Decl::SERVER:
   case Decl::RSERVER:
-    indent(x, 0);
+    indent(i, 0);
     printf("Decl todo\n");
   }
 }
 
-void Tree::printAbbr(int x, Abbr *a) {
+void Tree::printAbbr(int i, Abbr *a) {
   switch(a->type) {
   case Abbr::VAR:
   case Abbr::CALL:
   case Abbr::SERVER:
   case Abbr::PROCESS:
   case Abbr::FUNCTION:
-    indent(x, 0);
+    indent(i, 0);
     printf("Abbr todo\n");
     break;
   }
 }
 
-void Tree::printFmls(int x, std::list<Fml*> *f) {
-  indent(x, f->size());
+void Tree::printFmls(int i, std::list<Fml*> *f) {
+  indent(i, f->size());
   printf("Formals\n");
   if (f != nullptr) {
     for (auto y : *f)
-      printFml(x+1, y);
+      printFml(i+1, y);
   }
 }
 
-void Tree::printFml(int x, Fml *f) {
-  indent(x, 1);
+void Tree::printFml(int i, Fml *f) {
+  indent(i, 1);
   printf("Formal\n");
-  printName(x+1, f->name);
+  printName(i+1, f->name);
 }
 
-void Tree::printProcess(int x, Process *p) {
+void Tree::printProcess(int i, Process *p) {
   switch (p->type) {
   default: assert(0 && "invalid process type");
 
-  case Process::CMD:
-    indent(x, 1);
-    printf("Process\n");
-    printCmd(x+1, ((ProcessCmd*) p)->cmd);
-    break;
+  case Process::CMD: {
+      ProcessCmd *x = static_cast<ProcessCmd*>(p);
+      indent(i, 1);
+      printf("Process\n");
+      printCmd(i+1, x->cmd);
+      break;
+    }
 
-  case Process::SPEC:
-    indent(x, 2);
-    printf("Process\n");
-    printIntf(x+1, ((ProcessSpec*) p)->intf);
-    printCmd(x+1, ((ProcessSpec*) p)->cmd);
-    break;
+  case Process::SPEC: {
+      ProcessSpec *x = static_cast<ProcessSpec*>(p);
+      indent(i, 2);
+      printf("Process\n");
+      printIntf(i+1, x->intf);
+      printCmd(i+1, x->cmd);
+      break;
+    }
   }
 }
 
-void Tree::printServer(int x, Server *s) {
-  indent(x, 0);
+void Tree::printServer(int i, Server *s) {
+  indent(i, 0);
   printf("Server\n");
 }
 
-void Tree::printIntf(int x, std::list<Decl*> *i) {
-  indent(x, 0);
+void Tree::printIntf(int i, std::list<Decl*> *f) {
+  indent(i, 0);
   printf("Interface\n");
 }
 
-void Tree::printHiding(int x, Hiding *h) {
-  indent(x, 0);
+void Tree::printHiding(int i, Hiding *h) {
+  indent(i, 0);
   printf("Hiding\n");
 }
 
-void Tree::printCmd(int x, Cmd *c) {
+void Tree::printCmd(int i, Cmd *c) {
   switch(c->type) {
 
-  case Cmd::SPEC:
-    printSpec(x, ((CmdSpec*)c)->spec);
-    printCmd(x+1, ((CmdSpec*)c)->cmd);
-    break;
+  case Cmd::SPEC: {
+      CmdSpec *x = static_cast<CmdSpec*>(c);
+      printSpec(i, x->spec);
+      printCmd(i+1, x->cmd);
+      break;
+    }
 
   case Cmd::SKIP:
-    indent(x, 0);
+    indent(i, 0);
     printf("Skip\n");
     break;
 
   case Cmd::STOP:
-    indent(x, 0);
+    indent(i, 0);
     printf("Stop\n");
     break;
 
-  case Cmd::SEQ:
-    indent(x, ((Seq*) c)->cmds->size());
-    printf("Seq\n");
-    for (auto y : *(((Seq*) c)->cmds))
-      printCmd(x+1, y);
-    break;
+  case Cmd::SEQ: {
+      Seq *x = static_cast<Seq*>(c);
+      indent(i, x->cmds->size());
+      printf("Seq\n");
+      for (auto y : *x->cmds)
+        printCmd(i+1, y);
+      break;
+    }
 
-  case Cmd::ASS:
-  case Cmd::IN:
-  case Cmd::OUT:
-  case Cmd::CONNECT:
-  case Cmd::ALT:
-  case Cmd::TEST:
-  case Cmd::IFD:
-  case Cmd::IFTE:
-  case Cmd::CASE:
-  case Cmd::WHILE:
-  case Cmd::UNTIL:
-  case Cmd::DO:
-  case Cmd::PAR:
-  case Cmd::INSTANCE:
-  case Cmd::CALL:
-  case Cmd::RALT:
-  case Cmd::RTEST:
-  case Cmd::RCASE:
-  case Cmd::RSEQ:
-    indent(x, 0);
-    printf("Cmd todo %d\n", c->type);
-    break;
+  case Cmd::ASS: {
+      indent(i, 0);
+      Ass *x = static_cast<Ass*>(c);
+      break;
+    }
+
+  case Cmd::IN: {
+      indent(i, 0);
+      In *x = static_cast<In*>(c);
+      break;
+    }
+
+  case Cmd::OUT: {
+      indent(i, 0);
+      Out *x = static_cast<Out*>(c);
+      break;
+    }
+
+  case Cmd::CONNECT: {
+      indent(i, 0);
+      Connect *x = static_cast<Connect*>(c);
+      break;
+    }
+
+  case Cmd::ALT: {
+      indent(i, 0);
+      Alt *x = static_cast<Alt*>(c);
+      break;
+    }
+
+  case Cmd::TEST: {
+      indent(i, 0);
+      Test *x = static_cast<Test*>(c);
+      break;
+    }
+
+  case Cmd::IFD: {
+      indent(i, 0);
+      IfD *x = static_cast<IfD*>(c);
+      break;
+    }
+
+  case Cmd::IFTE: {
+      indent(i, 0);
+      IfTE *x = static_cast<IfTE*>(c);
+      break;
+    }
+
+  case Cmd::CASE: {
+      indent(i, 0);
+      Case *x = static_cast<Case*>(c);
+      break;
+    }
+
+  case Cmd::WHILE: {
+      indent(i, 0);
+      While *x = static_cast<While*>(c);
+      break;
+    }
+
+  case Cmd::UNTIL: {
+      indent(i, 0);
+      Until *x = static_cast<Until*>(c);
+      break;
+    }
+
+  case Cmd::DO: {
+      indent(i, 0);
+      Do *x = static_cast<Do*>(c);
+      break;
+    }
+
+  case Cmd::PAR: {
+      indent(i, 0);
+      Par *x = static_cast<Par*>(c);
+      break;
+    }
+
+  case Cmd::INSTANCE: {
+      indent(i, 0);
+      Instance *x = static_cast<Instance*>(c);
+      break;
+    }
+
+  case Cmd::CALL: {
+      indent(i, 0);
+      Call *x = static_cast<Call*>(c);
+      break;
+    }
+
+  case Cmd::RALT: {
+      indent(i, 0);
+      RepAlt *x = static_cast<RepAlt*>(c);
+      break;
+    }
+
+  case Cmd::RTEST: {
+      indent(i, 0);
+      RepTest *x = static_cast<RepTest*>(c);
+      break;
+    }
+
+  case Cmd::RCASE: {
+      indent(i, 0);
+      RepCase *x = static_cast<RepCase*>(c);
+      break;
+    }
+
+  case Cmd::RSEQ: {
+      indent(i, 0);
+      RepSeq *x = static_cast<RepSeq*>(c);
+      break;
+    }
   }
 }
 
-void Tree::printExpr(int x, Expr *e) {
-  indent(x, 0);
+void Tree::printExpr(int i, Expr *e) {
+  indent(i, 0);
   printf("Expr\n");
 }
 
-void Tree::printName(int x, Name *name) {
-  indent(x, 0);
+void Tree::printName(int i, Name *name) {
+  indent(i, 0);
   printf("Name %s\n", name->str.c_str());
 }
 

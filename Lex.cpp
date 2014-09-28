@@ -314,6 +314,7 @@ void Lex::error(const char *msg) {
   printChBuf();
   ERR.record();
   // Skip up to a safer point
+  // TODO: fix this behaviour
   Lex::Token t = readToken();
   printf("recover: ");
   LEX.printToken(t);
