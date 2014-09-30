@@ -20,9 +20,11 @@ void Tree::print() {
 
 void Tree::printSpec(int i, Spec *s) {
   switch(s->type) {
+
   case Spec::DEF:   printDef(i, (Def*) s);   break;
   case Spec::DECL:  printDecl(i, (Decl*) s); break;
   case Spec::ABBR:  printAbbr(i, (Abbr*) s); break;
+
   case Spec::SSPEC: {
       SimSpec *x = static_cast<SimSpec*>(s);
       indent(i, x->specs->size());

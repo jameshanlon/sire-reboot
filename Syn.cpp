@@ -166,6 +166,7 @@ Spec *Syn::readSpec() {
         getNextToken();
         val = true;
       }
+      // TODO: val abbr
       // ... <spef> <name> ...
       Spef *spef = readSpef(val);
       Name *name = readName();

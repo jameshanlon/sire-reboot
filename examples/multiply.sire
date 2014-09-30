@@ -1,7 +1,7 @@
 val N is 3:
 
 process Node(val i, val j, process Node[N][N] g,
-  process North[N] bn, process West[N] bw, 
+  process North[N] bn, process West[N] bw,
   process South[N] bs, process East[N] be) is
     interface(chan n, chan w, chan s, chan e) to
 { if
@@ -30,18 +30,18 @@ process Node(val i, val j, process Node[N][N] g,
   %Aij := valof if i = j then return 1 else return 0;
   % communicate and compute
   while true do
-  { n ? j; 
-    w ? Bi; 
-    e ! Bi; 
+  { n ? j;
+    w ? Bi;
+    e ! Bi;
     s ! Aij*Bi + j
   }
 }
 
 & process North(val i, process Node[N][N] g) is
     interface(chan c) to
-{ connect c to g[i][0]; 
+{ connect c to g[i][0];
   % input partial sums
-  while true do c ! 0 
+  while true do c ! 0
 }
 
 & process West(val j, process Node[N][N] g) is
@@ -64,11 +64,11 @@ process Node(val i, val j, process Node[N][N] g,
     interface(chan c) to
 { connect c to g[N-1][j];
   % discard output
-  var v: 
+  var v:
   while true do c ? v
 }
 
-{ n is [i=0 for N] North(i, g) 
+{ n is [i=0 for N] North(i, g)
 & w is [j=0 for N] West(j, g)
 & s is [i=0 for N] South(i, g)
 & e is [j=0 for N] East(j, g)

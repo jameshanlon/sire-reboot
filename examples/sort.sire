@@ -1,12 +1,12 @@
 val D is 3:
 val N is 1 << D:
 
-function level(val id) is 
+function level(val id) is
   % return a level for a hypercube node
-  valof 
+  valof
   { var d, dmax, l:
     dmax := 0; l := 0;
-    while dmax < id do 
+    while dmax < id do
     { dmax := 2*dmax + 1;
       l := l + 1 } }
   result l
@@ -16,9 +16,9 @@ function nbr(val id, val d) is
   % return the id of a neighbour for a hypercube node in dimension d
   id xor (1<<d)
 :
-  
+
 process distribute(val id, chan[D+1] c, var[n] a, val n) is
-{ var lvl, len, base: 
+{ var lvl, len, base:
   lvl := level(id);
   % receive $2^{\ttt{level}(\ttt{id})}$ elements of 'a' from the parent
   c[lvl] ? len;
@@ -28,11 +28,11 @@ process distribute(val id, chan[D+1] c, var[n] a, val n) is
   seq [i=lvl+1 for D-lvl-1]
   { len := len / 2;
     c[i] ! len;
-    seq [j=base for len] c[i] ! a[j]; 
+    seq [j=base for len] c[i] ! a[j];
     base := base-len } } :
-  
+
 process collect(val id, chan[D+1] c, var[n] a, val n) is
-{ var lvl, len, lenPart: 
+{ var lvl, len, lenPart:
   lvl := level(id);
   % receive portions of array from each child
   lenPart := 1;
@@ -53,7 +53,7 @@ process sort(val id, chan[D+1] c, var a) is
     then
     { c[i] ! a;
       c[i] ? swp;
-      if { swp < a: a := swp } 
+      if { swp < a: a := swp }
     }
     else
     { c[i] ? swp;
@@ -80,7 +80,7 @@ process Master(process Node n) is
   collect(id, c, a, N)
 }:
 
-{ m is Master(n) & 
+{ m is Master(n) &
   n is par [i=0 for N] Node(i, m, n)
 }
 

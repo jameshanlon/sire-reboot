@@ -2,16 +2,16 @@ val N is 10:
 
 server Buffer() is
   interface(
-    call write(val v), 
+    call write(val v),
     call read(var v)) to
 { var[N] b:
   var inp, outp, count:
-  initial { 
-    inp := 0; 
-    outp := 0; 
-    count := 0 
+  initial {
+    inp := 0;
+    outp := 0;
+    count := 0
   }:
-  alt 
+  alt
   { count+1 < N & accept write(val v):
     { b[inp] := v;
       inp := (inp + 1) rem N;
@@ -19,7 +19,7 @@ server Buffer() is
     }
   | count > 0 & accept read(var v):
     { v := b[outp];
-      outp := (outp+1) rem N; 
+      outp := (outp+1) rem N;
       count := count - 1
     }
   }
@@ -33,7 +33,7 @@ server Buffer() is
   var v: while true do b.read(v)
 :
 
-b is Buffer(): 
+b is Buffer():
 { Producer(b)
-& Consumer(b) }  
+& Consumer(b) }
 

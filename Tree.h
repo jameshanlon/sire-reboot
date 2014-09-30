@@ -293,6 +293,7 @@ struct RepServerDecl : public Decl {
 // Abbreviation
 struct Abbr : public Spec {
   typedef enum {
+    VAL,
     VAR,
     CALL,
     SERVER,
@@ -301,11 +302,22 @@ struct Abbr : public Spec {
   } Type;
   Type type;
   Spef *spef;
-  Elem *elem;
+  union {
+    Elem *elem;
+    Expr *expr;
+  }
 
 protected:
+  Abbr(Type t, Spef *s, Name *n, Expr *e) :
+    Spec(Spec::ABBR, n), type(t), spef(s), expr(e) {}
   Abbr(Type t, Spef *s, Name *n, Elem *e) :
     Spec(Spec::ABBR, n), type(t), spef(s), elem(e) {}
+};
+
+// Value abbreviation
+struct ValAbbr : public Abbr {
+  ValAbbr(Spef *s, Name *n, Expr* e) :
+    Abbr(VAL, s, n, e) {}
 };
 
 // Variable abbreviation
