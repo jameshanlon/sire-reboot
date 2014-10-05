@@ -1,0 +1,23 @@
+val N is 2;
+
+proc foo(val i, chanend l, chanend r) is
+{ var v;
+  if i = 0 
+  then
+  { r ! 1; 
+    l ? v;
+    assert v = N
+  }
+  else
+  { l ? v; 
+    r ! v + 1
+  }
+}
+
+proc main() is
+{ chan c[N];
+  var i;
+  par i in [0 for N] do
+    foo(i, c[i], c[(i+1) rem N])
+}
+

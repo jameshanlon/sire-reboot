@@ -1,0 +1,38 @@
+val D is 3;      % Tree depth
+val N is 1 << D; % Number of leaves
+
+% Send a token down, then sum values up.
+proc branch(chanend c, chanend left, chanend right) is
+{ var u;
+  var v;
+  c ? v;
+  assert v = 0;
+  left ! v;
+  right ! v;
+  left ? u;
+  right ? v;
+  c ! u + v
+}
+
+% Receive a token and send back a 1.
+proc leaf(chanend c) is
+{ var v;
+  c ? v;
+  assert v = 0;
+  c ! 1
+}
+
+proc main() is
+{ chan c[(2*N)-1];
+  var v;
+  var i;
+  { c[0] ! 0; 
+    c[0] ? v;
+    assert v = N
+  } &
+  par i in [0 for N] do 
+    leaf(c[(N-1) + i]) &
+  par i in [0 for N-1] do
+    branch(c[i], c[(2*i)+1], c[(2*i)+2])
+}$
+

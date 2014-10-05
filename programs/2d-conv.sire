@@ -1,0 +1,233 @@
+val hIMG is 16;  % Image width/height
+val wIMG is 16;  % Image width/height
+val sIMG is hIMG*wIMG; % Image size
+val hKERNEL is 5; % Kernel width/height
+val wKERNEL is 5; % Kernel width/height
+val hGRID is NUM_CORES_SQRT; % Length of square processor array
+val wGRID is NUM_CORES_SQRT; % Length of square processor array
+val sGRID is hGRID*wGRID; % Length of square processor array
+val hHALO is hKERNEL/2; % Halo width/height
+val wHALO is wKERNEL/2; % Halo width/height
+val hSEG is hIMG / hGRID; % Image segment width/height
+val wSEG is wIMG / wGRID; % Image segment width/height
+val sSEG is hSEG * wSEG; % Image segment size
+val hSEGH is hSEG + (hHALO*2); % Image segement width/height with halo
+val wSEGH is wSEG + (wHALO*2); % Image segement width/height with halo
+val sSEGH is hSEGH*hSEGH; % Segment with halo size
+val sKERNEL is hKERNEL*hKERNEL; % Kernel size
+
+func plot(val i) is
+  if i > 32      then printchar(' ')
+  else if i > 16 then printchar('.')
+  else if i > 8  then printchar(':')
+  else if i > 3  then printchar('+')
+  else if i > 1  then printchar('%')
+  else                printchar('#')
+
+proc sendVertHalo(chanend c, var I[sSEGH], val xOff, val yOff) is
+{ var y;
+  var x;
+  for y in [0 for hSEG] do % Image y (rows)
+    for x in [0 for wHALO] do % Halo x (cols)
+      c ! I[(wSEG*(y+yOff))+xOff+x]
+}
+
+proc recvVertHalo(chanend c, var I[sSEGH], val xOff, val yOff) is
+{ var y;
+  var x;
+  for y in [0 for hSEG] do % Image y (rows)
+    for x in [0 for wHALO] do % Halo x (cols)
+      c ? I[(wSEG*(y+yOff))+xOff+x]
+}
+
+proc sendHorzHalo(chanend c, var I[sSEGH], val xOff, val yOff) is
+{ var y;
+  var x;
+  for y in [0 for hHALO] do % Halo y (rows)
+    for x in [0 for wSEG] do % Image x (cols)
+      c ! I[(wSEG*(y+yOff))+xOff+x]
+}
+
+proc recvHorzHalo(chanend c, var I[sSEGH], val xOff, val yOff) is
+{ var y;
+  var x;
+  for y in [0 for hHALO] do % Halo y (rows)
+    for x in [0 for wSEG] do % Image x (cols)
+      c ? I[(wSEG*(y+yOff))+xOff+x]
+}
+
+proc convolve(var I[sSEGH], var K[sKERNEL]) is
+{ var i;
+  var j;
+  var m;
+  var n;
+  var ii;
+  var jj;
+  var mm;
+  var nn;
+  var sum;
+  for i in [hHALO for hSEG] do % Image segment y (row)
+    for j in [wHALO for wSEG] do % Image segment x (col)
+    { sum := 0;
+      for m in [0 for hKERNEL] do % Kernel y (row)
+      { mm := hKERNEL - 1 - m;
+        for n in [0 for wKERNEL] do % Kernel x (col)
+        { nn := wKERNEL - 1 - n;
+          ii := (i+1) + (m - (hKERNEL/2));
+          jj := (j+wHALO) + (n - (wKERNEL/2));
+          sum := sum + (I[(wSEGH*ii)+jj] * K[(wKERNEL*mm)+nn])
+        }
+      };
+      I[(wSEGH*i)+(wHALO+j)] := sum
+    }
+}
+
+proc cell(val idX, val idY, 
+    chanend n, chanend s, chanend e, chanend w,
+    chanend pipeIn, chanend pipeOut) is
+{ var I[];
+  var K[sKERNEL];
+  var value;
+  var id;
+  var index;
+  var x;
+  var y;
+  var t1;
+  var t2;
+
+  memalloc(I, sSEGH);
+  id := (idY*wGRID) + idX;
+
+  % Set kernel
+  K[0]:=-1;K[1]:=-2;K[2]:=-1;
+  K[3]:= 0;K[4]:= 0;K[5]:= 0;
+  K[6]:= 1;K[7]:= 2;K[8]:= 1;
+  
+  % Load image
+  for y in [0 for hIMG] do % Image segment y (row)
+    for x in [0 for wIMG] do % Image segment x (col)
+    { pipeIn ? value;
+      index := (wIMG*y)+x;
+      % Store the correct image segment
+      if (index >= (id*sSEG)) and (index < ((id+1)*sSEG))
+      then
+      { var xOff; 
+        var yOff;
+        xOff:= (x - (idX*wSEG)) + wHALO;
+        yOff:= (y - (idY*hSEG)) + hHALO;
+        I[(wSEGH*yOff)+xOff] := value
+      }
+      else skip;
+      % Pass the rest of the image on
+      if ((idX+1)*(idY+1)) ~= sGRID
+      then
+        pipeOut ! value
+      else skip
+    };
+
+  time(t1);
+
+  % Distribute halos
+  % 1. Circular shift left
+  if idX = 0 
+  then
+  { sendVertHalo(w, I, wHALO,      hHALO);
+    recvVertHalo(e, I, wSEG+wHALO, hHALO)
+  }
+  else
+  { recvVertHalo(e, I, wSEG+wHALO, hHALO);
+    sendVertHalo(w, I, wHALO,      hHALO)
+  };
+  % 2. Circular shift right
+  if idX = 0 
+  then
+  { sendVertHalo(e, I, wSEG, hHALO);
+    recvVertHalo(w, I, 0,    hHALO)
+  }
+  else
+  { recvVertHalo(w, I, 0,    hHALO);
+    sendVertHalo(e, I, wSEG, hHALO)
+  };
+  % 3. Circular shift up
+  if idY = 0 
+  then
+  { sendHorzHalo(s, I, 0, hHALO);
+    recvHorzHalo(n, I, 0, hSEG)
+  }
+  else
+  { recvHorzHalo(n, I, 0, hSEG);
+    sendHorzHalo(s, I, 0, hHALO)
+  };
+  % 4. Circular shift down
+  if idY = 0 
+  then
+  { sendHorzHalo(n, I, 0, hHALO+hSEG);
+    recvHorzHalo(s, I, 0, 0)
+  }
+  else
+  { recvVertHalo(s, I, 0, 0);
+    sendVertHalo(n, I, 0, hHALO+hSEG)
+  };
+
+  % Perform convolution
+  convolve(I, K);
+  
+  time(t2);
+
+  % Return maximum time taken
+  pipeIn ? value;
+  if (t2-t1) > value
+  then
+    pipeOut ! t2-t1
+  else
+    pipeOut ! value;
+
+  % Return results
+  for x in [0 for id*sSEG] do
+  { pipeIn ? value;
+    pipeOut ! value
+  };
+  for y in [hHALO for hSEG] do % Image segment y (row)
+    for x in [wHALO for wSEG] do % Image segment x (col)
+      pipeOut ! I[(wSEGH*y)+x];
+
+  memfree(I)
+}
+
+proc controller(chanend pipeIn, chanend pipeOut) is
+{ var x;
+  var y;
+  var value;
+  % Load image
+  for y in [0 for hIMG] do
+    for x in [0 for wIMG] do
+      pipeIn ! 10;
+  % Receive time
+  pipeIn ! 0;
+  pipeOut ? value;
+  printvalln(value);
+  % Display image
+  for y in [0 for hIMG] do
+  { for x in [0 for wIMG] do
+    { pipeOut ? value;
+      plot(value)
+    };
+    println()
+  }
+}
+
+proc main() is
+{ chan horz[sGRID];
+  chan vert[sGRID];
+  chan p[sGRID+1];
+  var x_;
+  var y_;
+  assert (NUM_CORES_SQRT*NUM_CORES_SQRT) = NUM_CORES;
+  { controller(p[0], p[sGRID]) &
+    par y_ in [0 for hGRID], x_ in [0 for wGRID] do
+      cell(x_, y_, vert[(x_*hGRID)+y_], vert[(x_*hGRID)+((y_+1) rem hGRID)],
+                   horz[(y_*wGRID)+x_], horz[(y_*wGRID)+((x_+1) rem wGRID)],
+                   p[(y_*wGRID)+x_], p[(y_*wGRID)+x_+1])
+  }
+}
+

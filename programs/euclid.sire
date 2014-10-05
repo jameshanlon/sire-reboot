@@ -1,0 +1,33 @@
+% Find the greatest common divisor of two numbers a,b
+
+% Recursively
+func gcdRec(val a, val b) is
+  if b = 0 
+  then return a
+  else return gcd(b, a rem b)
+
+% Iteratively
+func gcdLoop(val a, val b) is
+{ var t;
+  var x;
+  var y;
+  x := a;
+  y := b;
+  while y ~= 0 do
+  { t := y;
+    y := x rem y;
+    x := t
+  };
+  return x
+}
+
+% Ouput: 8, 7, 1
+proc main() is
+{ assert gcdRec(16, 24) = 8;
+  assert gcdRec(49, 84) = 7;
+  assert gcdRec(243, 346) = 1;
+  assert gcdLoop(16, 24) = 8;
+  assert gcdLoop(49, 84) = 7;
+  assert gcdLoop(243, 346) = 1
+}
+

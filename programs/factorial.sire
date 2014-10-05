@@ -1,0 +1,29 @@
+% Calculate the factorial of a value
+
+% Recursively
+func factorialRec(val x) is
+  if x = 0
+  then return 1 
+  else return x * factorial(x-1)
+
+% Iteratively
+func factorialLoop(val x) is
+{ var ans;
+  var y;
+  ans := 1;
+  y := 1;
+  while y <= x do
+  { ans := ans * y;
+    y := y + 1
+  };
+  return ans
+}
+
+proc main() is
+{ assert factorialRec(3) = 6;
+  assert factorialRec(5) = 120;
+  assert factorialRec(7) = 5040;
+  assert factorialLoop(3) = 6;
+  assert factorialLoop(5) = 120;
+  assert factorialLoop(7) = 5040
+}

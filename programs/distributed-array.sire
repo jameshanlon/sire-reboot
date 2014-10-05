@@ -1,0 +1,179 @@
+val STORAGE is 16;  % Storage per leaf
+val N is 4; % Number of leaves (storage units)
+val READ  is 0;
+val WRITE is 1;
+val HALT  is 2;
+
+proc leaf(chanend c) is
+{ var base;
+  var data[STORAGE];
+  var query;
+  var index;
+  var value;
+  var running;
+  
+  % Read 'base' value configuration message
+  c ? value;
+  c ? base;
+  c ? value;
+  
+  % Run
+  running := true;
+  while running do 
+  { c ? query;
+    if query = READ
+    then
+    { c ? index;
+      c ! data[index-base]
+    }
+    else if query = WRITE
+    then
+    { c ? index;
+      c ? value;
+      data[index-base] := value
+    }
+    else % HALT
+      running := false
+  }
+}
+
+proc branch(chanend root, chanend left, chanend right) is
+{ var depth;
+  var base;
+  var interval;
+  var query;
+  var index;
+  var value;
+  var running;
+ 
+  % Configure: depth, base, interval
+  root  ? depth;
+  root  ? base;
+  root  ? interval;
+  left  ! depth + 1;
+  right ! depth + 1;
+  left  ! base;
+  right ! base + (interval/2);
+  left  ! interval/2;
+  right ! interval/2;
+  
+  % Run
+  running := true;
+  while running do
+  { root ? query;
+    if query = READ
+    then 
+    { root ? index;
+      if index < base+(interval/2)
+      then
+      { left ! READ;
+        left ! index;
+        left ? value
+      }
+      else
+      { right ! READ;
+        right ! index;
+        right ? value
+      };
+      root ! value
+    }
+    else if query = WRITE
+    then
+    { root ? index;
+      root ? value;
+      if index < base+(interval/2)
+      then
+      { left ! WRITE;
+        left ! index;
+        left ! value
+      }
+      else
+      { right ! WRITE;
+        right ! index;
+        right ! value
+      }
+    }
+    else % HALT
+    { left ! HALT;
+      right ! HALT;
+      running := false
+    }
+  }
+}
+
+proc serve(chanend x, chanend root) is
+{ var query;
+  var index;
+  var value;
+  var running;
+ 
+  % Configure the structure
+  root ! 0;
+  root ! 0;
+  root ! N*STORAGE;
+  
+  % Run
+  running := true;
+  while running do 
+  { x ? query;
+    if query = READ
+    then 
+    { x ? index;
+      root ! READ;
+      root ! index;
+      root ? value;
+      x ! value
+    }
+    else if query = WRITE
+    then
+    { x ? index;
+      x ? value;
+      root ! WRITE;
+      root ! index;
+      root ! value
+    }
+    else % HALT
+    { root ! HALT;
+      running := false
+    }
+  }
+}
+
+proc array(chanend x) is
+{ chan c[(2*N)-1];
+  var i;
+   par i in [0 for N] do 
+    leaf(c[(N-1)+i]) &
+  { serve(x, c[0]) &
+    par i in [0 for N-1] do
+      branch(c[i], c[(2*i)+1], c[(2*i)+2])
+  }$
+}
+
+proc read(chanend c, val index, var value) is
+{ c ! READ;
+  c ! index;
+  c ? value
+}
+
+proc write(chanend c, val index, val value) is
+{ c ! WRITE;
+  c ! index;
+  c ! value
+}
+
+proc main() is
+{ chan x;
+  { var value;
+    var i;
+    for i in [0 for N*STORAGE] do
+      write(x, i, i);
+    for i in [0 for N*STORAGE] do
+    { read(x, i, value);
+      printhexln(value)
+    };
+    x ! HALT
+  } &
+  array(x)
+}
+

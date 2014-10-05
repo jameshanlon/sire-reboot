@@ -1,0 +1,2 @@
+proc main() is
+  printstrln("hello world")

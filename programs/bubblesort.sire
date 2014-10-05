@@ -1,0 +1,27 @@
+val N is 10;
+
+proc bsort(var a[n], val n) is
+{ var i;
+  var j;
+  var tmp;
+  for i in [0 for n] do 
+    for j in [0 for n-i-1] do
+      if a[j] > a[j+1] then 
+      { tmp := a[j]
+      ; a[j] := a[j+1]
+      ; a[j+1] := tmp
+      }
+      else skip
+}
+
+% Ouput: 0123456789
+proc main() is
+{ var a[N];
+  var i;
+  for i in [0 for N] do 
+    a[i] := N-(i+1);
+  bsort(a, N);
+  for i in [0 for N] do 
+    printval(a[i]);
+  printstrln("")
+}

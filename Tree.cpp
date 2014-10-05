@@ -10,7 +10,7 @@ static void indent(int i, int numChildren) {
   if(i > 1) --markers[i-1];
   for (int j=0; j<i-1; ++j)
     printf("%s", markers[j] > 0 ? "| " : "  ");
-  printf("*-");
+  printf("`-");
 }
 
 void Tree::print() {
