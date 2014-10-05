@@ -305,7 +305,7 @@ struct Abbr : public Spec {
   union {
     Elem *elem;
     Expr *expr;
-  }
+  };
 
 protected:
   Abbr(Type t, Spef *s, Name *n, Expr *e) :
@@ -316,8 +316,8 @@ protected:
 
 // Value abbreviation
 struct ValAbbr : public Abbr {
-  ValAbbr(Spef *s, Name *n, Expr* e) :
-    Abbr(VAL, s, n, e) {}
+  ValAbbr(Name *n, Expr* e) :
+    Abbr(VAL, nullptr, n, e) {}
 };
 
 // Variable abbreviation

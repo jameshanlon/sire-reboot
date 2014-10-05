@@ -163,10 +163,17 @@ Spec *Syn::readSpec() {
       // "val" ...
       bool val = false;
       if (curTok == Lex::tVAL) {
-        getNextToken();
         val = true;
+        getNextToken();
+
+        // ... <name> is <expr>
+        if (curTok == Lex::tNAME) {
+          Name *name = readName();
+          checkFor(Lex::tIS);
+          res = new ValAbbr(name, readExpr());
+          return readSpecEnd(res);
+        }
       }
-      // TODO: val abbr
       // ... <spef> <name> ...
       Spef *spef = readSpef(val);
       Name *name = readName();

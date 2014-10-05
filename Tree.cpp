@@ -116,7 +116,14 @@ void Tree::printDecl(int i, Decl *d) {
 
 void Tree::printAbbr(int i, Abbr *a) {
   switch(a->type) {
-  
+
+  case Abbr::VAL: {
+      indent(i, 0);
+      ValAbbr *x = static_cast<ValAbbr*>(a);
+      printf("ValAbbr\n");
+      break;
+    }
+
   case Abbr::VAR: {
       indent(i, 0);
       VarAbbr *x = static_cast<VarAbbr*>(a);
