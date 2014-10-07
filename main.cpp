@@ -5,6 +5,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <assert.h>
 
 #include <string>
 #include <string.h>
@@ -89,18 +90,24 @@ int main(int argc, char *argv[]) {
     }
     else {
       Tree *tree = SYN.formTree();
+      fclose(fp);
+      if (ERR.any())
+        throw FatalError();
       tree->print();
       //TRN.translateTree();
     }
   }
   catch(FatalError &e) {
-    fprintf(stderr, "Error: %s\n", e.msg());
+    if (e.hasMsg())
+      fprintf(stderr, "Error: %s\n", e.msg());
     if (fp != nullptr)
       fclose(fp);
     return 1;
   }
+  catch (...) {
+    assert(0 && "unexpected error");
+  }
 
-  fclose(fp);
   return 0;
 }
 

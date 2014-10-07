@@ -314,19 +314,14 @@ void Lex::error(const char *msg) {
   printChBuf();
   ERR.record();
   // Skip up to a safer point
-  // TODO: fix this behaviour
   Lex::Token t = readToken();
-  printf("recover: ");
   LEX.printToken(t);
-  //while (t != tEOF
-  //    || t != tSEMI
-  //    || t != tAND
-  //    || t != tRCURLY
-  //    || t != tLCURLY) {
-  //  t = readToken();
-  //  printf("recover: ");
-  //  LEX.printToken(t);
-  //}
+  while (t != tEOF &&
+         t != tSEMI &&
+         t != tAND &&
+         t != tRCURLY &&
+         t != tLCURLY)
+    t = readToken();
 }
 
 const char *Lex::tokStr(Lex::Token t) {

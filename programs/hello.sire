@@ -1,2 +1,1 @@
-proc main() is
-  printstrln("hello world")
+printstrln("hello world")

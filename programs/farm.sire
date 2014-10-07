@@ -3,38 +3,38 @@ val NONE is 0:
 
 server Farmer() is
   interface(
-    call request(var w), 
+    call request(var w),
     call result(val w, val r)) to
 { var results[N]:
   var work:
   initial work := 0:
-  alt { 
+  alt {
     % provide a worker with work if any remains or NONE if not
     accept request(var w):
-      if work < N 
-      then 
+      if work < N
+      then
       { w := work;
         work := work + 1
       }
       else w := NONE
     % accept a result from a worker
-  | accept return(val w, val r): 
+  | accept return(val w, val r):
       results[w] := r
   }
 }
 
 & process Worker(server Farmer f) is
 { var running: running := true;
-  while running do { 
+  while running do {
     var work, result:
     % request some work
     f.request(work);
     % if there is none then terminate
     if work = NONE
     then running := false
-    else { 
+    else {
       % otherwise, perform the computation and return the result
-      compute(work, result); 
+      compute(work, result);
       f.result(work, result)
     }
   }
