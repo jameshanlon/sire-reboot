@@ -1,7 +1,7 @@
 % Ackermann's funciton
 
 func ackermann(val m, val n) is
-{ if m=0 
+{ if m=0
   then return n+1
   else if (m>0) and (n=0)
   then return ackermann(m-1, 1)
@@ -14,5 +14,5 @@ func ackermann(val m, val n) is
 proc main() is
 { printvalln(ackermann(0, 2))
 ; printvalln(ackermann(2, 4))
-; printvalln(ackermann(3, 2)) 
+; printvalln(ackermann(3, 2))
 }

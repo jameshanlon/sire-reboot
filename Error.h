@@ -12,8 +12,10 @@
 class FatalError {
   std::string s;
 public:
-  FatalError(const char *s) : s(s) {}
+  FatalError() : s(nullptr) {}
+  FatalError(const char *s) : s() {}
   ~FatalError() throw() {}
+  bool hasMsg() { return s.empty(); }
   const char* msg() const throw() {
     return s.c_str();
   }
@@ -25,6 +27,7 @@ public:
   ~Error() {};
   static Error instance;
   static Error &get() { return instance; }
+  bool any() { return count > 0; }
   void record() {
     count++;
     if(count >= MAX_ERRORS)

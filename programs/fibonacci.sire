@@ -1,23 +1,23 @@
-% Calculate nth Fibonacci number
+# Calculate nth Fibonacci number
 
-% Recursively
-func fibRec(val n) is 
-  if n > 1 
+# Recursively
+function fibRec(val n) is
+  if n > 1
   then return fibRec(n-1) + fibRec(n-2)
-  else if n = 0 then return 0 
+  else if n = 0 then return 0
   else return 1
 
-% Iteratively
-func fibLoop(val n) is 
+# Iteratively
+function fibLoop(val n) is
 { var x;
   var y;
   var z;
   var i;
-  x := 0; 
+  x := 0;
   y := 1;
   i := n - 1;
   z := x;
-  while(i > 0) do 
+  while(i > 0) do
   { z := x + y;
     x := y;
     y := z;
@@ -26,11 +26,9 @@ func fibLoop(val n) is
   return z
 }
 
-proc main() is
-{ assert fibRec(6) = 8; 
-  assert fibRec(11) = 89;
-  assert fibRec(16) = 987;
-  assert fibLoop(6) = 8;
-  assert fibLoop(11) = 89;
-  assert fibLoop(16) = 987
-}
+assert fibRec(6) = 8;
+assert fibRec(11) = 89;
+assert fibRec(16) = 987;
+assert fibLoop(6) = 8;
+assert fibLoop(11) = 89;
+assert fibLoop(16) = 987
