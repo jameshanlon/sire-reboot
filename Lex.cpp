@@ -313,15 +313,16 @@ void Lex::error(const char *msg) {
   printf("Error near line %d: %s\n", lineNum, msg);
   printChBuf();
   ERR.record();
+  exit(1);
   // Skip up to a safer point
-  Lex::Token t = readToken();
-  LEX.printToken(t);
-  while (t != tEOF &&
-         t != tSEMI &&
-         t != tAND &&
-         t != tRCURLY &&
-         t != tLCURLY)
-    t = readToken();
+  //Lex::Token t = readToken();
+  //LEX.printToken(t);
+  //while (t != tEOF &&
+  //       t != tSEMI &&
+  //       t != tAND &&
+  //       t != tRCURLY &&
+  //       t != tLCURLY)
+  //  t = readToken();
 }
 
 const char *Lex::tokStr(Lex::Token t) {

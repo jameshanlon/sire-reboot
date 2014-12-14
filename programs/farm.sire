@@ -1,7 +1,7 @@
 val N is 10:
 val NONE is 0:
 
-server Farmer() is
+server Farmer()
   interface(
     call request(var w),
     call result(val w, val r)) to
@@ -9,7 +9,7 @@ server Farmer() is
   var work:
   initial work := 0:
   alt {
-    % provide a worker with work if any remains or NONE if not
+    # provide a worker with work if any remains or NONE if not
     accept request(var w):
       if work < N
       then
@@ -17,7 +17,7 @@ server Farmer() is
         work := work + 1
       }
       else w := NONE
-    % accept a result from a worker
+    # accept a result from a worker
   | accept return(val w, val r):
       results[w] := r
   }
@@ -27,13 +27,13 @@ server Farmer() is
 { var running: running := true;
   while running do {
     var work, result:
-    % request some work
+    # request some work
     f.request(work);
-    % if there is none then terminate
+    # if there is none then terminate
     if work = NONE
     then running := false
     else {
-      % otherwise, perform the computation and return the result
+      # otherwise, perform the computation and return the result
       compute(work, result);
       f.result(work, result)
     }
@@ -41,5 +41,5 @@ server Farmer() is
 }:
 
 server f is Farmer():
-par [i=0 for N] Worker(f)
+par [i=0 for N] do Worker(f)
 

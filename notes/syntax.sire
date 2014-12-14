@@ -1,0 +1,58 @@
+#==============================================================================
+# definition
+#==============================================================================
+
+process foo(
+    server S a,
+    server T[][] b,
+    interface(call c(var x) c)) is
+  skip
+
+
+#==============================================================================
+# abbreviations
+#==============================================================================
+
+foo(x, y, z)
+
+=
+
+# explicit
+server S a is x:
+server T[][] b is y:
+server interface(call c(var x)) c is z:
+skip
+
+
+#==============================================================================
+# declarations
+#==============================================================================
+
+var[10] a:
+var[2][8] b:
+var[] x is a:
+var[][] y is b:
+function z is f:
+chan c is d:
+
+# 1
+server a is [N] S():
+server a is [i=0 for N] S(i):
+
+# Commands
+
+do c while e
+do e until c
+while c do e
+until e do c
+
+# par/seq replicators
+seq [i=0 for N] do f(i)
+par [i=0 for N] do h(i)
+seq [i=0 for N, j=0 for M] do g(i)
+
+# replicated parallel components anonymous/named
+{ par i=0 to N do f(i) & g() & h() }
+{ a is [i=0 to N] f(i) & g() & h() }
+
+

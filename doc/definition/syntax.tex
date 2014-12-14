@@ -1,0 +1,149 @@
+\section{Syntax}
+
+\subsection{Collected syntax}
+
+The following sections list the \sire\ syntax, with each section related to a
+particular feature.
+
+\input{collected.tex}
+
+
+\clearpage
+\subsection{Ordered syntax}
+
+The following lists each element of the \sire\ syntax in alphabetical order.
+
+\input{ordered.tex}
+
+
+\clearpage
+\subsection{Operators}
+\label{sec:operators}
+
+A $\pn{binary-operator}$ $\oplus$ takes two operands $a$ and $b$ and produces a
+value $a \oplus b$.
+%
+A binary \emph{arithmetic operators} takes signed integer operands and produces
+a signed integer result.
+
+\begin{center}
+\begin{tabular}{ccc}
+{\bf Symbol} & {\bf Meaning} & {\bf Definition}\\
+\midrule
+\ttt{+} & sum & $a+b$\\
+\ttt{-} & difference & $a-b$\\
+\ttt{*} & produce & $a\times b$\\
+\ttt{/} & quotient & $a / b$\\
+\ttt{rem} & remainder & $a \mod b$
+\end{tabular}
+\end{center}
+
+\noindent
+A binary \emph{relational operator} takes two signed integer values
+and produces the value \ttt{true} or \ttt{false}.
+
+\begin{center}
+\begin{tabular}{ccc}
+{\bf Symbol} & {\bf Meaning} & {\bf Definition}\\
+\midrule
+\ttt{=} & equality & $a=b$\\
+\ttt{\textasciitilde=} & inequality & $a\neq b$\\
+\ttt{<} & less than & $a < b$\\
+\ttt{<=} & less than or equal & $a \leq b$\\
+\ttt{>} & greater than & $a > b$\\
+\ttt{>=} & greater than or equal & $a \geq b$
+\end{tabular}
+\end{center}
+
+\noindent
+A binary \emph{logical operator} takes two operands and produces a bitwise
+result $b_i = a_i\oplus b_i$ for $0\leq i < n$.
+
+\begin{center}
+\begin{tabular}{ccc}
+{\bf Symbol} & {\bf Meaning} & {\bf Definition}\\
+\midrule
+\ttt{or} & bitwise or & $b$ \ttt{or} $0$ $=$ $b$, $b$ \ttt{or} $1$ $=$ $1$\\
+\ttt{and} & bitwise and & $b$ \ttt{and} $0$ $=$ $0$, $b$ \ttt{and} $1$ $=$ $b$\\
+\ttt{xor} & bitwise exclusive or & $b$ \ttt{xor} $0$ $=$ $b$,
+  $b$ \ttt{xor} $1$ $=$ $1$, $1$ \ttt{xor} $1$ $=$ $0$, \\
+\ttt{{<}<} & left bitwise shift & $b_i=b_{i+1}$, $b_0=0$\\
+\ttt{>{>}} & right bitwise shift & $b_i=b_{i-1}$, $b_n-1=0$\\
+\end{tabular}
+\end{center}
+
+\noindent
+A $\pn{unary-operator}$ $\oplus$ takes a single operand $a$ and produces the value
+$\oplus a$.
+
+\begin{center}
+\begin{tabular}{ccc}
+{\bf Symbol} & {\bf Meaning} & {\bf Definition}\\
+\midrule
+\ttt{-} & negation & $0-a$ \\
+\ttt{\textasciitilde} & bitwise not &
+    $\text{\ttt{\textasciitilde}}0=1$, $\text{\ttt{\textasciitilde}}1=0$\\
+\end{tabular}
+\end{center}
+
+
+\subsection{Representation of values}
+\label{appx:representation-values}
+
+Signed values are represented as a two's complement bit-pattern. With a word
+size of $n$, values in the range $-2^{n-1} \leq n < 2^{n-1}$ can be
+represented.
+
+The literal value \ttt{true} represents an all-1 bit pattern (the value $-1$) and the
+literal value \ttt{false} represents an all-0 bit pattern (the value 0). The effect of this
+is consistent with the logical not operation: \ttt{not} \ttt{false} $=$
+\ttt{true} and \ttt{not} \ttt{true} = \ttt{false}.
+
+
+\subsection{Character set}
+
+A $\pn{character}$ can be any alphabetical character
+
+\begin{flalign*}
+  \hspace{5mm}&\sm{A B C D E F G H I J K L M N O P Q R S T U V W X Y Z}&\\
+  \hspace{5mm}&\sm{a b c d e f g h i j k l m n o p q r s t u v w x y z}&
+\end{flalign*}
+
+\noindent
+or any special character
+
+\begin{flalign*}
+  \hspace{5mm}&\sm{\_ + - = , . : ; ? \{ \} [ ] ( ) \# \& ! * @ | " '}&
+\end{flalign*}
+
+\noindent
+A $\pn{digit}$ can be any numeric character
+
+\begin{flalign*}
+  \hspace{5mm}&\sm{0 1 2 3 4 5 6 7 8 9}&
+\end{flalign*}
+
+\noindent
+A $\pn{hex-digit}$ can be any numeric character or
+
+\begin{flalign*}
+  \hspace{5mm}&\sm{A B C D E F a b c d e f}&
+\end{flalign*}
+
+\noindent
+A $\pn{name}$ consists of a sequence of alphanumeric characters and underscores.
+
+
+\subsection{Comments}
+
+A comment is introduced with a `\ttt{\%}' symbol and continues until the end of
+  the line.
+
+
+\begin{minipage}{\textwidth} % keep with next
+\subsection{Keywords}
+
+The following are keywords in \sire\ and cannot be used for names.
+
+\input{keywords}
+\end{minipage}

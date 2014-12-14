@@ -29,6 +29,7 @@ function fibLoop(val n) is
 assert fibRec(6) = 8;
 assert fibRec(11) = 89;
 assert fibRec(16) = 987;
+
 assert fibLoop(6) = 8;
 assert fibLoop(11) = 89;
 assert fibLoop(16) = 987

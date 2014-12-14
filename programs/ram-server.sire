@@ -1,37 +1,39 @@
 val S is 1024:
 val N is 10:
 
-server Store() is
-  interface( 
-    call read(val i, var v), 
-    call write(val i, val v)):
+server Store()
+  interface(
+    call read(val i, var v),
+    call write(val i, val v)) to
 { var[S] a:
-  alt 
-  { accept read(val i, var v): 
+  alt {
+    accept read(val i, var v):
       v := a[i]
-  | accept write(val i, val v): 
-      a[i] := v 
+  | accept write(val i, val v):
+      a[i] := v
   }
 }
 
-& server Access(server Store[N] s) is
-  interface( 
-    call read(val addr, var v), 
-    call write(val addr, val v)):
-  alt 
-  { accept read(val addr, var v): 
+&
+server Access(server Store[N] s)
+  interface(
+    call read(val addr, var v),
+    call write(val addr, val v)) to
+  alt
+  { accept read(val addr, var v):
       s[addr/N].read(addr rem S, v)
-  | accept write(val addr, val v): 
+  | accept write(val addr, val v):
       s[addr/N].write(addr rem S, v)
   }
 
-& server RAM() inherits
-  from [ s is [N] Store(), m is Access(s) ] 
+&
+server RAM() exports
+  from [ s is [N] Store(), m is Access(s) ]
   interface m
 :
 
 server m is RAM():
 var v:
-m.write(99, 42); 
+m.write(99, 42);
 m.read(99, v);
 

@@ -34,6 +34,8 @@ server Buffer() is
 :
 
 b is Buffer():
-{ Producer(b)
-& Consumer(b) }
+par {
+ Producer(b);
+ Consumer(b)
+}
 

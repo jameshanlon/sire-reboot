@@ -1,9 +1,11 @@
 val N is 8;
 
-proc foo(val i, val j, chanend n, chanend s, chanend w, chanend e) is 
+process foo(val i, val j,
+            chanend n, chanend s,
+            chanend w, chanend e) is 
 { var u;
   var v;
-  % Top left
+  # Top left
   if (i = 0) and (j = 0)
   then
   { s ! 1;
@@ -13,7 +15,7 @@ proc foo(val i, val j, chanend n, chanend s, chanend w, chanend e) is
     assert u = N;
     assert v = N
   }
-  % Row 0
+  # Row 0
   else if i = 0
   then
   { s ! 1;
@@ -22,7 +24,7 @@ proc foo(val i, val j, chanend n, chanend s, chanend w, chanend e) is
     e ! v + 1;
     assert u = N
   }
-  % Column 0
+  # Column 0
   else if j = 0
   then
   { e ! 1;
@@ -31,7 +33,7 @@ proc foo(val i, val j, chanend n, chanend s, chanend w, chanend e) is
     s ! v + 1;
     assert u = N
   }
-  % Everything else
+  # Everything else
   else
   { n ? u;
     w ? v;
@@ -40,12 +42,12 @@ proc foo(val i, val j, chanend n, chanend s, chanend w, chanend e) is
   }
 }
 
-proc main() is
+process main() is
 { chan x[N*N];
   chan y[N*N];
   var i;
   var j;
-  par i in [0 for N], j in [0 for N] do 
+  par i in [0 for N], j in [0 for N] do
     foo(i, j, y[(j*N)+i], y[(j*N)+((i+1) rem N)],
               x[(i*N)+j], x[(i*N)+((j+1) rem N)])
 }

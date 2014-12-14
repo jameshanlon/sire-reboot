@@ -1,15 +1,15 @@
 val N is 2;
 
-proc foo(val i, chanend l, chanend r) is
+process foo(val i, chanend l, chanend r) is
 { var v;
-  if i = 0 
+  if i = 0
   then
-  { r ! 1; 
+  { r ! 1;
     l ? v;
     assert v = N
   }
   else
-  { l ? v; 
+  { l ? v;
     r ! v + 1
   }
 }

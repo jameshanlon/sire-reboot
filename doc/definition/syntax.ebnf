@@ -20,7 +20,7 @@ program             = <specification> ":" <program>
 
 specification       = <declaration>
                     | <abbreviation>
-                    | {0 "&" <specification> };
+                    | {0 "&" <specification>};
 
 declaration         = <specifier> {1 "," <name> };
 
@@ -31,7 +31,7 @@ abbreviation        = <specifier> <name> "is" <element>
 specifier           = <type>
                     | <type> <name>
                     | <type> <interface>
-                    | <specifier> "[" "]" 
+                    | <specifier> "[" "]"
                     | <specifier> "[" <expression> "]";
 
 type                = "var"
@@ -43,15 +43,14 @@ type                = "var"
 
 
 % ============================================================================
-[Primitive commands] 
+[Primitive commands]
 % ============================================================================
 
 primitive-command   = <skip>
                     | <stop>
                     | <assignment>
                     | <input>
-                    | <output>
-                    | <connect>;
+                    | <output>;
 
 skip                = "skip";
 
@@ -63,23 +62,19 @@ input               = <element> "?" <element>;
 
 output              = <element> "!" <expression>;
 
-connect             = "connect" <element> "to" <element>;
-                    
 
 % ============================================================================
-[Structured commands] 
+[Structured commands]
 % ============================================================================
 
 structured-command  = <alternation>
                     | <conditional>
                     | <case>
-                    | <loop> 
-                    | "{" <sequence> "}"
-                    | "{" <parallel> "}"
-                    | "seq" {1 "," <range>} "do" <command>
-                    | "par" {1 "," <range>} "do" <command>;
+                    | <loop>
+                    | <sequence>
+                    | <parallel>;
 
-% Test              
+% Test
 conditional         = "test" "{" {0 "|" <choice> "}"
                     | "if" <expression> "do" <command>
                     | "if" <expression> "then" <command> "else" <command>
@@ -93,8 +88,14 @@ choice              = <guarded-choice>
                     | <specification> ":" <choice>;
 
 guarded-choice      = <expression> ":" <command>;
-                    
-% Case 
+
+% Loop
+loop                = "while" <expression> "do" <command>
+                    | "until" <expression> "do" <command>
+                    | "do" <command> "while" <expr>
+                    | "do" <command> "until" <expr>;
+
+% Case
 case                = "case" "(" <expression> ")" "{" {0 "|" <selection>} "}";
 
 selection           = <expression> ":" <command>
@@ -113,40 +114,16 @@ guard               = <input>
                     | <expression> "&" <input>
                     | <expression> "&" <skip>;
 
-% Loop 
-loop                = "while" <expression> "do" <command>
-                    | "until" <expression> "do" <command>
-                    | "do" <command> "while" <expr>
-                    | "do" <command> "until" <expr>;
-
-
-% ============================================================================
-[Sequence] 
-% ============================================================================
-
+% Sequence
 sequence            = {0 ";" <command> };
 
-command             = <primitive-command> 
+% Parallel
+parallel            = {0 ";" <command> };
+
+% Command
+command             = <primitive-command>
                     | <structured-command>
                     | <specification> ":" <command>;
-
-
-% ============================================================================
-[Parallel] 
-% ============================================================================
-
-parallel            = {0 "&" <component> };
-
-component           = <label> <process>
-                    | <label> "[" {0 "," <process> } "]"
-                    | <process>;
-
-label               = <name> "is";
-
-process             = <command>
-                    | <interface> "to" <command>;
-
-interface           = "interface" "(" {0 "," <formal>} ")";
 
 
 % ============================================================================
@@ -175,8 +152,6 @@ command             = <element> "(" {0 "," <actual>} ")";
 [Replication]
 % ============================================================================
 
-component           = <label> <replicator> <process>;
-
 conditional         = "if" <replicator> <choice>;
 
 case                = "case" <replicator> <selection>;
@@ -189,6 +164,10 @@ replicator          = "[" {1 "," <range>} "]";
 
 range               = <name> "=" <expression> "for" <expression>
                     | <name> "=" <expression> "for" <expression> "step" <expression>;
+
+sequence            = "seq" {1 "," <range>} "do" <command>;
+
+parallel            = "par" {1 "," <range>} "do" <command>;
 
 
 % ============================================================================
@@ -244,7 +223,7 @@ definition          = <procedure>
 
 procedure           = "process" <name> "(" {0 "," <formal>} ")" "is" <process>
                     | "server" <name> "(" {0 "," <formal>} ")" "is" <server>
-                    | "server" <name> "(" {0 "," <formal>} ")" "inherits" <hiding-declaration>;
+                    | "server" <name> "(" {0 "," <formal>} ")" "provides" <hiding-declaration>;
 
 function            = "function" <name> "(" {0 "," <formal>} ")" "is" <valof>
                     | "function" <name> "(" {0 "," <formal>} ")" "is" <expression>;
@@ -265,26 +244,4 @@ instance            = <name> "(" {0 "," <actual>} ")";
 
 actual              = <element>
                     | <expression>;
-
-
-% ============================================================================
-[Compiler transformations]
-% ============================================================================
-
-% Process distribution
-process             = "on" <expression> "do" <process>;
-
-% Channel-end references
-
-absolute-reference  = "(" <expression> ":" <expression> ":" <expression> ")";
-
-interface           = "interface" "(" {0 "," <declaration>} ")" "@" <absolute-reference>;
-
-server-call         = <local-chanend> "!" <element> "(" {0 "," <actual>} ")";
-
-local-chanend       = <element> "@" <absolute-reference>;
-
-element             = <remote-chanend>;
-
-remote-chanend      = "@" <absolute-reference> "." <expression>;
 

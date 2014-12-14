@@ -82,7 +82,7 @@ proc convolve(var I[sSEGH], var K[sKERNEL]) is
     }
 }
 
-proc cell(val idX, val idY, 
+proc cell(val idX, val idY,
     chanend n, chanend s, chanend e, chanend w,
     chanend pipeIn, chanend pipeOut) is
 { var I[];
@@ -102,7 +102,7 @@ proc cell(val idX, val idY,
   K[0]:=-1;K[1]:=-2;K[2]:=-1;
   K[3]:= 0;K[4]:= 0;K[5]:= 0;
   K[6]:= 1;K[7]:= 2;K[8]:= 1;
-  
+
   % Load image
   for y in [0 for hIMG] do % Image segment y (row)
     for x in [0 for wIMG] do % Image segment x (col)
@@ -111,7 +111,7 @@ proc cell(val idX, val idY,
       % Store the correct image segment
       if (index >= (id*sSEG)) and (index < ((id+1)*sSEG))
       then
-      { var xOff; 
+      { var xOff;
         var yOff;
         xOff:= (x - (idX*wSEG)) + wHALO;
         yOff:= (y - (idY*hSEG)) + hHALO;
@@ -129,7 +129,7 @@ proc cell(val idX, val idY,
 
   % Distribute halos
   % 1. Circular shift left
-  if idX = 0 
+  if idX = 0
   then
   { sendVertHalo(w, I, wHALO,      hHALO);
     recvVertHalo(e, I, wSEG+wHALO, hHALO)
@@ -139,7 +139,7 @@ proc cell(val idX, val idY,
     sendVertHalo(w, I, wHALO,      hHALO)
   };
   % 2. Circular shift right
-  if idX = 0 
+  if idX = 0
   then
   { sendVertHalo(e, I, wSEG, hHALO);
     recvVertHalo(w, I, 0,    hHALO)
@@ -149,7 +149,7 @@ proc cell(val idX, val idY,
     sendVertHalo(e, I, wSEG, hHALO)
   };
   % 3. Circular shift up
-  if idY = 0 
+  if idY = 0
   then
   { sendHorzHalo(s, I, 0, hHALO);
     recvHorzHalo(n, I, 0, hSEG)
@@ -159,7 +159,7 @@ proc cell(val idX, val idY,
     sendHorzHalo(s, I, 0, hHALO)
   };
   % 4. Circular shift down
-  if idY = 0 
+  if idY = 0
   then
   { sendHorzHalo(n, I, 0, hHALO+hSEG);
     recvHorzHalo(s, I, 0, 0)
@@ -171,7 +171,7 @@ proc cell(val idX, val idY,
 
   % Perform convolution
   convolve(I, K);
-  
+
   time(t2);
 
   % Return maximum time taken
