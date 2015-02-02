@@ -11,7 +11,10 @@ syn case match
 
 " Types
 syn keyword	sType	     var val chan call
+syn keyword	sType	     bool int real const
 syn keyword	sType	     process server function
+syn keyword	sType	     proc func
+syn keyword	sType	     procedure
 
 " Keywords
 syn keyword	sKeyword     is return skip stop

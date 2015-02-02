@@ -1,28 +1,25 @@
-val N is 10:
+const int N is 10:
 
-server Store() is
-  interface( 
-    call read(val i, var v), 
-    call write(val i, val v), 
-    call apply(process f(var[n] a, val n))
-  ) to
-{ var[N] a:
-  alt 
-  { accept read(val i, var v):  
-      v := a[i]
-  | accept write(val i, val v): 
-      a[i] := v
-  | accept apply(process f(var[n] a, val  n)): 
-      f(a, N) 
-  }
+server Store():
+  read(val i, var v),
+  write(val i, val v),
+  apply(proc f(var[n] a, val n))
+{
+  var[N] a:
+  accept read(int i, &int v):
+    v := a[i]
+  accept write(int i, int v):
+    a[i] := v
+  accept apply(proc f(&int[n] a, int n)):
+    f(a, N)
+}:
+
+func foo(var[n] a, val n)
+  seq i=0 for n a[i] := 0
 :
 
-function foo(var[n] a, val n) is
-  seq [i=0 for n] a[i] := 0
-:
-
-server s is Store():
+s is Store():
 var v:
-seq [i=0 for N] s.write(i, 1);
+seq i=0 for N do s.write(i, 1);
 s.apply(foo)
 

@@ -1,40 +1,42 @@
 val D is 3;      % Tree depth
 val N is 1 << D; % Number of leaves
 
-# Send a token down, then sum values up.
-process branch(chanend c, chanend left, chanend right) is
-{ var u;
-  var v;
-  c ? v;
+server Chan() & (send(val v), recv(var w))
+  accept send(val v):
+    accept recv(var w):
+      w := v;
+
+% Send a token down, then sum values up.
+process branch(&Chan c, &Chan left, &Chan right) {
+  var u, v:
+  c.recv(v);
   assert v = 0;
-  left ! v;
-  right ! v;
-  left ? u;
-  right ? v;
-  c ! u + v
+  left.send(v);
+  right.send(v);
+  left.recv(u);
+  right.recv(v);
+  c.send(u + v)
 }
 
-# Receive a token and send back a 1.
-process leaf(chanend c) is
-{ var v;
-  c ? v;
+% Receive a token and send back a 1.
+process leaf(Chan c) {
+  var v:
+  c.recv(v);
   assert v = 0;
-  c ! 1
+  c.send(1)
 }
 
-process main() is
-{ chan c[(2*N)-1];
-  var v;
-  var i;
-  distribute {
-    { c[0] ! 0;
-      c[0] ? v;
+process main() {
+
+  c is [(2*N)-1] Chan:
+  par {
+    seq {
+      var v:
+      c[0].send(0);
+      c[0].recv(v);
       assert v = N
     };
-    distribute i in [0 for N] do
-      leaf(c[(N-1) + i]) &
-    distribute i in [0 for N-1] do
-      branch(c[i], c[(2*i)+1], c[(2*i)+2])
+    par [i = 0 for N] leaf(c[(N-1) + i]);
+    par [i = 0 for N-1] branch(c[i], c[(2*i)+1], c[(2*i)+2])
   }
-}$
-
+}

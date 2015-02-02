@@ -1,38 +1,30 @@
-val S is 1024:
-val N is 10:
+int S is 1024:
+int N is 10:
 
-server Store()
-  interface(
-    call read(val i, var v),
-    call write(val i, val v)) to
-{ var[S] a:
-  alt {
-    accept read(val i, var v):
-      v := a[i]
-  | accept write(val i, val v):
-      a[i] := v
-  }
+procedure Store():
+  interface(read(int i, var v),
+            write(int i, int v)) {
+  int[S] a:
+  accept read(int i, var v):  v := a[i];
+  accept write(int i, int v):a[i] := v
 }
 
-&
-server Access(server Store[N] s)
-  interface(
-    call read(val addr, var v),
-    call write(val addr, val v)) to
-  alt
-  { accept read(val addr, var v):
-      s[addr/N].read(addr rem S, v)
-  | accept write(val addr, val v):
-      s[addr/N].write(addr rem S, v)
+procedure Access(server Store[N] s):
+  interface(read(int addr, &int v),
+            write(int addr, int v)) {
+  accept read(int addr, &int v):
+    s[addr/N].read(addr rem S, v)
+  accept write(int addr, int v):
+    s[addr/N].write(addr rem S, v)
+}
+
+procedure RAM():
+  interface m from {
+    s is [N] Store();
+    m is Access(s)
   }
 
-&
-server RAM() exports
-  from [ s is [N] Store(), m is Access(s) ]
-  interface m
-:
-
-server m is RAM():
+m is RAM():
 var v:
 m.write(99, 42);
 m.read(99, v);
