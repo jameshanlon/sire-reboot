@@ -27,6 +27,7 @@ syn keyword	sKeyword     for
 syn keyword	sStructure   if then else do
 syn keyword     sStructure   case alt
 syn keyword	sStructure   initial accept final
+syn keyword	sStructure   when
 
 " Repetative constructs
 syn keyword     sRepeat      while until step to seq par

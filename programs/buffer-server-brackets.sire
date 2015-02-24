@@ -1,33 +1,36 @@
 val N is 10:
 
 server Buffer() is
-interface
-  write(val v)
+interface {
+  write(val v);
   read(var v)
-to
+} to {
   var[N] b:
   var inp, outp, count:
-  initial
+  initial {
     inp := 0
     outp := 0
     count := 0
-  when count+1 < N accept write(val v)
+  }
+  when count+1 < N accept write(val v) {
     b[inp] := v
     inp := (inp + 1) rem N
     count := count + 1
-  when count > 0 accept read(var v)
+  }
+  when count > 0 accept read(var v) {
     v := b[outp]
     outp := (outp+1) rem N
     count := count - 1
-:
+  }
+}:
 
-& process Producer(server Buffer b) is
+& process Producer(server Buffer b) {
   while true do b.write(0)
-:
+}:
 
-& process Consumer(server Buffer b) is
+& process Consumer(server Buffer b) {
   var v: while true do b.read(v)
-:
+}:
 
 b is Buffer():
 par
@@ -36,18 +39,18 @@ par
 
 % =============================================================================
 
-interface Buffer is
+interface Buffer {
   write(val v)
   read(var v)
-:
+}:
 
-& process Producer(Buffer b) is
+& process Producer(Buffer b) {
   while true do b.write(0)
-:
+}:
 
-& process Consumer(Buffer b) is
+& process Consumer(Buffer b) {
   var v: while true do b.read(v)
-:
+}:
 
 b is interface Buffer to
   var[N] b:

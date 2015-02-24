@@ -1,0 +1,30 @@
+% Nested accept
+server Chan():
+  interface
+    send(int)
+    recv(&int)
+  to
+    accept send(int x):
+      accept recv(&int y):
+        y := x
+:
+
+% Guarded accept
+server Chan():
+  interface
+    send(int)
+    recv(&int)
+  to
+    bool flag:
+    int v:
+    initial flag := false
+    accept send(int x):
+      v := x
+    when flag accept recv(&int y):
+      y := v
+:
+
+c is Chan:
+par
+  c.send(0)
+  c.recv(v)
